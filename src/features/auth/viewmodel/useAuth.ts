@@ -111,11 +111,14 @@ export function useAuth() {
         .update({ terms_accepted_at: new Date().toISOString() })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('terms_accepted_at update warning:', error.message);
+      }
 
       router.replace('/(tabs)');
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not accept terms' });
+      console.warn('Terms accept error:', error);
+      router.replace('/(tabs)');
     } finally {
       setIsLoading(false);
     }

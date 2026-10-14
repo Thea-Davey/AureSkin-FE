@@ -21,12 +21,13 @@ export default function RootLayout() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const isTermsScreen = segments[1] === 'terms';
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to login if not authenticated
       router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if authenticated and trying to access auth screens
+    } else if (isAuthenticated && inAuthGroup && !isTermsScreen) {
+      // Redirect to home if authenticated and trying to access login/register (allow terms)
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments]);
