@@ -310,40 +310,45 @@
 **Reference Image:** `design_references/library_ingredients.png`
 
 #### 🎯 Purpose
-> The Ingredients Tab is the first tab of the Library page. It presents a searchable, scrollable list of all skincare ingredients in the database. Users can browse and tap any ingredient to learn more about it.
+> The Ingredients Tab is the default view of the Library section. It presents a searchable, scrollable catalog of skincare ingredients from the AureSkin knowledge base. Users can browse ingredients, search by name, and tap any ingredient to view its detailed mechanism of action, benefits, cautions, and personalized compatibility status. It functions as an educational reference guide, decoupled from the active scan analysis results.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| Hamburger Menu Icon (☰) | Icon Button (Top-Left) | Opens the Menu Overlay side drawer. |
-| "Library" | Static Text (Page Header) | Page title. Non-interactive. |
-| "Ingredients" Tab | Tab Switcher Button (Active) | Currently active tab. Stays on the Ingredients tab when tapped. |
-| "Products" Tab | Tab Switcher Button (Inactive) | Tapping it switches the view to the Products Tab. |
-| Search Bar ("search ingredient") | Text Input Field | Filters the ingredient list in real-time as the user types. |
-| Ingredient List Item | Tappable List Row | Each row displays the ingredient name (e.g., "Aloe Vera"). Tapping it navigates to the Ingredient Detail Page. |
-| Bottom Tab Bar | Tab Navigator (Persistent) | Home, Library (active), Scan, History, Routine. |
+| Hamburger Menu Icon (☰) | Icon Button (Top-Left) | Opens the Menu Overlay side drawer navigation. |
+| "Library" | Static Text (Header) | Section title. Non-interactive. |
+| "Ingredients" Tab | Tab Control Button (Active) | Currently selected tab showing a highlighted pill background (`bg-accent/40` or `bg-secondary`). Remains active on tap. |
+| "Products" Tab | Tab Control Button (Inactive) | Switches view to the Products Tab (3.2). |
+| Search Bar | Text Input Field | Centered input inside the curved container (`rounded-card`) with a search icon (magnifying glass) and placeholder `"search ingredient"`. Filters the ingredient list in real-time. |
+| Ingredient List | Scrollable List (Vertical) | Displays paginated ingredients in rounded card containers (`rounded-card`). |
+| Ingredient List Item | Tappable Card Row | Displays the ingredient name (e.g., "Aloe Vera"). Tapping it navigates to the Ingredient Detail Page (3.3). |
+| Bottom Tab Bar | Tab Navigator (Persistent) | Provides access to Home, Library (active), Scan, History, and Routine. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| Ingredient name list | `GET /ingredients?q=&limit=20&offset=0` → paginated ingredient names |
+| Ingredient Name List | `GET /ingredients?q=&limit=20&offset=0` via `library_api.ts` (`fetchIngredients`) / `useIngredients.ts` (Supabase `ingredients` table). |
+| Search Query | Local component state debounced and passed to `useIngredients.ts`. |
+| Active Tab State | ViewModel state inside `useLibrary.ts` or local tab switcher state. |
 
 #### ✨ Animations & Transitions
-- **Entry:** Screen slides in from the right when the Library tab is tapped. List items fade in as they load.
-- **Interactions:** Tapping an ingredient row shows a brief opacity press effect. The search bar highlights on focus. List scrolls with standard momentum.
-- **Exit:** Tapping an ingredient row pushes to the Ingredient Detail Page via a forward horizontal slide.
+- **Entry:** Displays when navigating to the Library tab or selecting the Ingredients tab. List rows fade in as data resolves.
+- **Interactions:** Search bar border highlights on focus. Tapping an ingredient card provides opacity feedback (`active:opacity-80`). List scrolls smoothly with standard momentum.
+- **Exit:** Tapping an ingredient row pushes to the Ingredient Detail Page (3.3) via a forward slide or modal sheet. Switching tabs toggles content smoothly.
 
 #### 🔄 Screen States
-- **Loading:** Shows skeleton shimmer rows while the ingredient list is being fetched.
-- **Empty:** Displays "No ingredients found." with a search icon if the query returns no results.
-- **Error:** Displays an inline error card with a "Try again" button.
-- **Success:** N/A (success is the default populated state)
+- **Loading:** Displays skeleton shimmer rows while ingredient records are being retrieved.
+- **Empty:** Displays "No ingredients found" message with a search icon when the search term yields zero results.
+- **Error:** Displays an inline error card with an error message and a "Retry" button.
+- **Success:** Displays the scrollable list of ingredient card rows matching the active search query.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
 | Tap "Products" tab | Library Page — Products Tab (3.2) |
 | Tap an ingredient row | Ingredient Detail Page (3.3) |
+| Tap Hamburger Menu (☰) | Menu Overlay (7.1) |
+| Tap Bottom Tab Bar (Home/Scan/History/Routine) | Respective main application tab |
 
 ---
 
@@ -352,33 +357,56 @@
 **Reference Image:** `design_references/library_products.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Products Tab allows users to browse, filter, and search curated skincare products stored in the AureSkin library. Users can filter products by category (cleansers, toners, moisturizers, serums, etc.), view product details and formulations, toggle favorite products, and contribute new products to the community-driven database using the Floating Action Button (+).
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Hamburger Menu Icon (☰) | Icon Button (Top-Left) | Opens the Menu Overlay side drawer. |
+| "Library" | Static Text (Header) | Section title. Non-interactive. |
+| "Ingredients" Tab | Tab Control Button (Inactive) | Switches view to the Ingredients Tab (3.1). |
+| "Products" Tab | Tab Control Button (Active) | Currently selected tab showing a highlighted pill background. Remains active on tap. |
+| Search Control | Icon Button / Input Trigger | Magnifying glass icon on the left of the filter row. Tapping expands a product search input. |
+| Category Filter Dropdown | Dropdown / Filter Pill | Category selector (e.g., "▾ Cleansers", "▾ Toners", "▾ Moisturizers", "▾ Sunscreens"). Filters products by category. |
+| Secondary Filter Dropdown | Dropdown / Filter Pill | Displays secondary filter options (e.g., "▾ All", "▾ Favorites"). Filters the list according to user preference. |
+| Product List | Scrollable List (Vertical) | Displays products arranged in vertical cards (`rounded-card`). |
+| Product Card | Tappable Card | Contains the product thumbnail image, name, brand, category badge, and favorite icon. Tapping the card opens the Product Detail Page (3.4). |
+| Product Image Thumbnail | Image Component | Displays the product photo from Supabase Storage (`product-images`). Shows a soft placeholder background if no image is available. |
+| Product Name | Static Text (Heading) | Displays the product name (e.g., "Glycolic Acid 7% Toning Solution"). |
+| Product Brand | Static Text (Subtext) | Displays the brand name (e.g., "The Ordinary"). |
+| Product Category Badge | Status Pill (`rounded-badge`) | Displays the category type (e.g., "Toner") with muted accent background. |
+| Favorite Icon | Icon Button | Star outline icon at top-right of the card. Tapping toggles the product's saved favorite state. |
+| Add Product Button (+) | Floating Action Button (FAB) | Circular elevated button (`rounded-full bg-primary`) at bottom-right with a plus icon. Navigates to the Add Product flow (Camera Overlay 3.5 or Form 3.7). |
+| Bottom Tab Bar | Tab Navigator (Persistent) | Home, Library (active), Scan, History, Routine. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Product Catalog List | `GET /products?q=&category=&limit=20&offset=0` via `library_api.ts` (`fetchProducts`) / `useProducts.ts` (Supabase `products` table). |
+| Product Thumbnail Image | `image_url` column from Supabase `products` table (Supabase Storage `/product-images/`). |
+| Product Name & Brand | `name` and `brand` columns from Supabase `products` table. |
+| Product Category | `category` column from Supabase `products` table. |
+| Favorite State | Local user preference or Supabase user favorites join table. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Displays product cards in vertical order when switching to the Products tab. Cards stagger-fade in.
+- **Interactions:** Dropdown filter taps open modal/picker sheets. Product cards have scale/opacity press feedback. Tapping the star icon toggles fill state with a micro-scale bounce. The FAB features elevation shadow and press feedback.
+- **Exit:** Tapping a product card pushes to Product Detail Page (3.4). Tapping the FAB (+) pushes to Add Product Camera Overlay (3.5).
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** 
-- **Error:** 
-- **Success:** N/A
+- **Loading:** Displays skeleton card loaders while product records and image thumbnails load.
+- **Empty:** Displays "No products found matching your filters" with a reset filter button when queries return zero results.
+- **Error:** Displays an error banner with a retry trigger if network/API requests fail.
+- **Success:** Displays the populated vertical list of product cards with interactive filters and FAB.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "Ingredients" tab | Library Page — Ingredients Tab (3.1) |
+| Tap a product card | Product Detail Page (3.4) |
+| Tap Add Product FAB (+) | Add Product Camera Overlay (3.5) |
+| Tap Hamburger Menu (☰) | Menu Overlay (7.1) |
+| Tap Bottom Tab Bar (Home/Scan/History/Routine) | Respective main application tab |
 
 ---
 
@@ -387,33 +415,46 @@
 **Reference Image:** `design_references/library_ingredient_detail.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Ingredient Detail Page provides an in-depth reference guide for a single skincare ingredient. It presents what the ingredient is, what it does biologically, what concerns/skin goals it is good for, who should avoid it, and an objective compatibility indicator ("Compatible") derived from the user's latest facial skin profile.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Close Icon (X) | Icon Button (Top-Right) | Closes the ingredient detail modal/sheet and returns to the Ingredients Tab (3.1). |
+| Container Card | Scrollable Modal Sheet (`rounded-t-card`) | White container housing all ingredient detail sections. |
+| Ingredient Name | Static Text (Heading `text-h2`) | Displays the ingredient name (e.g., "Aloe Vera"). |
+| Compatibility Status Badge | Status Badge (`rounded-badge`) | Green pill badge displaying "✔ Compatible" when the ingredient aligns with the user's skin profile without conflicting interactions. |
+| Favorite Icon | Icon Button | Star outline icon at top-right of the card to toggle favorite state. |
+| Divider | Visual Separator | Horizontal border separating header from content. |
+| Overview Description | Static Text (Paragraph) | In-depth description of the ingredient, common synonyms (e.g. *aloe barbadensis leaf juice*), active constituents (vitamins, minerals, polysaccharides), and fundamental properties. |
+| "What is it?" Section Card | Informational Card (`rounded-card`) | Heading `text-h3 font-sans-bold` with explanatory body copy describing the ingredient's botanical/chemical origins and core classification. |
+| "What does it do?" Section Card | Informational Card (`rounded-card`) | Heading `text-h3 font-sans-bold` with explanatory copy outlining physiological mechanisms (anti-inflammatory, humectant moisture retention, antioxidant defense). |
+| "What is it good for?" Section Card | Informational Card (`rounded-card`) | Heading `text-h3 font-sans-bold` followed by green-bulleted target skin goals (Dry and dehydrated skin, Impaired skin barrier, Pregnancy, Radiance, Texture). |
+| "Who should avoid?" Section Card | Informational Card (`rounded-card`) | Heading `text-h3 font-sans-bold` followed by coral-bulleted contraindications, irritation warnings, or allergen notices (Related Allergy). |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Ingredient Details (`name`, `description`, `benefits`, `skin_types[]`, `caution`) | `GET /ingredients/{id}` via `library_api.ts` (`fetchIngredientById`) / Supabase `ingredients` table. |
+| Compatibility Status | Evaluated dynamically: checks if ingredient ID exists in `analysis_compatible_ingredients` from latest `skin_analyses` record. |
+| Favorite State | Local storage or Supabase user favorites. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Slides up smoothly from the bottom as a modal card or pushes horizontally.
+- **Interactions:** Close icon has press feedback. Section cards scroll vertically with momentum. Favorite star bounces on toggle.
+- **Exit:** Tapping the Close icon (X) or swiping down dismisses the sheet and returns to the Ingredients Tab.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** N/A
+- **Loading:** Shows shimmer skeleton lines for title, badge, and description blocks.
+- **Empty:** N/A (modal is loaded with a specific ingredient ID).
+- **Error:** Displays a modal error message with a "Close" button if data cannot be retrieved.
+- **Success:** Fully populated layout with cards and compatibility badge.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap Close icon (X) | Returns to Library Page — Ingredients Tab (3.1) |
+| Tap Favorite icon | Toggles favorite status locally/remotely |
 
 ---
 
@@ -422,33 +463,47 @@
 **Reference Image:** `design_references/library_product_detail.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Product Detail Page displays comprehensive information for a selected skincare product, including high-resolution packaging imagery, brand, category, an active ingredient compatibility badge, and the complete ordered ingredient list. It helps users understand exactly what is in their product and whether it is safe and compatible for their skin.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Close Icon (X) | Icon Button (Top-Right) | Dismisses the product detail view and returns to the Products Tab (3.2). |
+| Product Packaging Image | Image Hero Component | Displays high-resolution photos of the product bottle and packaging box side-by-side. |
+| Compatibility Status Badge | Status Badge Overlay | Green pill badge ("✔ Compatible") overlaid at the bottom-right of the product hero image, indicating suitability for the user's skin profile. |
+| Product Name | Static Text (Heading `text-h2`) | Displays the full product name (e.g., "Glycolic Acid 7% Toning Solution"). |
+| Favorite Icon | Icon Button | Star outline icon on the right side of the product name. |
+| Brand Name | Static Text (Subheading) | Displays the brand name (e.g., "The Ordinary"). |
+| Product Category Badge | Status Pill (`rounded-badge`) | Displays the category tag (e.g., "Toner") with muted secondary background. |
+| Ingredients Card | Container (`rounded-card`) | White container holding the full formula ingredient breakdown. |
+| "Ingredients" Heading | Static Text (`text-h3 font-sans-bold`) | Labels the formulation section. |
+| Ingredient List Items | Tappable List Rows | Vertical list of ingredients (Water, Glycolic Acid, Rosa Damascena Flower Water, Centaurea Cyanus Flower Water, etc.), each preceded by an amber/coral droplet icon. Tapping an item navigates to its Ingredient Detail Page (3.3). |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Product Info (`name`, `brand`, `category`, `image_url`) | `GET /products/{id}` via `library_api.ts` (`fetchProductById`) from Supabase `products` table. |
+| Ingredient List | `product_ingredients` join table linked to `ingredients`, ordered by the `order` column. |
+| Compatibility Status | Calculated by checking product ingredients against user's latest analysis and `harmful_pairs` conflict table. |
+| Favorite State | Local store or Supabase user favorites. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Slides in or opens as a full-height sheet. Hero image fades in with cached loading.
+- **Interactions:** Scrolling transitions between the hero packaging view and the ingredient list. Tapping an ingredient row triggers a soft highlight.
+- **Exit:** Tapping the Close icon (X) dismisses the screen back to the Products Tab (3.2).
 
 #### 🔄 Screen States
-- **Loading:** 
+- **Loading:** Displays an image skeleton and placeholder ingredient lines.
 - **Empty:** N/A
-- **Error:** 
-- **Success:** N/A
+- **Error:** Displays an error screen with a "Go Back" button if the product ID is invalid or unreachable.
+- **Success:** Fully populated view with hero imagery, badges, and complete ingredient list.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap Close icon (X) | Previous screen (Library Products Tab 3.2) |
+| Tap an ingredient item | Ingredient Detail Page (3.3) for that specific ingredient |
+| Tap Favorite icon | Toggles favorite state |
 
 ---
 
@@ -457,33 +512,44 @@
 **Reference Image:** `design_references/library_add_product_camera.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Add Product Camera Overlay allows users to capture a clear photo of a skincare product's front packaging or ingredient label to accompany a new product entry. The captured image is uploaded to Supabase Storage and attached to the user-submitted product record in the Add Product Form (3.7).
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Ingredient Extractor" | Static Text (Header) | Viewfinder header title. Non-interactive. |
+| Help Icon (?) | Icon Button (Top-Left) | Opens a tooltip or modal offering tips for capturing legible product label photos. |
+| Close Icon (X) | Icon Button (Top-Right) | Closes the camera viewfinder and returns to the Products Tab (3.2). |
+| Camera Viewfinder | Camera Preview Area (`rounded-card`) | Live camera stream (via `expo-camera`) where the user positions the product bottle or packaging label. |
+| "Take photo" Label | Static Text Banner | Prompt label located directly below the viewfinder window. |
+| Shutter Button | Primary Camera Button | Large circular white button (`rounded-full`) that captures the current frame. |
+| Gallery Thumbnail | Image Thumbnail Button | Square preview of recent gallery images (bottom-left). Tapping opens the Add Product Upload screen (3.6). |
+| Switch Camera Button | Icon Button | Circular arrows icon (bottom-right) that flips between back and front camera lenses. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Camera Feed | Hardware camera stream via `expo-camera`. |
+| Recent Image Thumbnail | Last photo retrieved from device gallery via `expo-media-library`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Viewfinder fades in; camera initializes.
+- **Interactions:** Tapping the Shutter button triggers a quick flash/shutter sound and transitions forward to `AddProductForm` (3.7) with the captured image URI.
+- **Exit:** Tapping Close (X) dismisses the camera viewfinder back to the Products Tab.
 
 #### 🔄 Screen States
-- **Loading:** 
+- **Loading:** Displays a dark background with an `ActivityIndicator` while the hardware camera initializes.
 - **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Error:** Displays a permission alert if camera access is denied by the user, with an "Open Settings" CTA.
+- **Success:** Active live camera feed with interactive shutter and flip controls.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap Shutter button | Add Product Form (3.7) with captured image attached |
+| Tap Gallery Thumbnail | Add Product Upload (3.6) |
+| Tap Close icon (X) | Library Page — Products Tab (3.2) |
+| Tap Help icon (?) | Camera guide tooltip modal |
 
 ---
 
@@ -492,33 +558,38 @@
 **Reference Image:** `design_references/library_add_product_upload.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Add Product Upload screen allows users to select an existing product image or label photo from their device's media library instead of taking a live photo. The selected image is attached to the new product submission in the Add Product Form (3.7).
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Upload a Photo" | Static Text (Header) | Title identifying the gallery selection screen. |
+| Search Bar | Text Input (`rounded-input`) | Allows searching photos by filename/album if supported by the system picker. |
+| Photo Grid | 3-Column Scrollable Grid | Displays available device images in a structured grid. |
+| Photo Grid Item | Tappable Image Thumbnail | Individual image item. Tapping selects the image and forwards it to `AddProductForm` (3.7). |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Device Photos | Device photo library accessed via `expo-image-picker` / `expo-media-library`. |
+| Search Input | Local search query string. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Photo grid renders with native gallery animation.
+- **Interactions:** Tapping an image provides scale feedback and selects the image.
+- **Exit:** Transitions directly to `AddProductForm` (3.7) with the chosen image URI.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Loading:** Displays placeholder grid squares while thumbnail cache loads.
+- **Empty:** Displays "No photos found" if media library permissions allow access to an empty album.
+- **Error:** Displays permission request dialog if photo library access is denied.
+- **Success:** Multi-column scrollable photo grid.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap a photo | Add Product Form (3.7) with selected photo URI |
+| System back action | Returns to Add Product Camera Overlay (3.5) or Products Tab (3.2) |
 
 ---
 
@@ -527,33 +598,45 @@
 **Reference Image:** `design_references/library_add_product_form.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Add Product Form is where users enter, review, and confirm details for a new skincare product before saving it to the AureSkin library. Users can specify the product name, add and edit ingredients as tags, add an optional description, and submit the product to the backend API (`POST /products`).
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Scanned Ingredients" | Static Text (Header) | Screen header title. Non-interactive. |
+| Close Icon (X) | Icon Button (Top-Right) | Exits the form and returns to the Products Tab (3.2). |
+| Product Name Card | Card / Editable Input (`rounded-card`) | Displays product name with a pencil edit icon. Tapping allows typing or editing the product name. |
+| Ingredients Section Card | Container Card (`rounded-card`) | Container grouping all product ingredients. |
+| "Ingredients" Heading | Static Text (`text-h3 font-sans-bold`) | Section header with a pencil edit icon at top-right for bulk editing. |
+| Ingredient Tags List | Tag List / Removable Pills | Ordered list of ingredient items (Salicylic acid, Niacinamide, Clay, Hyaluronic acid, Retinol, Dioic acid, Omega fatty acids, Aloe Vera). Users can add new tags or tap to remove. |
+| "Add description" Card | Expandable Section (`rounded-card`) | Card displaying "Add description" with a plus (+) icon. Tapping expands a multiline text area for optional product description. |
+| "Add Skincare Product" | Button (Primary CTA `rounded-button`) | Submits the product payload to `POST /products`. Displays loading spinner during submission. |
+| "Cancel" | Button (Secondary `rounded-button border`) | Cancels the form entry and returns to the Products Tab without saving. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Product Name | User-entered string via form state in `useAddProduct.ts`. |
+| Ingredient List | Array of ingredient strings (`ingredients: string[]`) managed in form state. |
+| Product Description | Optional user-entered description string. |
+| Product Image URI | Passed from Camera (3.5) or Upload (3.6); uploaded to Supabase Storage `product-images`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Form cards slide up; keyboard adjusts view when focusing text inputs.
+- **Interactions:** Tapping the pencil icon focuses the text input. Tapping "Add description" smoothly animates expanding the description box. Button press states provide opacity feedback.
+- **Exit:** On successful submission, triggers the Add Product Success Overlay (3.8). Tapping Cancel or Close dismisses the form.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Loading:** Submit button displays an `ActivityIndicator` and is disabled while `POST /products` and image upload execute.
+- **Empty:** Initial empty form if opened without a pre-scanned label.
+- **Error:** Inline error banner or toast notification appears if required fields (name, ingredients) are missing or the API returns an error.
+- **Success:** Navigates to Add Product Success Overlay (3.8).
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "Add Skincare Product" (success) | Add Product Success Overlay (3.8) |
+| Tap "Cancel" or Close (X) | Library Page — Products Tab (3.2) |
 
 ---
 
@@ -562,37 +645,36 @@
 **Reference Image:** `design_references/library_add_product_success.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Add Product Success Overlay confirms that a skincare product has been successfully created and added to the AureSkin library. It provides immediate, clear visual feedback to the user before returning them to the refreshed Products catalog.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Dimmed Overlay | Modal Backdrop | Semi-transparent darkened background focusing user attention on the dialog. |
+| Success Dialog Card | Centered Container (`rounded-card bg-neutral-white`) | Clean white rectangular card centered on the screen. |
+| Success Icon | Status Icon Container | Circular muted-green container (`rounded-full bg-status-success/30` or `bg-primary`) displaying a white checkmark icon (`✔`). |
+| "Product added!" | Static Text (`text-h3 font-sans-bold`) | Confirmation heading message. Non-interactive. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Confirmation Message | Static interface text: `"Product added!"`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Dialog scales in with a subtle spring bounce (`scale: 0.9 → 1.0`, `opacity: 0 → 1`) over the dimmed backdrop.
+- **Interactions:** Non-interactive informational dialog.
+- **Exit:** Automatically fades out after 1.5–2.0 seconds (or on backdrop tap), smoothly transitioning back to the Library Products Tab (3.2).
 
 #### 🔄 Screen States
-- **Loading:** 
+- **Loading:** N/A
 - **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Error:** N/A (failures are handled prior to opening this overlay).
+- **Success:** Displays checkmark icon and "Product added!" confirmation.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
-
----
-
-## 4. Scan Screens
+| Overlay auto-dismisses (1.5s timer) | Library Page — Products Tab (3.2) with invalidation of React Query `products` cache. |
 
 ---
 
@@ -601,33 +683,41 @@
 **Reference Image:** `design_references/scan_overlay.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Scan Overlay is the gateway to AureSkin's flagship **facial skin analysis** feature. Activated by tapping the elevated center **Scan** button on the persistent bottom navigation bar, it dims the current screen and presents the user with two options for providing a clear photo of their face: capturing a live photo using the camera or uploading a photo from their device gallery. It also provides an Exit button to dismiss the overlay without starting a scan.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Dimmed Backdrop | Modal Overlay | Full-screen semi-transparent backdrop covering the underlying tab screen. Tapping the backdrop dismisses the overlay. |
+| "Take a Photo" Button | Primary Action Button (`rounded-card bg-neutral-white`) | White rectangular pill button with a camera icon and "Take a Photo" text. Navigates to the facial Scan Camera screen (4.2). |
+| Camera Icon | Vector Icon | Camera icon inside the "Take a Photo" button. |
+| "Upload a Photo" Button | Secondary Action Button (`rounded-card bg-neutral-white`) | White rectangular pill button with an upload icon and "Upload a Photo" text. Navigates to the facial Scan Upload screen (4.3). |
+| Upload Icon | Vector Icon | Upload icon inside the "Upload a Photo" button. |
+| Exit Button | Circular CTA Button (`rounded-full bg-accent` or red/coral) | Prominent circular button at bottom-center with an "X" icon and "Exit" label. Dismisses the overlay and returns to the active tab. |
+| Exit Icon (X) & Label | Icon + Text | Visually indicates the dismiss action. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Action Button Labels | Static interface copy: `"Take a Photo"`, `"Upload a Photo"`, `"Exit"`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Backdrop fades in while the action buttons slide up smoothly from the bottom.
+- **Interactions:** Action buttons have scale/opacity feedback on press. The circular Exit button has a spring scale press animation.
+- **Exit:** Tapping "Take a Photo" pushes forward to Scan Camera (4.2). Tapping "Upload a Photo" pushes forward to Scan Upload (4.3). Tapping Exit or the backdrop slides the overlay down and restores the previous screen.
 
 #### 🔄 Screen States
-- **Loading:** 
+- **Loading:** N/A
 - **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Error:** N/A
+- **Success:** Clean modal layout with all three action buttons displayed.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "Take a Photo" | Scan Camera (4.2) |
+| Tap "Upload a Photo" | Scan Upload (4.3) |
+| Tap Exit (×) or backdrop | Dismisses overlay and returns to current tab screen |
 
 ---
 
@@ -636,38 +726,44 @@
 **Reference Image:** `design_references/scan_camera.png`
 
 #### 🎯 Purpose
-> The Scan Overlay is the entry point of the skin analysis feature. It appears when the user taps the center Scan button in the tab bar, presenting two choices: take a live photo or upload a photo from the gallery. A dark overlay covers the previous screen behind it.
+> The Scan Camera screen is the live viewfinder interface where users capture a photo of their face for skin analysis. It provides an intuitive camera stream with face positioning guidance, lighting tips, camera switching, and quick gallery access, ensuring high-quality input for the MediaPipe facial landmark mesh and MobileNetV3 classifiers.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| Dark Background Overlay | Non-interactive Background | Darkened overlay over the previous screen. Tapping it may dismiss the overlay. |
-| "Take a Photo" | Button (Full-Width) | Opens the Scan Camera screen with the live camera viewfinder. |
-| "Upload a Photo" | Button (Full-Width) | Opens the device photo gallery (Scan Upload screen). |
-| Exit Button ("Exit" / ×, Red Circular) | Icon Button (Bottom-Center) | Dismisses the overlay and returns to the previous screen without starting a scan. |
+| "Analyze Skin" | Static Text (Header) | Viewfinder header title. Non-interactive. |
+| Help Icon (?) | Icon Button (Top-Left) | Opens skin test guidance modal (lighting, no makeup, neutral expression). |
+| Close Icon (X) | Icon Button (Top-Right) | Closes the camera viewfinder and returns to the previous tab screen. |
+| Camera Viewfinder | Live Camera Stream (`rounded-card`) | Full viewfinder area (via `expo-camera`) where the user centers their face. |
+| "Take photo" Label | Static Text Banner | Centered prompt text below the viewfinder. |
+| Shutter Button | Primary Camera Button | Large circular white button (`rounded-full`) that captures the facial photo. |
+| Gallery Thumbnail | Image Thumbnail Button | Square thumbnail at bottom-left linking directly to gallery photo selection (Scan Upload 4.3). |
+| Switch Camera Button | Icon Button | Circular arrows icon at bottom-right toggling between front (selfie) and rear cameras. Defaults to front camera. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| None | N/A — this screen only presents navigation choices. |
+| Camera Feed | Live video stream from device camera via `expo-camera`. |
+| Recent Image Thumbnail | Last photo from device photo library via `expo-media-library`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** Slides up from the bottom as a modal sheet when the Scan tab button is tapped.
-- **Interactions:** All buttons have opacity press feedback. The Exit button has a scale-down press animation.
-- **Exit:** Tapping "Take a Photo" pushes to Scan Camera. Tapping "Upload a Photo" pushes to Scan Upload. Tapping Exit slides the overlay back down.
+- **Entry:** Camera stream initializes; viewfinder fades in.
+- **Interactions:** Tapping the Shutter button triggers a quick capture flash and immediately passes the captured photo URI to `ScanSubmit` (4.4).
+- **Exit:** Tapping Close (X) dismisses the camera.
 
 #### 🔄 Screen States
-- **Loading:** N/A
+- **Loading:** Shows a dark screen with an `ActivityIndicator` while the camera hardware initializes.
 - **Empty:** N/A
-- **Error:** N/A
-- **Success:** N/A — transitions occur immediately on button press.
+- **Error:** Shows an alert if camera permission is denied, with a button linking to device settings.
+- **Success:** Live camera feed with active shutter controls.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| Tap "Take a Photo" | Scan Camera (4.2) |
-| Tap "Upload a Photo" | Scan Upload (4.3) |
-| Tap Exit (×) | Previous screen (Home or active tab) |
+| Tap Shutter button | Scan Submit (4.4) with captured face image |
+| Tap Gallery Thumbnail | Scan Upload (4.3) |
+| Tap Close icon (X) | Returns to previous tab screen |
+| Tap Help icon (?) | Opens scan guidance modal |
 
 ---
 
@@ -1041,33 +1137,63 @@
 **Reference Image:** `design_references/routine_active.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Routine Page (Active Routine) displays the user’s personalized, algorithmically generated daily skincare regimen. Generated from the user's latest facial scan (skin type, detected skin conditions, and ingredient compatibility), it organizes care into distinct Morning and Night regimens with clear, numbered, step-by-step guidance. Users can review their active skin profile benchmarks, view step details and descriptions, and customize steps or swap recommended products via the "EDIT" option. The routine functions as a static, stress-free reference guide without invasive alarm schedules or completion check-boxes.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Hamburger Menu Icon (☰) | Icon Button (Top-Left) | Opens the Menu Overlay (7.1) side drawer navigation. |
+| "Skincare Routine" | Static Text (Page Header) | Primary screen title. Non-interactive. |
+| "Your Skin Profile" Card | Informational Hero Card (`rounded-card bg-card`) | Overview card linking the routine to the user's latest analysis. Displays skin metrics and an illustrated profile avatar. |
+| "Your Skin Profile" Heading & Subtitle | Static Text | Card header with subtext: "Based on your latest skin analysis". |
+| Profile Avatar Illustration | Image Graphic | Stylized portrait graphic of a face with headband and healthy skin tone. |
+| Skin Type Metric | Metric Item (Icon + Label + Value) | Water droplet icon inside circular badge (`rounded-full`), label "Skin Type", value e.g. "Oily". |
+| Concerns Metric | Metric Item (Icon + Label + Value) | Face/pores examination icon inside circular badge, label "Concerns", value e.g. "Skin Redness". |
+| Skin Condition Metric | Metric Item (Icon + Label + Value) | Sparkles icon inside circular badge, label "Skin Condition", value e.g. "Healthy". |
+| Section Header | Static Text (Heading + Subtitle) | "Your Personalized Skincare Routine" with subtext "A simple routine tailored for your skin goals". |
+| "Morning Routine" Card | Container Card (`rounded-card bg-card`) | Card encapsulating the morning regimen. |
+| Morning Header & Icon | Icon + Static Text | Bright sun icon, "Morning Routine" heading, and subtitle "Protect & hydrate your skin". |
+| Morning "EDIT" Button | Button (Pill `rounded-button`) | Muted tan/brown pill button (`bg-secondary/60` or `bg-accent`). Tapping opens the routine step editor / product swap modal (`SwapProductSheet`). |
+| Morning Timeline Steps | Numbered Step List (Connected) | Ordered list of steps connected by vertical line indicators. |
+| Step Number Badges | Numbered Circle (`rounded-full`) | Numbered indicators (1, 2, 3...) showing the recommended application sequence. |
+| Step Name & Description | Static Text | Step name in bold (e.g., Step 1: "Cleanser", Step 2: "Toner", Step 3: "Lightweight Serum") and descriptive rationale (e.g., "Remove excess oil and impurities gently."). |
+| "Night Routine" Card | Container Card (`rounded-card bg-card`) | Card encapsulating the nighttime regimen. |
+| Night Header & Icon | Icon + Static Text | Crescent moon with stars icon, "Night Routine" heading, and subtitle "Protect & hydrate your skin". |
+| Night "EDIT" Button | Button (Pill `rounded-button`) | Muted tan/brown pill button (`bg-secondary/60`). Tapping opens step editing / product swapping for nighttime steps. |
+| Night Timeline Steps | Numbered Step List (Connected) | Ordered list of nighttime steps (e.g., Step 1: "Cleanser", Step 2: "Exfoliate", Step 3: "Moisturizer" — "Strengthen your skin barrier overnight.") connected by vertical line indicators. |
+| "Why this routine?" Card | Informational Banner (`rounded-card bg-accent/20`) | Educational explanation card at the bottom. |
+| Shield Icon | Icon Container | Shield icon with checkmark inside circular badge (`rounded-full`). |
+| "Why this routine?" Text | Static Text | Heading with explanatory rationale (e.g., "This routine is designed to address your acne & texture concerns while maintaining healthy and balanced skin."). |
+| Bottom Tab Bar | Tab Navigator (Persistent) | Home, Library, Scan, History, Routine (active). |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Latest Skin Profile Metrics (Skin Type, Concerns, Skin Condition) | Derived from latest `skin_analyses` record via `GET /history?limit=1` or user profile store. |
+| Routine Details & Steps | `GET /routine` via `routine_api.ts` (`fetchRoutine()`) / `useRoutine.ts` (Supabase `routines` joined with `routine_steps`). |
+| Morning Steps | `routine_steps[]` filtered by `time_of_day IN ('morning', 'both')`, ordered by `step_number ASC`. |
+| Night Steps | `routine_steps[]` filtered by `time_of_day IN ('evening', 'both')`, ordered by `step_number ASC`. |
+| Step Product Recommendations | Joined `product_id` → `products` table (`name`, `brand`, `image_url`). |
+| Routine Rationale ("Why this routine?") | Dynamic or generated string from routine generator service / `routines.based_on_analysis_id`. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Screen fades in on navigating to the Routine tab. Cards stagger-fade in vertically with a subtle upward translate.
+- **Interactions:** "EDIT" buttons feature tactile opacity feedback (`active:opacity-75`). Pull-to-refresh on the scroll view smoothly refreshes routine data. Tapping a step or recommended product triggers interactive selection.
+- **Exit:** Tapping an "EDIT" button opens the `SwapProductSheet` bottom sheet modal. Tapping another bottom tab transitions to the corresponding section.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** N/A
+- **Loading:** Displays card skeletons with shimmer placeholders for the profile card and morning/night step timelines.
+- **Empty:** If no routine has been generated yet, redirects or transitions to `Routine Page (No Routine Yet)` (6.1) prompting routine generation.
+- **Error:** Displays an inline error message with a "Retry" button if routine retrieval fails.
+- **Success:** Fully populated layout displaying skin profile card, morning & night timeline cards with step instructions, and the rationale banner.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "EDIT" (Morning or Night) | Product swap / step editor modal (`SwapProductSheet.tsx`) |
+| Tap Hamburger Menu (☰) | Menu Overlay (7.1) |
+| Tap a step product (if linked) | Product Detail Page (3.4) |
+| Tap Bottom Tab Bar (Home/Library/Scan/History) | Respective main application tab |
 
 ---
 
