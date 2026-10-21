@@ -1,4 +1,5 @@
 import { Pressable, Text, ActivityIndicator } from 'react-native';
+import { theme } from '@/shared/theme';
 
 interface AuthButtonProps {
   title: string;
@@ -18,7 +19,7 @@ export function AuthButton({ title, onPress, isLoading, disabled }: AuthButtonPr
       `}
     >
       {isLoading ? (
-        <ActivityIndicator color="#FFFFFF" />
+        <ActivityIndicator color={theme.colors.card} />
       ) : (
         <Text className="text-neutral-white font-sans-semibold text-body">
           {title}

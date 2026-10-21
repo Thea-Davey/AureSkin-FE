@@ -1,10 +1,15 @@
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '../shared/store/authStore';
-import { View, Text } from 'react-native';
+import { View, Text, LogBox } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '../global.css';
+
+// Silence the Expo CLI connection warning banner from popping up on the device screen
+LogBox.ignoreLogs([
+  'Cannot connect to Expo CLI',
+]);
 
 const queryClient = new QueryClient();
 
@@ -42,7 +47,15 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />
+      </Stack>
       <Toast />
     </QueryClientProvider>
   );

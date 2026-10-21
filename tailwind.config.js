@@ -5,7 +5,7 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
-      // ── COLORS (extracted from Figma) ──────────────────────
+      // ── COLORS (extracted from Figma & theme.colors) ──────
       colors: {
         // Primary palette (olive/sage green from backgrounds)
         primary: {
@@ -24,6 +24,14 @@ module.exports = {
           DEFAULT: "#4CAF50",   // Green (health score ring, badges)
           light:   "#A5D6A7",   // Light green (background tint)
         },
+        // Direct theme tokens (matching theme.colors)
+        background: "#F5F0EB",
+        card:       "#FFFFFF",
+        text:       "#2D2D2D",
+        muted:      "#8A8A8A",
+        border:     "#E8E0D8",
+        error:      "#E53935",
+
         // Neutrals
         neutral: {
           white:   "#FFFFFF",

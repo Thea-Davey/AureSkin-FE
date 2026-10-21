@@ -14,24 +14,38 @@
 - [1. Auth Screens](#1-auth-screens)
   - [1.1 Login Screen](#11-login-screen)
   - [1.2 Register Screen](#12-register-screen)
+  - [1.3 Terms and Conditions Screen](#13-terms-and-conditions-screen)
 - [2. Home Screen](#2-home-screen)
+  - [2.1 Home Page](#21-home-page)
 - [3. Library Screens](#3-library-screens)
   - [3.1 Library Page (Ingredients Tab)](#31-library-page-ingredients-tab)
   - [3.2 Library Page (Products Tab)](#32-library-page-products-tab)
   - [3.3 Ingredient Detail Page](#33-ingredient-detail-page)
   - [3.4 Product Detail Page](#34-product-detail-page)
-  - [3.5 Add Product Form](#35-add-product-form)
+  - [3.5 Add Product Camera Overlay](#35-add-product-camera-overlay)
+  - [3.6 Add Product Upload](#36-add-product-upload)
+  - [3.7 Add Product Form](#37-add-product-form)
+  - [3.8 Add Product Success Overlay](#38-add-product-success-overlay)
 - [4. Scan Screens](#4-scan-screens)
-  - [4.1 Scan Page (Camera / Upload)](#41-scan-page-camera--upload)
-  - [4.2 Scan Results — Results Tab](#42-scan-results--results-tab)
-  - [4.3 Scan Results — Compatibility Tab](#43-scan-results--compatibility-tab)
+  - [4.1 Scan Overlay (Take a Photo / Upload a Photo)](#41-scan-overlay-take-a-photo--upload-a-photo)
+  - [4.2 Scan Camera (Take a Photo)](#42-scan-camera-take-a-photo)
+  - [4.3 Scan Upload (Upload a Photo)](#43-scan-upload-upload-a-photo)
+  - [4.4 Scan Submit (Submit Photo)](#44-scan-submit-submit-photo)
+  - [4.5 Scan Analyzing (Loading Screen)](#45-scan-analyzing-loading-screen)
+  - [4.6 Scan Results — Results Tab](#46-scan-results--results-tab)
+  - [4.7 Scan Results — Compatibility Tab](#47-scan-results--compatibility-tab)
 - [5. History Screens](#5-history-screens)
   - [5.1 History Page](#51-history-page)
-  - [5.2 History Detail Page](#52-history-detail-page)
-- [6. Routine Screen](#6-routine-screen)
+  - [5.2 History Detail Results Page](#52-history-detail-results-page)
+  - [5.3 History Detail Compatibility Page](#53-history-detail-compatibility-page)
+- [6. Routine Screens](#6-routine-screens)
   - [6.1 Routine Page (No Routine Yet)](#61-routine-page-no-routine-yet)
   - [6.2 Routine Page (Active Routine)](#62-routine-page-active-routine)
-- [7. Profile Screen](#7-profile-screen)
+- [7. Menu Overlay](#7-menu-overlay)
+  - [7.1 Menu Overlay](#71-menu-overlay)
+- [8. Profile Screen](#8-profile-screen)
+  - [8.1 Profile Page](#81-profile-page)
+  - [8.2 Edit Profile Page](#82-edit-profile-page)
 
 ---
 
@@ -258,11 +272,11 @@
 |---|---|
 | Latest skin type | `GET /history` (most recent entry) → `skin_type` |
 | Latest skin condition(s) | `GET /history` (most recent entry) → joined `analysis_conditions[]` |
-| Skin health percentage | Derived from scan confidence scores |
+| Skin health percentage | `GET /history` (most recent entry) → `health_score` |
 | Date scanned | `GET /history` (most recent entry) → `created_at` |
 | Today's routine steps | `GET /routine` → `routine_steps[]` filtered to current time-of-day |
-| Skincare articles | External API or static local content |
-| FAQs | Static / locally defined content |
+| Skincare articles | Supabase `articles` table (fetched dynamically via `@supabase/supabase-js`) |
+| FAQs | Static / locally defined content (study-tailored FAQs) |
 
 #### ✨ Animations & Transitions
 - **Entry:** Screen fades in when navigating to the Home tab. Content sections stagger-fade in from top to bottom.
@@ -871,7 +885,7 @@
 | Scan date | `GET /history` → `created_at` |
 | Skin type | `GET /history` → `skin_type` |
 | Skin condition(s) | `GET /history` → joined `analysis_conditions[]` |
-| Health percentage | Derived from skin type confidence score |
+| Health percentage | `GET /history` → `health_score` |
 
 #### ✨ Animations & Transitions
 - **Entry:** Slides in from the right when the History tab is tapped. List items fade in as they load.
