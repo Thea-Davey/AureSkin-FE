@@ -6,6 +6,7 @@ import { AuthCard } from './components/AuthCard';
 import { AuthInput } from './components/AuthInput';
 import { AuthButton } from './components/AuthButton';
 import { OAuthButton } from './components/OAuthButton';
+import { BypassNoticeBanner } from './components/BypassNoticeBanner';
 
 export function LoginPage() {
   const { 
@@ -16,7 +17,8 @@ export function LoginPage() {
     isLoading, 
     handleLogin, 
     handleGoogleAuth, 
-    handleFacebookAuth 
+    handleFacebookAuth,
+    isBypassActive,
   } = useAuth();
 
   return (
@@ -25,6 +27,8 @@ export function LoginPage() {
         <Text className="text-h2 font-sans-bold text-neutral-text mb-6">
           Log in to your Account
         </Text>
+
+        {isBypassActive && <BypassNoticeBanner />}
 
         <AuthInput
           placeholder="Email"
