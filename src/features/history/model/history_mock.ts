@@ -2,7 +2,7 @@ import { HistoryEntry } from './history_types';
 
 export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   {
-    id: 'mock-history-001',
+    id: 'mock-scan-001',
     image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
     created_at: '2026-10-18T09:30:00.000Z',
     health_score: 88,

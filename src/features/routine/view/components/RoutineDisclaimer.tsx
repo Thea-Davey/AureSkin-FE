@@ -1,6 +1,6 @@
+import { theme } from '@/shared/theme';
 import { TriangleAlert } from 'lucide-react-native';
 import { Text, View } from 'react-native';
-import { theme } from '@/shared/theme';
 
 export function RoutineDisclaimer() {
   return (

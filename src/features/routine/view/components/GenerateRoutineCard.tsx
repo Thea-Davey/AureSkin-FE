@@ -1,6 +1,6 @@
+import { theme } from '@/shared/theme';
 import { Check, FlaskConical, ScanFace } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { theme } from '@/shared/theme';
 
 interface GenerateRoutineCardProps {
   canGenerate: boolean;

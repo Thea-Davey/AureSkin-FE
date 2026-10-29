@@ -1,6 +1,6 @@
+import { theme } from '@/shared/theme';
 import { Droplet, ScanFace, Sparkles, UserRound } from 'lucide-react-native';
 import { Text, View } from 'react-native';
-import { theme } from '@/shared/theme';
 import { RoutineSkinProfile } from '../../model/routine_types';
 
 interface SkinProfileCardProps {

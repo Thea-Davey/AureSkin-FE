@@ -1,11 +1,11 @@
+import { theme } from '@/shared/theme';
 import { useRouter } from 'expo-router';
 import { AlertCircle, RotateCw } from 'lucide-react-native';
-import { RefreshControl, ScrollView, Text, Pressable, View } from 'react-native';
-import { theme } from '@/shared/theme';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useRoutine } from '../viewmodel/useRoutine';
 import { GeneratedRoutineSummary } from './components/GeneratedRoutineSummary';
 import { RoutineLoadingState } from './components/RoutineLoadingState';
 import { S1EmptyRoutine } from './containers/s1_EmptyRoutine';
-import { useRoutine } from '../viewmodel/useRoutine';
 
 export function RoutinePage() {
   const router = useRouter();

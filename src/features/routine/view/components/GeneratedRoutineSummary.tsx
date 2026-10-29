@@ -1,6 +1,6 @@
+import { theme } from '@/shared/theme';
 import { Moon, Sun } from 'lucide-react-native';
 import { Text, View } from 'react-native';
-import { theme } from '@/shared/theme';
 import { Routine, RoutineTimeOfDay } from '../../model/routine_types';
 
 interface GeneratedRoutineSummaryProps {

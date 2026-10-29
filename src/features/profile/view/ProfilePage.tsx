@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { User, Heart, AlertCircle, ShieldCheck, ChevronRight, Sparkles } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { ModalHeader } from '../../../shared/components/ModalHeader';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { theme } from '../../../shared/theme';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const displayName =
@@ -42,6 +44,7 @@ export default function ProfilePage() {
           </Text>
 
           <TouchableOpacity
+            onPress={() => router.push('/edit-profile')}
             activeOpacity={0.8}
             className="rounded-button border border-secondary px-5 py-2.5 flex-row items-center"
           >
@@ -88,6 +91,7 @@ export default function ProfilePage() {
 
           {/* Age Row */}
           <TouchableOpacity
+            onPress={() => router.push('/edit-profile')}
             activeOpacity={0.7}
             className="flex-row items-center py-3 px-2 border-b border-border/50"
           >
@@ -103,6 +107,7 @@ export default function ProfilePage() {
 
           {/* Pregnant Row */}
           <TouchableOpacity
+            onPress={() => router.push('/edit-profile')}
             activeOpacity={0.7}
             className="flex-row items-center py-3 px-2 border-b border-border/50"
           >
@@ -118,6 +123,7 @@ export default function ProfilePage() {
 
           {/* Allergen Row */}
           <TouchableOpacity
+            onPress={() => router.push('/edit-profile')}
             activeOpacity={0.7}
             className="flex-row items-center py-3 px-2"
           >

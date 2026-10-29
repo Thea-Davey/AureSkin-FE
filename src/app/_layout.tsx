@@ -52,10 +52,14 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="scan/camera" options={{ animation: 'fade' }} />
+        <Stack.Screen name="library/add-product-camera" options={{ animation: 'fade' }} />
+        <Stack.Screen name="library/add-product-upload" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="library/add-product-form" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <Toast />
     </QueryClientProvider>
