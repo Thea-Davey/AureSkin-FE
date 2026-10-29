@@ -164,7 +164,7 @@ export function S1HistoryList(props: HistoryListProps) {
               <Pressable onPress={props.onRetry} accessibilityRole="button" className="items-center py-4">
                 <Text className="text-body-sm font-sans-medium text-error">Could not load more. Tap to retry.</Text>
               </Pressable>
-            ) : null
+            ) : undefined
           }
         />
       )}

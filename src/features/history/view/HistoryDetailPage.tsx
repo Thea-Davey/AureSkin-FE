@@ -1,7 +1,8 @@
 import { theme } from '@/shared/theme';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, StatusBar, View } from 'react-native';
+import { Animated, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHistoryDetail } from '../viewmodel/useHistoryDetail';
 import { HistoryDetailHeader, HistoryDetailTab } from './components/HistoryDetailHeader';
@@ -43,7 +44,7 @@ export function HistoryDetailPage({ id }: HistoryDetailPageProps) {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-primary">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor={theme.colors.primary} />
       <View className="flex-1 bg-neutral-offwhite">
         <HistoryDetailHeader
           createdAt={historyDetail.detail?.created_at ?? null}

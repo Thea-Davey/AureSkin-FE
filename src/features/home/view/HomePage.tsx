@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, RefreshControl, StatusBar } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { theme } from '@/shared/theme';
 import { useHome } from '../viewmodel/useHome';
@@ -30,7 +31,7 @@ export function HomePage() {
 
   return (
     <View className="flex-1 bg-primary">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor={theme.colors.primary} />
 
       {/* Scrollable Dashboard Body */}
       <ScrollView

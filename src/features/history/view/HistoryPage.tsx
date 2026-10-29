@@ -1,6 +1,7 @@
 import { theme } from '@/shared/theme';
 import { useRouter } from 'expo-router';
-import { StatusBar, View } from 'react-native';
+import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useHistory } from '../viewmodel/useHistory';
 import { S1HistoryList } from './containers/s1_HistoryList';
 
@@ -10,7 +11,7 @@ export function HistoryPage() {
 
   return (
     <View className="flex-1 bg-neutral-offwhite">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" backgroundColor={theme.colors.primary} />
       <S1HistoryList
         entries={history.entries}
         filteredEntries={history.filteredEntries}
