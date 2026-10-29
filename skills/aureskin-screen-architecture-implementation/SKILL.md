@@ -58,8 +58,8 @@ Before creating the plan, read and inspect the following files to locate the tar
    - If the user specified a **Reference Image**, view that file. Otherwise, extract the filename specified under `Reference Image:` in the matched section of `ui_design_reference.md`.
    - View the exported Figma image corresponding to the target screen as the visual ground truth for layout, proportions, and UI hierarchy.
 
-4. **`frontend/src/shared/theme/index.ts`** || **`src/shared/theme/index.ts`**
-   - Runtime TypeScript color tokens (`theme.colors.*`). Use these exclusively for any JS prop values (icon colors, SVG strokes, `StatusBar`, `ActivityIndicator`, shadow colors, etc.).
+4. **`frontend/src/shared/theme/index.ts`** || **`src/shared/theme/index.ts`**   
+  - Runtime TypeScript color tokens (`theme.colors.*`). Use these exclusively for any JS prop values (icon colors, SVG strokes, `StatusBar`, `ActivityIndicator`, shadow colors, etc.).
 
 5. **`frontend/tailwind.config.js`** || **`tailwind.config.js`**
    - Authoritative design tokens for all Tailwind utility classes in `className` props:
