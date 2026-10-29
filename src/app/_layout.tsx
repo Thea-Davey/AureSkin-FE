@@ -1,4 +1,4 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '../shared/store/authStore';
 import { View, Text, LogBox } from 'react-native';
@@ -6,9 +6,10 @@ import Toast from 'react-native-toast-message';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '../global.css';
 
-// Silence the Expo CLI connection warning banner from popping up on the device screen
+// Silence development-only navigation registration warnings
 LogBox.ignoreLogs([
   'Cannot connect to Expo CLI',
+  "The action 'ROUTE_NAMES_CHANGED'",
 ]);
 
 const queryClient = new QueryClient();
@@ -17,13 +18,14 @@ export default function RootLayout() {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   useEffect(() => {
     initialize();
   }, []);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (!navigationState?.key || isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const isTermsScreen = segments[1] === 'terms';
@@ -35,7 +37,7 @@ export default function RootLayout() {
       // Redirect to home if authenticated and trying to access login/register (allow terms)
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, segments, navigationState?.key]);
 
   if (isLoading) {
     return (
