@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { supabase } from '../../../shared/services/supabase';
 import { authApi } from '../model/auth_api';
+import { LOGIN_BYPASS, MOCK_BYPASS_SESSION } from '../model/auth_bypass';
 import { useAuthStore } from '../../../shared/store/authStore';
 
 export function useAuth() {
@@ -27,6 +28,23 @@ export function useAuth() {
   };
 
   const handleLogin = async () => {
+    // If dev bypass mode is active, log in immediately with mock developer credentials
+    if (LOGIN_BYPASS) {
+      setIsLoading(true);
+      try {
+        setSession(MOCK_BYPASS_SESSION);
+        Toast.show({
+          type: 'info',
+          text1: 'Dev Bypass Login',
+          text2: 'Welcome to AureSkin offline mode!',
+        });
+        router.replace('/(tabs)');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all fields' });
       return;
@@ -38,8 +56,8 @@ export function useAuth() {
       
       // Store the session in Supabase client and Zustand
       await syncSupabaseSession(
-        response.data.data.access_token,
-        response.data.data.refresh_token
+        response.data.access_token,
+        response.data.refresh_token
       );
       
       Toast.show({ type: 'success', text1: 'Welcome back!' });
@@ -80,8 +98,8 @@ export function useAuth() {
       
       // Store session
       await syncSupabaseSession(
-        response.data.data.access_token,
-        response.data.data.refresh_token
+        response.data.access_token,
+        response.data.refresh_token
       );
       
       Toast.show({ type: 'success', text1: 'Account created successfully!' });
@@ -167,6 +185,7 @@ export function useAuth() {
     handleRegister,
     handleAcceptTerms,
     handleGoogleAuth,
-    handleFacebookAuth
+    handleFacebookAuth,
+    isBypassActive: LOGIN_BYPASS,
   };
 }

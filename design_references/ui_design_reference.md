@@ -678,6 +678,10 @@
 
 ---
 
+## 4. Scan Screens
+
+---
+
 ### 4.1 Scan Overlay (Take a Photo / Upload a Photo)
 
 **Reference Image:** `design_references/scan_overlay.png`
@@ -772,33 +776,38 @@
 **Reference Image:** `design_references/scan_upload.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Scan Upload screen provides a native photo picker interface allowing users to select an existing facial image from their device's local gallery or camera roll instead of capturing a live photo with the camera. It offers an organized multi-column photo grid and search filter so users can quickly locate clear, well-lit portrait photos for AI skin analysis.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Upload a Photo" | Static Text (Header) | Viewfinder header title. Non-interactive. |
+| Search Bar | Text Input Field (Pill container) | Pill-shaped search bar with magnifying glass icon and `"Search..."` placeholder to filter gallery photos by album, tag, or date. |
+| Gallery Photo Grid | Scrollable Grid (`FlatList`, 3 columns) | 3-column scrollable grid of square photo thumbnails fetched from the device's media library via `expo-media-library`. Tapping any photo tile selects that image and immediately navigates to Scan Submit (4.4). |
+| Back / Dismiss Action | Hardware/Gesture Back | Navigates back to the Scan Camera (4.2) viewfinder or previous tab screen. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Device photos & thumbnails | Local device media library accessed via `expo-media-library` (local asset URIs). |
+| Search query | Local component state filtering photo assets. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Pushes into view from Scan Camera (4.2) or Scan Overlay (4.1) with a horizontal slide transition. Photo grid items fade in smoothly.
+- **Interactions:** Grid scrolls vertically with smooth inertial momentum. Tapping an image tile provides instant opacity feedback (`activeOpacity={0.8}`). Search bar raises the keyboard on focus.
+- **Exit:** Selecting an image navigates forward to Scan Submit (4.4) with the chosen image URI. Swiping back or pressing device back pops to Scan Camera (4.2).
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Loading:** Shows centered `ActivityIndicator` or skeleton grid placeholders while media library permissions are being requested and assets are loaded into memory.
+- **Empty:** Displays an empty state icon and message: "No photos found. Take a photo or check your gallery permissions." if no images match the search or the gallery is empty.
+- **Error:** Displays a permission denied notice ("AureSkin needs access to your photos to analyze skin from your gallery") with a direct CTA button linking to device system settings.
+- **Success:** Displays a populated 3-column grid of image thumbnails ready for user selection.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap any photo thumbnail | Scan Submit (4.4) with selected image URI |
+| Press Back / Swipe Back | Scan Camera (4.2) |
 
 ---
 
@@ -807,33 +816,42 @@
 **Reference Image:** `design_references/scan_submit.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Scan Submit screen is the confirmation and review step where the user inspects their captured or selected face photo before submitting it for deep-learning skin analysis. It ensures the user can verify that their face is centered, evenly illuminated, and in sharp focus, offering options to retake the photo or proceed with processing.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Analyze Skin" | Static Text (Header) | Screen header title centered at the top. Non-interactive. |
+| Help Icon (?) | Icon Button (Top-Left) | Opens the skin test guidance modal (lighting, no makeup, neutral expression, glasses removed). |
+| Close Icon (×) | Icon Button (Top-Right) | Discards the current image and exits the scan workflow, returning to the previous tab screen (Home). |
+| Face Photo Preview | Image Container (`rounded-card`) | Large rounded card displaying the high-resolution captured or selected face photo. |
+| Guidance Prompt | Static Text Banner | Centered prompt text below the preview card: `"Make sure your face is evenly lit and in focus"`. |
+| "Retake" Button | Icon + Text Button (Bottom-Left) | Reload/circular arrows icon (`🔄`) paired with "Retake" label. Discards the current image and returns to Scan Camera (4.2) or Scan Upload (4.3) to recapture/reselect. |
+| "Submit Photo" Button | Primary Action Button (Bottom-Right) | White pill button (`bg-white rounded-full`) featuring bold text "Submit Photo" and an enclosed black circle with a white right arrow (`➔`). Tapping triggers image compression and initiates the analysis pipeline on the Scan Analyzing screen (4.5). |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Captured / Selected face photo | Local image URI passed via navigation route parameters from Scan Camera (4.2) or Scan Upload (4.3). |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Slides in horizontally from the right or crossfades in immediately after camera capture or gallery selection.
+- **Interactions:** "Submit Photo" button exhibits tactile scale-down feedback (`scale-98`) on press. "Retake" button provides active opacity feedback. Tapping Help (?) slides up the guidance modal.
+- **Exit:** Tapping "Submit Photo" pushes into Scan Analyzing (4.5). Tapping "Retake" returns to Scan Camera (4.2). Tapping Close (×) dismisses the scan flow back to Home.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Loading:** Brief placeholder while high-resolution image is loaded from local cache into the preview container.
+- **Empty:** N/A (this screen is strictly instantiated with a valid photo URI).
+- **Error:** Displays an alert banner if the local image file is corrupted or unreadable, with an option to retake.
+- **Success:** Clear preview of the face photo with interactive Retake and Submit controls.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "Submit Photo" button | Scan Analyzing (4.5) with image URI |
+| Tap "Retake" button | Scan Camera (4.2) or Scan Upload (4.3) |
+| Tap Help icon (?) | Opens skin test guidance modal |
+| Tap Close icon (×) | Returns to previous tab screen (Home `(tabs)/index`) |
 
 ---
 
@@ -842,33 +860,43 @@
 **Reference Image:** `design_references/scan_analyzing.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Scan Analyzing screen is an active, full-screen animated processing state displayed while the backend executes the AI skin analysis pipeline (`POST /scan`). It uploads the image to Supabase Storage, extracts anatomical facial landmarks via MediaPipe Face Mesh, executes the MobileNetV3 skin type and condition classifiers, computes the 0–100 heuristic skin health score, and cross-references compatible ingredients and harmful pairs. It provides real-time visual feedback, step-by-step progress reassurance, and data privacy confirmation.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Analyzing Skin" | Static Text (Header) | Centered screen header. Non-interactive. |
+| Circular Face Preview | Image Container (`rounded-full`) | Circular crop of the user's uploaded face photo centered on the screen. |
+| Animated Glowing Progress Ring | Radial Progress Ring (`border-green-400`) | Circular glowing green progress indicator enclosing the face preview that animates radially to reflect multi-phase pipeline completion. |
+| Percentage Badge | Pill Badge Container | Small dark pill badge docked at the bottom center of the circular frame with a glowing green dot and percentage label (`• 100%`) tracking real-time/simulated analysis progress. |
+| Pipeline Stage Headline | Dynamic Text Banner | Bold, uppercase green text (`text-green-400 font-bold`) updating dynamically according to the active pipeline stage (e.g., `"MAPPING FACIAL LANDMARKS..."`, `"CLASSIFYING SKIN TYPE AND POSSIBLE CONCERNS..."`, `"CALCULATING SKIN HEALTH SCORE..."`, `"CHECKING INGREDIENT COMPATIBILITY..."`). |
+| Pipeline Stage Subtext | Dynamic Subtitle | Descriptive subtitle in light gray (e.g., `"Analyzing micro-level dermal indicators"`). |
+| Security & Privacy Pill | Informational Card | Dark rounded card near the bottom featuring a green shield checkmark icon and text: `"Encrypted and processed securely making sure your data is safe."` |
+| "Cancel Analysis" Button | Secondary Text Button | Centered text button at the bottom allowing the user to abort the ongoing network request via an `AbortController` and return to the Scan Submit screen. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Face photo thumbnail | Local image URI passed from Scan Submit (4.4). |
+| Progress percentage | Calculated frontend progress state (0% to 100%) synchronized with pipeline events. |
+| Stage status message | Dynamic pipeline step descriptor mapped to backend analysis progress. |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Crossfades in seamlessly from Scan Submit (4.4). The progress ring and face preview scale in with a subtle bounce.
+- **Interactions:** The glowing green progress ring pulses and fills smoothly. The percentage badge increments continuously. Pipeline stage headlines crossfade with a smooth opacity and slide-up transition.
+- **Exit:** Once `POST /scan` returns a successful response (`200 OK`), the screen automatically crossfades or pushes forward to Scan Results — Results Tab (4.6). Tapping "Cancel Analysis" aborts the request and pops back to Scan Submit (4.4).
 
 #### 🔄 Screen States
-- **Loading:** 
+- **Loading:** The default and active state of this screen: glowing progress ring rotating/filling, dynamic status text cycling, and percentage advancing.
 - **Empty:** N/A
-- **Error:** 
-- **Success:** 
+- **Error:** If the network request times out, image lacks a detectable face (MediaPipe error), or server returns 4xx/5xx, displays an error modal: "Analysis could not be completed. Please ensure your face is clearly visible and try again." with "Retry" and "Cancel" buttons.
+- **Success:** Automatically transitions to Scan Results — Results Tab (4.6) upon receiving the complete `ScanResponse` payload.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Analysis completes successfully | Scan Results — Results Tab (4.6) with `ScanResponse` data |
+| Tap "Cancel Analysis" | Scan Submit (4.4) (aborts analysis request) |
 
 ---
 
@@ -877,33 +905,48 @@
 **Reference Image:** `design_references/scan_results_results_tab.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The Scan Results Results Tab is the primary findings dashboard presented immediately following a successful skin scan. It showcases the user's analyzed face photo, predicted skin type accompanied by model classification confidence, an overall heuristic skin health score (0–100), and detailed dermatological cards for all detected skin conditions with clinical explanations, symptoms, and root causes.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| "Skin Analysis" | Static Text (Title, Top-Center) | Screen header title. Non-interactive. |
+| Close (×) Button | Icon Button (Top-Right) | Closes the results screen and navigates directly back to the Home screen `(tabs)/index`. |
+| Tab Switcher ("Results") | Segmented Tab Button (Active) | Peachy-terracotta pill button indicating the active Results tab view. |
+| Tab Switcher ("Ingredient Compatibility") | Segmented Tab Button (Inactive) | Inactive tab button. Tapping switches the view to the Ingredient Compatibility Tab (4.7). |
+| Analyzed Face Photo Card | Image Container (`rounded-card`) | Full-width rounded card displaying the captured face photo stored in Supabase Storage (`image_url`). |
+| Skin Type Banner | Informational Card (`bg-[#FDF2E9] rounded-card`) | Prominent peachy-cream banner displaying `"Your Skin Type is"` sub-header and large bold skin type name (e.g., `"Oily"`, `"Dry"`, `"Normal"`, `"Combination"`, `"Acne Prone"`). |
+| Skin Type Confidence Badge | Circular Badge (`rounded-full`) | White circular pill badge on the right side of the skin type banner displaying model confidence percentage (e.g., `"91.46%"`). |
+| Skin Health Score | Metric Widget | Overall heuristic skin health score (0–100) calculated by `ml/health_scorer.py` evaluating condition severity and skin balance. |
+| "Concern/s" Section Header | Static Text Header | Bold section heading introducing the detected skin condition cards. |
+| Condition Detail Card(s) | Informational Card (`rounded-card`) | Stacked card for each detected skin condition (e.g., "Skin Redness", "Inflammatory Acne", "Dark Spots"). Features a coral/pink header with flame/alert icon and condition title, followed by a clinical description (e.g., erythema inflammatory response), symptoms bullet points, and root causes. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Analyzed face photo | `POST /scan` → `data.image_url` (Supabase Storage URL) |
+| Predicted skin type | `POST /scan` → `data.skin_type` (`normal`, `oily`, `dry`, `combination`, `acneprone`) |
+| Skin type confidence | `POST /scan` → `data.skin_type_confidence` (e.g., `91.46%`) |
+| Skin health score | `POST /scan` → `data.health_score` (0–100 integer/float from weighted heuristic scorer) |
+| Detected conditions list | `POST /scan` → `data.conditions[]` (`name`, `display_name`, `confidence`, `description`, `symptoms`, `causes`) |
+| Dermatological analysis summary | `POST /scan` → `data.summary` |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Slides in from the right or fades in seamlessly from Scan Analyzing (4.5). The skin type banner and condition cards cascade upward with a staggered fade-in animation.
+- **Interactions:** Full-page vertical scrolling. Tab switcher has smooth sliding indicator animation. Condition cards have subtle press feedback or expandable sections for in-depth guidance.
+- **Exit:** Tapping the "Ingredient Compatibility" tab slides horizontally to 4.7. Tapping the Close (×) button dismisses the scan flow and returns to the Home tab.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** N/A
+- **Loading:** Brief skeleton placeholder for photo, skin type banner, and condition cards if hydrating results from state or cache.
+- **Empty:** If the ML model detects no skin conditions, the "Concern/s" section displays a positive confirmation card: "No active skin conditions detected. Your skin barrier appears healthy and balanced."
+- **Error:** Displays an error message with a "Retry Analysis" button if analysis payload data is missing or corrupted.
+- **Success:** Fully populated results screen displaying face photo, skin type banner with confidence badge, health score, and condition cards.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap "Ingredient Compatibility" tab | Scan Results — Compatibility Tab (4.7) |
+| Tap Close icon (×) | Home Screen `(tabs)/index` |
 
 ---
 
@@ -1007,33 +1050,49 @@
 **Reference Image:** `design_references/history_detail_results_tab.png`
 
 #### 🎯 Purpose
-> [Describe the purpose here.]
+> The History Detail Results Page allows users to inspect the complete skin analysis findings from a specific past scan session selected from their history log (`GET /history/{id}`). It mirrors the visual layout of the live Scan Results Results Tab (4.6), displaying the historical face photo, recorded skin type with confidence percentage, heuristic skin health score (0–100), and detected skin conditions with clinical descriptions, symptoms, and causes, while providing a timestamped back-navigation header to return to the history list.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
-| | | |
+| Back Arrow (←) | Icon Button (Top-Left) | Navigates back to the History Page (5.1) list. |
+| "Skin Analysis: [Date]" | Static Text (Title, Top-Center) | Screen header title displaying the formatted date of the historical scan (e.g., `"Skin Analysis: May 1, 2026"`). Non-interactive. |
+| Tab Switcher ("Results") | Segmented Tab Button (Active) | Peachy-terracotta pill button indicating the active Results tab view. |
+| Tab Switcher ("Ingredient Compatibility") | Segmented Tab Button (Inactive) | Inactive tab button. Tapping switches to the History Detail Compatibility Page (5.3). |
+| Historical Face Photo Card | Image Container (`rounded-card`) | Full-width rounded card displaying the stored face photo retrieved from Supabase Storage (`image_url`). |
+| Historical Skin Type Banner | Informational Card (`bg-[#FDF2E9] rounded-card`) | Prominent peachy-cream card displaying `"Your Skin Type is"` sub-header and the historical skin type (e.g., `"Oily"`). |
+| Historical Confidence Badge | Circular Badge (`rounded-full`) | White circular badge with confidence percentage recorded at the time of the scan (e.g., `"91.46%"`). |
+| Historical Skin Health Score | Metric Widget | Stored heuristic skin health score (0–100) recorded for that scan session. |
+| "Concern/s" Section Header | Static Text Header | Bold section heading introducing the historical condition cards. |
+| Historical Condition Card(s) | Informational Card (`rounded-card`) | Stacked cards for each condition detected during that historical scan session (e.g., "Skin Redness"), detailing symptoms, descriptions, and causes recorded at that time. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| | |
+| Scan timestamp | `GET /history/{id}` → `created_at` (formatted e.g., "May 1, 2026") |
+| Historical face photo | `GET /history/{id}` → `image_url` (Supabase Storage) |
+| Historical skin type | `GET /history/{id}` → `skin_type` |
+| Historical skin type confidence | `GET /history/{id}` → `skin_type_confidence` |
+| Historical skin health score | `GET /history/{id}` → `health_score` (0–100) |
+| Historical detected conditions | `GET /history/{id}` → joined `analysis_conditions[]` with `conditions` metadata (`display_name`, `confidence`, `description`) |
+| Historical dermatological summary | `GET /history/{id}` → `summary` |
 
 #### ✨ Animations & Transitions
-- **Entry:** 
-- **Interactions:** 
-- **Exit:** 
+- **Entry:** Pushes into view from History Page (5.1) with a forward horizontal slide transition. Photo and result cards fade in smoothly.
+- **Interactions:** Page scrolls vertically with smooth physics. Tapping the "Ingredient Compatibility" tab switches to 5.3 with a horizontal slide animation.
+- **Exit:** Tapping the Back arrow (←) pops the screen back to History Page (5.1) with a reverse horizontal slide transition.
 
 #### 🔄 Screen States
-- **Loading:** 
-- **Empty:** N/A
-- **Error:** 
-- **Success:** N/A
+- **Loading:** Shows skeleton placeholders for photo card, skin type banner, and condition cards while `GET /history/{id}` is fetching.
+- **Empty:** N/A (screen is accessed by selecting an existing history record ID).
+- **Error:** Displays an error banner: "Unable to load scan details. The record may have been deleted." with a "Go Back" button if record retrieval fails.
+- **Success:** Displays the complete historical skin analysis results, photos, confidence scores, and conditions.
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| | |
+| Tap Back arrow (←) | History Page (5.1) |
+| Tap "Ingredient Compatibility" tab | History Detail Compatibility Page (5.3) |
 
 ---
 

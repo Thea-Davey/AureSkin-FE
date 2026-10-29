@@ -1,9 +1,11 @@
-import { View, Text } from 'react-native';
+import React from 'react';
+import { Redirect } from 'expo-router';
 
+/**
+ * Scan route fallback.
+ * The scan workflow operates as a modal overlay directly on the active tab
+ * without navigating away. If navigated to directly, redirects to the main tabs.
+ */
 export default function ScanScreen() {
-  return (
-    <View className="flex-1 items-center justify-center bg-neutral-offwhite">
-      <Text className="text-h2 font-sans-bold text-neutral-text">Scan Screen</Text>
-    </View>
-  );
+  return <Redirect href="/(tabs)" />;
 }

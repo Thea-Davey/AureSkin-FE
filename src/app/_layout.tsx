@@ -55,6 +55,7 @@ export default function RootLayout() {
         <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="scan/camera" options={{ animation: 'fade' }} />
       </Stack>
       <Toast />
     </QueryClientProvider>

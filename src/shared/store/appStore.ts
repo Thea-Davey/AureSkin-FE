@@ -5,6 +5,11 @@ interface AppState {
   openMenu: () => void;
   closeMenu: () => void;
   toggleMenu: () => void;
+
+  isScanOverlayOpen: boolean;
+  openScanOverlay: () => void;
+  closeScanOverlay: () => void;
+  toggleScanOverlay: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -12,4 +17,9 @@ export const useAppStore = create<AppState>((set) => ({
   openMenu: () => set({ isMenuOpen: true }),
   closeMenu: () => set({ isMenuOpen: false }),
   toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
+
+  isScanOverlayOpen: false,
+  openScanOverlay: () => set({ isScanOverlayOpen: true }),
+  closeScanOverlay: () => set({ isScanOverlayOpen: false }),
+  toggleScanOverlay: () => set((state) => ({ isScanOverlayOpen: !state.isScanOverlayOpen })),
 }));

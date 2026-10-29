@@ -1,0 +1,68 @@
+import { HistoryEntry } from './history_types';
+
+export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
+  {
+    id: 'mock-history-001',
+    image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=80',
+    created_at: '2026-10-18T09:30:00.000Z',
+    health_score: 88,
+    skin_type: 'Combination',
+    conditions: ['Skin Redness'],
+  },
+  {
+    id: 'mock-history-002',
+    image_url: null,
+    created_at: '2026-10-12T16:15:00.000Z',
+    health_score: 76,
+    skin_type: 'Oily',
+    conditions: ['Acne', 'Enlarged Pores'],
+  },
+  {
+    id: 'mock-history-003',
+    image_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=80',
+    created_at: '2026-10-06T08:45:00.000Z',
+    health_score: 93,
+    skin_type: 'Normal',
+    conditions: [],
+  },
+  {
+    id: 'mock-history-004',
+    image_url: null,
+    created_at: '2026-09-29T11:20:00.000Z',
+    health_score: 69,
+    skin_type: 'Dry',
+    conditions: ['Dryness', 'Uneven Tone'],
+  },
+  {
+    id: 'mock-history-005',
+    image_url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=240&q=80',
+    created_at: '2026-09-20T13:00:00.000Z',
+    health_score: 82,
+    skin_type: 'Sensitive',
+    conditions: ['Skin Redness'],
+  },
+  {
+    id: 'mock-history-006',
+    image_url: null,
+    created_at: '2026-09-12T10:10:00.000Z',
+    health_score: 74,
+    skin_type: 'Combination',
+    conditions: ['Uneven Tone', 'Dark Spots'],
+  },
+  {
+    id: 'mock-history-007',
+    image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=80',
+    created_at: '2026-09-04T07:50:00.000Z',
+    health_score: 91,
+    skin_type: 'Normal',
+    conditions: [],
+  },
+  {
+    id: 'mock-history-008',
+    image_url: null,
+    created_at: '2026-08-26T15:40:00.000Z',
+    health_score: 67,
+    skin_type: 'Dry',
+    conditions: ['Dryness', 'Skin Redness'],
+  },
+];
