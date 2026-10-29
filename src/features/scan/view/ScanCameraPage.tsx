@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScanCamera } from '../viewmodel/useScanCamera';
-import { S1CameraViewfinder } from './containers/s1_CameraViewfinder';
-import { S2CameraControls } from './containers/s2_CameraControls';
+import { S1CameraViewfinder } from './containers/camera/s1_CameraViewfinder';
+import { S2CameraControls } from './containers/camera/s2_CameraControls';
 import { SkinGuidanceModal } from './components/SkinGuidanceModal';
 
 /**

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { ChevronLeft, Search, X } from 'lucide-react-native';
-import { theme } from '../../../../shared/theme';
+import { theme } from '@/shared/theme';
 
 export interface S1UploadHeaderProps {
   searchQuery: string;

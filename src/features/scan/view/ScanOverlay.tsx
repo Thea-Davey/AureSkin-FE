@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useScan } from '../viewmodel/useScan';
-import { S1ScanOptions } from './containers/s1_ScanOptions';
+import { S1ScanOptions } from './containers/overlay/s1_ScanOptions';
 
 /**
  * ScanOverlay component (Section 4.1).

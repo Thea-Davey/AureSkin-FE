@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { CameraShutterButton } from '../components/CameraShutterButton';
-import { CameraGalleryThumbnail } from '../components/CameraGalleryThumbnail';
-import { CameraFlipButton } from '../components/CameraFlipButton';
+import { CameraShutterButton } from '../../components/CameraShutterButton';
+import { CameraGalleryThumbnail } from '../../components/CameraGalleryThumbnail';
+import { CameraFlipButton } from '../../components/CameraFlipButton';
 
 export interface S2CameraControlsProps {
   recentThumbnail?: string | null;

@@ -23,12 +23,32 @@ export const USE_MOCK: boolean = true;
 
 /**
  * Upload face photo for end-to-end deep learning analysis.
+ * Supports cancellation via AbortSignal.
  * - Live: POST /scan (multipart/form-data)
- * - Mock: returns MOCK_SCAN_RESULT after an artificial delay
+ * - Mock: returns MOCK_SCAN_RESULT after simulated multi-stage delay with cancellation support
  */
-export async function uploadScan(imageUri: string): Promise<ScanResult> {
+export async function uploadScan(
+  imageUri: string,
+  signal?: AbortSignal
+): Promise<ScanResult> {
   if (USE_MOCK) {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        resolve();
+      }, 2500);
+
+      if (signal) {
+        if (signal.aborted) {
+          clearTimeout(timeout);
+          reject(new DOMException('Aborted', 'AbortError'));
+          return;
+        }
+        signal.addEventListener('abort', () => {
+          clearTimeout(timeout);
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      }
+    });
     return MOCK_SCAN_RESULT;
   }
 
@@ -45,6 +65,7 @@ export async function uploadScan(imageUri: string): Promise<ScanResult> {
 
   const response = await api.post('/scan', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    signal,
   });
 
   return response.data?.data as ScanResult;
@@ -107,4 +128,24 @@ export async function fetchGalleryPhotos(query?: string): Promise<GalleryPhotoIt
   // Live fallback returns curated photos
   return MOCK_GALLERY_PHOTOS;
 }
+
+/**
+ * Fetch a completed scan result record by analysis ID.
+ * - Live: GET /scan/{analysisId}
+ * - Mock: returns MOCK_SCAN_RESULT
+ */
+export async function fetchScanResult(analysisId?: string): Promise<ScanResult> {
+  if (USE_MOCK) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return MOCK_SCAN_RESULT;
+  }
+
+  if (!analysisId) {
+    throw new Error('Analysis ID is required to fetch scan results.');
+  }
+
+  const response = await api.get(`/scan/${analysisId}`);
+  return response.data?.data as ScanResult;
+}
+
 

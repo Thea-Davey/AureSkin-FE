@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { ImageOff } from 'lucide-react-native';
-import { theme } from '../../../../shared/theme';
+import { theme } from '@/shared/theme';
 
 export interface S2PhotoPreviewProps {
   imageUri: string;

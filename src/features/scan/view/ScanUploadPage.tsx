@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScanUpload } from '../viewmodel/useScanUpload';
-import { S1UploadHeader } from './containers/s1_UploadHeader';
-import { S2PhotoGrid } from './containers/s2_PhotoGrid';
+import { S1UploadHeader } from './containers/upload/s1_UploadHeader';
+import { S2PhotoGrid } from './containers/upload/s2_PhotoGrid';
 
 /**
  * ScanUploadPage (Section 4.3).

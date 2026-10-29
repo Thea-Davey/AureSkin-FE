@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScanSubmit } from '../viewmodel/useScanSubmit';
-import { S1SubmitHeader } from './containers/s1_SubmitHeader';
-import { S2PhotoPreview } from './containers/s2_PhotoPreview';
+import { S1SubmitHeader } from './containers/submit/s1_SubmitHeader';
+import { S2PhotoPreview } from './containers/submit/s2_PhotoPreview';
 import { SubmitControls } from './components/SubmitControls';
 import { SkinGuidanceModal } from './components/SkinGuidanceModal';
 

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { HelpCircle, X, CameraOff } from 'lucide-react-native';
 import { CameraView } from 'expo-camera';
-import { CameraFacing } from '../../model/scan_types';
-import { theme } from '../../../../shared/theme';
+import { CameraFacing } from '../../../model/scan_types';
+import { theme } from '@/shared/theme';
 
 export interface S1CameraViewfinderProps {
   facing: CameraFacing;

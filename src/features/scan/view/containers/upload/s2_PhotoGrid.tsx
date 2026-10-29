@@ -5,11 +5,11 @@ import {
   useWindowDimensions,
   ActivityIndicator,
 } from 'react-native';
-import { GalleryPhotoItem } from '../../model/scan_types';
-import { PhotoGridTile } from '../components/PhotoGridTile';
-import { DevicePickerTile } from '../components/DevicePickerTile';
-import { PhotoGridEmpty } from '../components/PhotoGridEmpty';
-import { theme } from '../../../../shared/theme';
+import { GalleryPhotoItem } from '../../../model/scan_types';
+import { PhotoGridTile } from '../../components/PhotoGridTile';
+import { DevicePickerTile } from '../../components/DevicePickerTile';
+import { PhotoGridEmpty } from '../../components/PhotoGridEmpty';
+import { theme } from '@/shared/theme';
 
 export interface S2PhotoGridProps {
   photos: GalleryPhotoItem[];

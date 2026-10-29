@@ -36,12 +36,37 @@ export const MOCK_SCAN_RESULT: ScanResult = {
     {
       id: 'ing-02',
       name: 'Niacinamide',
-      reason: 'Regulates sebum production and soothes vascular redness.',
+      reason: 'Regulates sebum production and strengthens barrier integrity.',
     },
     {
       id: 'ing-03',
-      name: 'Centella Asiatica',
-      reason: 'Accelerates skin barrier repair and reduces inflammation.',
+      name: 'Clay',
+      reason: 'Absorbs excess surface oil and clarifies dermal impurities.',
+    },
+    {
+      id: 'ing-04',
+      name: 'Hyaluronic acid',
+      reason: 'Provides deep non-comedogenic hydration.',
+    },
+    {
+      id: 'ing-05',
+      name: 'Retinol',
+      reason: 'Accelerates cellular turnover and normalizes keratinization.',
+    },
+    {
+      id: 'ing-06',
+      name: 'Dioic acid',
+      reason: 'Reduces excessive sebum production and evens tone.',
+    },
+    {
+      id: 'ing-07',
+      name: 'Omega fatty acids',
+      reason: 'Replenishes essential skin lipids without clogging pores.',
+    },
+    {
+      id: 'ing-08',
+      name: 'Aloe Vera',
+      reason: 'Soothes dermal inflammation and cools irritated skin.',
     },
   ],
   incompatible_pairs: [
@@ -50,6 +75,12 @@ export const MOCK_SCAN_RESULT: ScanResult = {
       ingredient_b: 'Salicylic Acid',
       reason:
         'Combining strong keratolytics increases barrier irritation and excessive peeling. Alternate days instead.',
+    },
+    {
+      ingredient_a: 'Vitamin C (L-Ascorbic Acid)',
+      ingredient_b: 'AHAs / BHAs',
+      reason:
+        'Low pH active layering destabilizes Vitamin C efficacy and provokes irritation. Use Vitamin C in AM, AHAs/BHAs in PM.',
     },
   ],
   created_at: new Date().toISOString(),

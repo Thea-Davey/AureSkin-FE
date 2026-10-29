@@ -32,6 +32,9 @@ export interface IncompatiblePair {
   ingredient_a: string;
   ingredient_b: string;
   reason: string;
+  subtitle?: string;          // e.g. "Do not use on the same day as:"
+  incompatible_with?: string[]; // e.g. ["AHAs", "BHAs", "PHAs"]
+  guidance?: string;          // e.g. "Use on alternate nights (once you have built up the tolerance)"
 }
 
 export interface ScanResult {
@@ -106,5 +109,83 @@ export interface ScanSubmitParams {
  * 'unknown' → default fallback to /scan/camera
  */
 export type ImageSource = 'camera' | 'upload' | 'unknown';
+
+// ── Analyzing Specific Types (Section 4.5) ──────────────────────────
+
+/**
+ * Route params passed from /scan/submit to /scan/analyzing.
+ */
+export interface ScanAnalyzingParams {
+  imageUri: string;
+}
+
+/**
+ * Multi-stage pipeline progression states.
+ */
+export type PipelineStageKey =
+  | 'MAPPING_LANDMARKS'
+  | 'CLASSIFYING_CONDITIONS'
+  | 'CALCULATING_SCORE'
+  | 'CHECKING_COMPATIBILITY'
+  | 'COMPLETE';
+
+export interface PipelineStageInfo {
+  key: PipelineStageKey;
+  headline: string;
+  subtext: string;
+  targetProgress: number; // 0 - 100
+}
+
+/**
+ * Pipeline stages mapped directly to Section 4.5 specification.
+ */
+export const PIPELINE_STAGES: PipelineStageInfo[] = [
+  {
+    key: 'MAPPING_LANDMARKS',
+    headline: 'MAPPING FACIAL LANDMARKS...',
+    subtext: 'Extracting 468 anatomical facial mesh points',
+    targetProgress: 25,
+  },
+  {
+    key: 'CLASSIFYING_CONDITIONS',
+    headline: 'CLASSIFYING SKIN TYPE AND POSSIBLE CONCERNS...',
+    subtext: 'Analyzing micro-level dermal indicators',
+    targetProgress: 60,
+  },
+  {
+    key: 'CALCULATING_SCORE',
+    headline: 'CALCULATING SKIN HEALTH SCORE...',
+    subtext: 'Evaluating condition severity and skin balance',
+    targetProgress: 85,
+  },
+  {
+    key: 'CHECKING_COMPATIBILITY',
+    headline: 'CHECKING INGREDIENT COMPATIBILITY...',
+    subtext: 'Cross-referencing safe and harmful active pairings',
+    targetProgress: 98,
+  },
+  {
+    key: 'COMPLETE',
+    headline: 'ANALYSIS COMPLETE',
+    subtext: 'Preparing your dermatological skin report...',
+    targetProgress: 100,
+  },
+];
+
+// ── Results Specific Types (Section 4.6 & 4.7) ───────────────────────
+
+/**
+ * Route params passed to /scan/results.
+ */
+export interface ScanResultsParams {
+  analysisId?: string;
+  imageUri?: string;
+}
+
+/**
+ * Active tab selection on the Scan Results screen.
+ */
+export type ScanResultsTab = 'results' | 'compatibility';
+
 
 

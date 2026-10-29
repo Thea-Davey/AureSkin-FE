@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Pressable, Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, Upload } from 'lucide-react-native';
-import { ScanActionButton } from '../components/ScanActionButton';
-import { ScanExitButton } from '../components/ScanExitButton';
+import { ScanActionButton } from '../../components/ScanActionButton';
+import { ScanExitButton } from '../../components/ScanExitButton';
 
 export interface S1ScanOptionsProps {
   fadeAnim: Animated.Value;

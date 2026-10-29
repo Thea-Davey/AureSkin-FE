@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { HelpCircle, X } from 'lucide-react-native';
-import { theme } from '../../../../shared/theme';
+import { theme } from '@/shared/theme';
 
 export interface S1SubmitHeaderProps {
   onOpenGuidance: () => void;
