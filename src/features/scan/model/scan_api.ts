@@ -1,16 +1,22 @@
 import { api } from '../../../shared/services/api';
-import { ScanResult, CompatibilityResponse, SkinGuidanceTip } from './scan_types';
+import {
+  ScanResult,
+  CompatibilityResponse,
+  SkinGuidanceTip,
+  GalleryPhotoItem,
+} from './scan_types';
 import {
   MOCK_SCAN_RESULT,
   MOCK_COMPATIBILITY,
   MOCK_GALLERY_THUMBNAIL,
   MOCK_SKIN_GUIDANCE_TIPS,
+  MOCK_GALLERY_PHOTOS,
 } from './scan_mock';
 
 // ============================================================================
 // DATA SOURCE TOGGLE (use mock)
 // Set to `true` to use mock data for all Scan screen features (Scan Analysis,
-// Camera Capture Simulation, Health Score, Ingredient Compatibility).
+// Camera Capture Simulation, Gallery Photos Grid, Health Score, Compatibility).
 // Set to `false` to fetch real-time live data from FastAPI and Supabase.
 export const USE_MOCK: boolean = true;
 // ============================================================================
@@ -78,3 +84,27 @@ export async function getSkinGuidanceTips(): Promise<SkinGuidanceTip[]> {
   }
   return MOCK_SKIN_GUIDANCE_TIPS;
 }
+
+/**
+ * Fetch gallery photos for the Scan Upload photo grid (Section 4.3).
+ * Supports optional client-side query string filtering.
+ */
+export async function fetchGalleryPhotos(query?: string): Promise<GalleryPhotoItem[]> {
+  if (USE_MOCK) {
+    // Artificial brief loading delay for realistic transition
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    if (!query || query.trim() === '') {
+      return MOCK_GALLERY_PHOTOS;
+    }
+    const lower = query.toLowerCase();
+    return MOCK_GALLERY_PHOTOS.filter(
+      (p) =>
+        p.filename?.toLowerCase().includes(lower) ||
+        p.tag?.toLowerCase().includes(lower)
+    );
+  }
+
+  // Live fallback returns curated photos
+  return MOCK_GALLERY_PHOTOS;
+}
+

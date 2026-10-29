@@ -77,7 +77,7 @@ export function useScan(): UseScanReturn {
   const handleUploadPhoto = useCallback(() => {
     closeScanOverlay();
     try {
-      router.push('/(tabs)/scan/upload' as any);
+      router.push('/scan/upload' as any);
     } catch {
       // Fallback handled gracefully
     }

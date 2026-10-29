@@ -74,3 +74,18 @@ export interface SkinGuidanceTip {
   description: string;
   iconName: 'Sun' | 'Sparkles' | 'Smile' | 'Glasses';
 }
+
+// ── Upload Specific Types (Section 4.3) ──────────────────────────
+
+export interface GalleryPhotoItem {
+  id: string;
+  uri: string;
+  filename?: string;
+  creationTime?: string;
+  tag?: string;
+}
+
+export interface PhotoFilterOptions {
+  searchQuery?: string;
+}
+
