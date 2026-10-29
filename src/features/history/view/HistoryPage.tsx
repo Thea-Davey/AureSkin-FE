@@ -1,7 +1,6 @@
 import { theme } from '@/shared/theme';
 import { useRouter } from 'expo-router';
 import { StatusBar, View } from 'react-native';
-import Toast from 'react-native-toast-message';
 import { useHistory } from '../viewmodel/useHistory';
 import { S1HistoryList } from './containers/s1_HistoryList';
 
@@ -37,9 +36,7 @@ export function HistoryPage() {
         onRetry={history.actions.retry}
         onRefresh={history.actions.refresh}
         onLoadNextPage={history.actions.loadNextPage}
-        onOpenEntry={() => {
-          Toast.show({ type: 'info', text1: 'Scan details are coming soon.' });
-        }}
+        onOpenEntry={(id) => router.push({ pathname: '/history/[id]', params: { id } })}
         onStartScan={() => router.push('/(tabs)/scan')}
       />
     </View>

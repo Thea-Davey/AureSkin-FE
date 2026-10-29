@@ -1,6 +1,14 @@
 import { api } from '../../../shared/services/api';
-import { MOCK_HISTORY_ENTRIES } from './history_mock';
-import { HistoryEntry, HistoryPage, HistoryPageParams } from './history_types';
+import { MOCK_HISTORY_DETAILS, MOCK_HISTORY_ENTRIES } from './history_mock';
+import {
+    HistoryCompatibleIngredient,
+    HistoryCondition,
+    HistoryDetail,
+    HistoryEntry,
+    HistoryIncompatiblePair,
+    HistoryPage,
+    HistoryPageParams,
+} from './history_types';
 
 // ============================================================================
 // DATA SOURCE TOGGLE (use mock)
@@ -13,11 +21,16 @@ export const USE_MOCK: boolean = true;
 const deletedMockEntryIds = new Set<string>();
 
 interface HistoryConditionItem {
+  id?: string;
   name?: string;
   display_name?: string;
+  description?: string | null;
+  confidence?: number | null;
   condition?: {
+    id?: string;
     name?: string;
     display_name?: string;
+    description?: string | null;
   };
 }
 
@@ -29,6 +42,32 @@ interface HistoryResponseItem {
   skin_type?: string | null;
   conditions?: Array<string | HistoryConditionItem> | null;
   analysis_conditions?: HistoryConditionItem[] | null;
+}
+
+interface HistoryDetailResponse extends HistoryResponseItem {
+  summary?: string | null;
+  skin_type_confidence?: number | null;
+  analysis_compatible_ingredients?: CompatibleIngredientItem[] | null;
+  compatible_ingredients?: CompatibleIngredientItem[] | null;
+  analysis_incompatible_pairs?: IncompatiblePairItem[] | null;
+  incompatible_pairs?: IncompatiblePairItem[] | null;
+}
+
+interface CompatibleIngredientItem {
+  id?: string;
+  name?: string;
+  reason?: string | null;
+  ingredient?: {
+    id?: string;
+    name?: string;
+  } | null;
+}
+
+interface IncompatiblePairItem {
+  id?: string;
+  ingredient_a?: string;
+  ingredient_b?: string;
+  reason?: string | null;
 }
 
 function normalizeEntry(item: HistoryResponseItem): HistoryEntry {
@@ -79,4 +118,89 @@ export async function deleteHistoryEntry(id: string): Promise<void> {
   }
 
   await api.delete(`/history/${encodeURIComponent(id)}`);
+}
+
+function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
+  const rawConditions = item.conditions?.length ? item.conditions : item.analysis_conditions ?? [];
+  const conditions: HistoryCondition[] = rawConditions.map((rawCondition, index) => {
+    const condition = typeof rawCondition === 'string' ? { display_name: rawCondition } : rawCondition;
+    const joinedCondition = condition.condition ?? condition;
+    const displayName = joinedCondition.display_name ?? joinedCondition.name ?? condition.display_name ?? condition.name ?? 'Skin concern';
+
+    return {
+      id: `${item.id}-condition-${index}`,
+      name: joinedCondition.name ?? condition.name ?? displayName,
+      display_name: displayName,
+      description: null,
+      confidence: null,
+    };
+  });
+  const normalizedConditions = conditions.map((condition, index) => {
+    const rawCondition = rawConditions[index];
+    if (typeof rawCondition === 'string') return condition;
+    const joinedCondition = rawCondition.condition ?? rawCondition;
+    return {
+      ...condition,
+      id: rawCondition.id ?? joinedCondition.id ?? condition.id,
+      description: joinedCondition.description ?? null,
+      confidence: rawCondition.confidence ?? null,
+    };
+  });
+  const rawCompatibleIngredients = item.analysis_compatible_ingredients ?? item.compatible_ingredients;
+  const rawIncompatiblePairs = item.analysis_incompatible_pairs ?? item.incompatible_pairs;
+
+  const compatibleIngredients: HistoryCompatibleIngredient[] | null = rawCompatibleIngredients === undefined || rawCompatibleIngredients === null
+    ? null
+    : rawCompatibleIngredients.map((item, index) => {
+        const ingredient = item.ingredient ?? item;
+        const name = ingredient.name ?? item.name;
+        if (!name) throw new Error('A compatible ingredient was missing its name.');
+        return {
+          id: item.id ?? ingredient.id ?? `${item.id ?? 'compatible'}-${index}`,
+          name,
+          reason: item.reason ?? null,
+        };
+      });
+
+  const incompatiblePairs: HistoryIncompatiblePair[] | null = rawIncompatiblePairs === undefined || rawIncompatiblePairs === null
+    ? null
+    : rawIncompatiblePairs.map((item, index) => {
+        if (!item.ingredient_a || !item.ingredient_b) {
+          throw new Error('An incompatible ingredient pair was missing an ingredient name.');
+        }
+        return {
+          id: item.id ?? `${item.ingredient_a}-${item.ingredient_b}-${index}`,
+          ingredient_a: item.ingredient_a,
+          ingredient_b: item.ingredient_b,
+          reason: item.reason ?? null,
+        };
+      });
+
+  return {
+    ...normalizeEntry(item),
+    summary: item.summary ?? null,
+    skin_type_confidence: item.skin_type_confidence ?? null,
+    conditions: normalizedConditions,
+    compatible_ingredients: compatibleIngredients,
+    incompatible_pairs: incompatiblePairs,
+  };
+}
+
+export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
+  if (USE_MOCK) {
+    if (deletedMockEntryIds.has(id)) {
+      throw new Error('This scan is no longer available.');
+    }
+    const detail = MOCK_HISTORY_DETAILS[id];
+    if (!detail) throw new Error('Scan not found.');
+    return detail;
+  }
+
+  const response = await api.get(`/history/${encodeURIComponent(id)}`);
+  const payload = response.data?.data;
+  if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') {
+    throw new Error('The history detail response was not in the expected format.');
+  }
+
+  return normalizeDetail(payload as HistoryDetailResponse);
 }

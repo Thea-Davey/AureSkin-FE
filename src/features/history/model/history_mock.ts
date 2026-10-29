@@ -1,4 +1,4 @@
-import { HistoryEntry } from './history_types';
+import { HistoryDetail, HistoryEntry } from './history_types';
 
 export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   {
@@ -66,3 +66,195 @@ export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
     conditions: ['Dryness', 'Skin Redness'],
   },
 ];
+
+export const MOCK_HISTORY_DETAILS: Record<string, HistoryDetail> = {
+  'mock-history-001': {
+    id: 'mock-history-001',
+    image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=900&q=85',
+    created_at: '2026-10-18T09:30:00.000Z',
+    health_score: 88.42,
+    skin_type: 'Combination',
+    skin_type_confidence: 91.2,
+    summary: 'Your skin appears balanced overall, with mild redness visible in the analyzed image.',
+    conditions: [
+      {
+        id: 'mock-condition-redness-1',
+        name: 'skin_redness',
+        display_name: 'Skin Redness',
+        description: 'Visible redness can occur when the skin is temporarily irritated or reactive.',
+        confidence: 76.4,
+      },
+    ],
+    compatible_ingredients: [
+      { id: 'mock-compatible-1a', name: 'Niacinamide', reason: 'Often included in routines for combination skin.' },
+      { id: 'mock-compatible-1b', name: 'Ceramides', reason: 'Supports the skin barrier.' },
+    ],
+    incompatible_pairs: [
+      { id: 'mock-pair-1a', ingredient_a: 'Retinoids', ingredient_b: 'AHA exfoliants', reason: 'Combining strong exfoliants and retinoids may increase irritation.' },
+    ],
+  },
+  'mock-history-002': {
+    id: 'mock-history-002',
+    image_url: null,
+    created_at: '2026-10-12T16:15:00.000Z',
+    health_score: 76.18,
+    skin_type: 'Oily',
+    skin_type_confidence: 87.6,
+    summary: 'The analysis detected areas that may benefit from a gentle, consistent routine.',
+    conditions: [
+      {
+        id: 'mock-condition-acne-2',
+        name: 'acne',
+        display_name: 'Acne',
+        description: 'Acne is associated with clogged pores and may appear as inflamed blemishes.',
+        confidence: 82.1,
+      },
+      {
+        id: 'mock-condition-pores-2',
+        name: 'enlarged_pores',
+        display_name: 'Enlarged Pores',
+        description: 'Pores can look more noticeable with oil production, congestion, or natural skin variation.',
+        confidence: 68.7,
+      },
+    ],
+    compatible_ingredients: [
+      { id: 'mock-compatible-2a', name: 'Salicylic Acid', reason: 'Commonly selected for oily, blemish-prone skin.' },
+      { id: 'mock-compatible-2b', name: 'Niacinamide', reason: 'Can be used in a balanced routine for oily skin.' },
+    ],
+    incompatible_pairs: [
+      { id: 'mock-pair-2a', ingredient_a: 'Retinol', ingredient_b: 'Benzoyl Peroxide', reason: 'Using both in the same routine may increase dryness or irritation.' },
+    ],
+  },
+  'mock-history-003': {
+    id: 'mock-history-003',
+    image_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85',
+    created_at: '2026-10-06T08:45:00.000Z',
+    health_score: 93.07,
+    skin_type: 'Normal',
+    skin_type_confidence: 94.3,
+    summary: 'No notable skin concerns were detected in this analysis.',
+    conditions: [],
+    compatible_ingredients: [],
+    incompatible_pairs: [],
+  },
+  'mock-history-004': {
+    id: 'mock-history-004',
+    image_url: null,
+    created_at: '2026-09-29T11:20:00.000Z',
+    health_score: 69.35,
+    skin_type: 'Dry',
+    skin_type_confidence: 84.9,
+    summary: 'The analysis detected areas of dryness and uneven tone.',
+    conditions: [
+      {
+        id: 'mock-condition-dryness-4',
+        name: 'dryness',
+        display_name: 'Dryness',
+        description: 'Dryness may present as roughness, tightness, or visible flaking.',
+        confidence: 79.6,
+      },
+      {
+        id: 'mock-condition-tone-4',
+        name: 'uneven_tone',
+        display_name: 'Uneven Tone',
+        description: 'Uneven tone describes areas where visible skin color appears less uniform.',
+        confidence: 64.2,
+      },
+    ],
+    compatible_ingredients: null,
+    incompatible_pairs: null,
+  },
+  'mock-history-005': {
+    id: 'mock-history-005',
+    image_url: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=900&q=85',
+    created_at: '2026-09-20T13:00:00.000Z',
+    health_score: 82.73,
+    skin_type: 'Sensitive',
+    skin_type_confidence: 89.1,
+    summary: 'The analysis detected mild visible redness.',
+    conditions: [
+      {
+        id: 'mock-condition-redness-5',
+        name: 'skin_redness',
+        display_name: 'Skin Redness',
+        description: 'Visible redness can occur when the skin is temporarily irritated or reactive.',
+        confidence: 71.8,
+      },
+    ],
+    compatible_ingredients: [
+      { id: 'mock-compatible-5a', name: 'Glycerin', reason: 'Helps attract moisture to the skin.' },
+      { id: 'mock-compatible-5b', name: 'Ceramides', reason: 'Supports the skin barrier.' },
+    ],
+    incompatible_pairs: [],
+  },
+  'mock-history-006': {
+    id: 'mock-history-006',
+    image_url: null,
+    created_at: '2026-09-12T10:10:00.000Z',
+    health_score: 74.61,
+    skin_type: 'Combination',
+    skin_type_confidence: 86.5,
+    summary: 'The analysis detected uneven tone and dark spots.',
+    conditions: [
+      {
+        id: 'mock-condition-tone-6',
+        name: 'uneven_tone',
+        display_name: 'Uneven Tone',
+        description: 'Uneven tone describes areas where visible skin color appears less uniform.',
+        confidence: 70.2,
+      },
+      {
+        id: 'mock-condition-spots-6',
+        name: 'dark_spots',
+        display_name: 'Dark Spots',
+        description: 'Dark spots are areas of increased pigmentation that can follow sun exposure or blemishes.',
+        confidence: 65.9,
+      },
+    ],
+    compatible_ingredients: [
+      { id: 'mock-compatible-6a', name: 'Azelaic Acid', reason: 'Frequently used in routines for uneven tone.' },
+    ],
+    incompatible_pairs: [
+      { id: 'mock-pair-6a', ingredient_a: 'Retinoids', ingredient_b: 'AHA exfoliants', reason: 'Combining strong exfoliants and retinoids may increase irritation.' },
+    ],
+  },
+  'mock-history-007': {
+    id: 'mock-history-007',
+    image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=85',
+    created_at: '2026-09-04T07:50:00.000Z',
+    health_score: 91.84,
+    skin_type: 'Normal',
+    skin_type_confidence: 92.8,
+    summary: 'No notable skin concerns were detected in this analysis.',
+    conditions: [],
+    compatible_ingredients: [],
+    incompatible_pairs: [],
+  },
+  'mock-history-008': {
+    id: 'mock-history-008',
+    image_url: null,
+    created_at: '2026-08-26T15:40:00.000Z',
+    health_score: 67.29,
+    skin_type: 'Dry',
+    skin_type_confidence: 81.7,
+    summary: 'The analysis detected dryness and mild visible redness.',
+    conditions: [
+      {
+        id: 'mock-condition-dryness-8',
+        name: 'dryness',
+        display_name: 'Dryness',
+        description: 'Dryness may present as roughness, tightness, or visible flaking.',
+        confidence: 83.5,
+      },
+      {
+        id: 'mock-condition-redness-8',
+        name: 'skin_redness',
+        display_name: 'Skin Redness',
+        description: 'Visible redness can occur when the skin is temporarily irritated or reactive.',
+        confidence: 62.8,
+      },
+    ],
+    compatible_ingredients: null,
+    incompatible_pairs: null,
+  },
+};

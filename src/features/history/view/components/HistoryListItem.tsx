@@ -45,16 +45,28 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
       </View>
 
       <View className="ml-3 flex-1">
-        <View className="mb-2 flex-row items-center justify-between">
-          <View className="flex-row items-center">
+        <View className="mb-2 flex-row items-center gap-1">
+          <View className="mr-1 min-w-0 flex-1 flex-row items-center">
             <CalendarDays size={14} color={theme.colors.muted} />
-            <Text className="ml-1.5 text-body-sm font-sans-semibold text-text">
+            <Text numberOfLines={1} className="ml-1.5 flex-1 text-body-sm font-sans-semibold text-text">
               {formatDate(entry.created_at)}
             </Text>
           </View>
           <View className="rounded-badge bg-status-success/15 px-2 py-1">
             <Text className="text-caption font-sans-bold text-primary">{healthScore}% Healthy</Text>
           </View>
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onMorePress();
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="More actions for this scan"
+            className="h-8 w-8 items-center justify-center"
+          >
+            <MoreHorizontal size={20} color={theme.colors.muted} />
+          </Pressable>
         </View>
 
         <View className="mb-2 flex-row flex-wrap items-center gap-1.5">
@@ -77,18 +89,6 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
         </View>
       </View>
 
-      <Pressable
-        onPress={(event) => {
-          event.stopPropagation();
-          onMorePress();
-        }}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel="More actions for this scan"
-        className="ml-1 h-10 w-8 items-center justify-center"
-      >
-        <MoreHorizontal size={22} color={theme.colors.muted} />
-      </Pressable>
     </Pressable>
   );
 }
