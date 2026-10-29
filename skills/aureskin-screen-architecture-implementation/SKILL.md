@@ -58,8 +58,9 @@ Before creating the plan, read and inspect the following files to locate the tar
    - If the user specified a **Reference Image**, view that file. Otherwise, extract the filename specified under `Reference Image:` in the matched section of `ui_design_reference.md`.
    - View the exported Figma image corresponding to the target screen as the visual ground truth for layout, proportions, and UI hierarchy.
 
-4. **`frontend/src/shared/theme/index.ts`** || **`src/shared/theme/index.ts`**   
-  - Runtime TypeScript color tokens (`theme.colors.*`). Use these exclusively for any JS prop values (icon colors, SVG strokes, `StatusBar`, `ActivityIndicator`, shadow colors, etc.).
+4. **`frontend/src/shared/theme/index.ts`** || **`src/shared/theme/index.ts`**
+   - Runtime TypeScript color tokens (`theme.colors.*`). Use these exclusively for any JS prop values (icon colors, SVG strokes, `StatusBar`, `ActivityIndicator`, shadow colors, etc.).
+
 
 5. **`frontend/tailwind.config.js`** || **`tailwind.config.js`**
    - Authoritative design tokens for all Tailwind utility classes in `className` props:
@@ -68,7 +69,7 @@ Before creating the plan, read and inspect the following files to locate the tar
      - **Border Radius Presets:** `rounded-card` (16px), `rounded-button` (12px), `rounded-input` (10px), `rounded-badge` (20px), `rounded-full` (9999px).
      - **Font Family Presets:** `font-sans` (Inter 400), `font-sans-medium` (Inter 500), `font-sans-semibold` (Inter 600), `font-sans-bold` (Inter 700), `font-heading` (Outfit 700).
 
-6. **`frontend/src/features/home/`** || **`frontend/src/features/home/`** (all files)
+6. **`frontend/src/features/home/**`** || **`frontend/src/features/home/**`** (all files)
    - The completed Home Screen is your living reference implementation. Mirror its MVVM pattern, mock centralization, `USE_MOCK` toggle structure, and component styling conventions.
 
 > ⚠️ **CRITICAL — STRICT DESIGN TOKEN ADHERENCE (NO RAW / ARBITRARY VALUES)**

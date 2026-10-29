@@ -512,7 +512,7 @@
 **Reference Image:** `design_references/library_add_product_camera.png`
 
 #### 🎯 Purpose
-> The Add Product Camera Overlay allows users to capture a clear photo of a skincare product's front packaging or ingredient label to accompany a new product entry. The captured image is uploaded to Supabase Storage and attached to the user-submitted product record in the Add Product Form (3.7).
+> The Add Product Camera Overlay allows users to capture a clear photo of a skincare product's front packaging or ingredient label for review in the Add Product Form (3.7). The local photo is not uploaded or saved until product submission is implemented.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
@@ -523,18 +523,18 @@
 | Camera Viewfinder | Camera Preview Area (`rounded-card`) | Live camera stream (via `expo-camera`) where the user positions the product bottle or packaging label. |
 | "Take photo" Label | Static Text Banner | Prompt label located directly below the viewfinder window. |
 | Shutter Button | Primary Camera Button | Large circular white button (`rounded-full`) that captures the current frame. |
-| Gallery Thumbnail | Image Thumbnail Button | Square preview of recent gallery images (bottom-left). Tapping opens the Add Product Upload screen (3.6). |
+| Gallery Button | Image Thumbnail Button | Square button at bottom-left. Shows the last captured or selected image when available, otherwise a gallery icon. Tapping opens the Add Product Upload screen (3.6). |
 | Switch Camera Button | Icon Button | Circular arrows icon (bottom-right) that flips between back and front camera lenses. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
 | Camera Feed | Hardware camera stream via `expo-camera`. |
-| Recent Image Thumbnail | Last photo retrieved from device gallery via `expo-media-library`. |
+| Button Preview | Last captured or selected photo held in the current camera flow; no broad device-library access is requested. |
 
 #### ✨ Animations & Transitions
 - **Entry:** Viewfinder fades in; camera initializes.
-- **Interactions:** Tapping the Shutter button triggers a quick flash/shutter sound and transitions forward to `AddProductForm` (3.7) with the captured image URI.
+- **Interactions:** Tapping the Shutter button captures a photo. The user can continue to the Add Product Form (3.7) with the local image preview; the photo is not uploaded or saved at this stage.
 - **Exit:** Tapping Close (X) dismisses the camera viewfinder back to the Products Tab.
 
 #### 🔄 Screen States
@@ -546,8 +546,9 @@
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| Tap Shutter button | Add Product Form (3.7) with captured image attached |
-| Tap Gallery Thumbnail | Add Product Upload (3.6) |
+| Tap Shutter button | Captured image preview in the camera flow |
+| Tap "Continue to product details" | Add Product Form (3.7) with the local image URI; nothing is uploaded yet |
+| Tap Gallery Button | Add Product Upload (3.6) |
 | Tap Close icon (X) | Library Page — Products Tab (3.2) |
 | Tap Help icon (?) | Camera guide tooltip modal |
 
@@ -558,38 +559,39 @@
 **Reference Image:** `design_references/library_add_product_upload.png`
 
 #### 🎯 Purpose
-> The Add Product Upload screen allows users to select an existing product image or label photo from their device's media library instead of taking a live photo. The selected image is attached to the new product submission in the Add Product Form (3.7).
+> The Add Product Upload screen allows users to select an existing product image or label photo from their device's photo picker instead of taking a live photo. The selected local image is reviewed in the Add Product Form (3.7); it is not uploaded or saved until submission is implemented.
 
 #### 🧩 Elements & Functions
 | Element | Type | Function / Behavior |
 |---|---|---|
 | "Upload a Photo" | Static Text (Header) | Title identifying the gallery selection screen. |
-| Search Bar | Text Input (`rounded-input`) | Allows searching photos by filename/album if supported by the system picker. |
-| Photo Grid | 3-Column Scrollable Grid | Displays available device images in a structured grid. |
-| Photo Grid Item | Tappable Image Thumbnail | Individual image item. Tapping selects the image and forwards it to `AddProductForm` (3.7). |
+| "Choose from device" | Primary Action Button | Opens the operating system's image picker without requiring broad photo-library access. |
+| Photo Picker | Native System Interface | Lets the user browse device photos. The app receives only the selected image. |
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
-| Device Photos | Device photo library accessed via `expo-image-picker` / `expo-media-library`. |
-| Search Input | Local search query string. |
+| Selected Photo | URI returned by `expo-image-picker` after the user selects an image. |
 
 #### ✨ Animations & Transitions
-- **Entry:** Photo grid renders with native gallery animation.
-- **Interactions:** Tapping an image provides scale feedback and selects the image.
-- **Exit:** Transitions directly to `AddProductForm` (3.7) with the chosen image URI.
+- **Entry:** The upload screen presents a button to open the native photo picker.
+- **Interactions:** Selecting a photo in the system picker returns it to the product camera flow.
+- **Exit:** Returns to the product camera flow with the chosen image URI, where the user can continue to the form.
 
 #### 🔄 Screen States
-- **Loading:** Displays placeholder grid squares while thumbnail cache loads.
-- **Empty:** Displays "No photos found" if media library permissions allow access to an empty album.
-- **Error:** Displays permission request dialog if photo library access is denied.
-- **Success:** Multi-column scrollable photo grid.
+- **Loading:** Shows a progress indicator while the system picker opens.
+- **Empty:** The system picker handles empty photo libraries.
+- **Error:** Displays an inline message if the system picker cannot be opened.
+- **Success:** The chosen image URI is returned to the Add Product Camera Overlay (3.5).
 
 #### 🗺️ Navigation
 | Action | Destination |
 |---|---|
-| Tap a photo | Add Product Form (3.7) with selected photo URI |
+| Tap "Choose from device" and select a photo | Add Product Camera Overlay (3.5) with selected photo URI |
 | System back action | Returns to Add Product Camera Overlay (3.5) or Products Tab (3.2) |
+
+#### Implementation Note
+Android Expo Go does not support the broad media-library access required for a custom in-app gallery grid. The system photo picker is used instead, allowing the user to select a photo without granting broad access to their library.
 
 ---
 
@@ -605,25 +607,29 @@
 |---|---|---|
 | "Scanned Ingredients" | Static Text (Header) | Screen header title. Non-interactive. |
 | Close Icon (X) | Icon Button (Top-Right) | Exits the form and returns to the Products Tab (3.2). |
-| Product Name Card | Card / Editable Input (`rounded-card`) | Displays product name with a pencil edit icon. Tapping allows typing or editing the product name. |
+| Product Name Card | Card / Editable Input (`rounded-card`) | Displays the product name with a pencil edit icon. Tapping the icon allows typing or editing the product name. |
 | Ingredients Section Card | Container Card (`rounded-card`) | Container grouping all product ingredients. |
-| "Ingredients" Heading | Static Text (`text-h3 font-sans-bold`) | Section header with a pencil edit icon at top-right for bulk editing. |
-| Ingredient Tags List | Tag List / Removable Pills | Ordered list of ingredient items (Salicylic acid, Niacinamide, Clay, Hyaluronic acid, Retinol, Dioic acid, Omega fatty acids, Aloe Vera). Users can add new tags or tap to remove. |
+| "Ingredients" Heading | Static Text (`text-h3 font-sans-bold`) | Section header with a pencil edit icon at top-right to edit the list. |
+| Ingredient List | Stacked Ingredient Rows | Immediately displays Salicylic acid, Niacinamide, Clay, Hyaluronic acid, Retinol, Dioic acid, Omega fatty acids, and Aloe Vera in that order. Editing allows users to add or remove rows. |
 | "Add description" Card | Expandable Section (`rounded-card`) | Card displaying "Add description" with a plus (+) icon. Tapping expands a multiline text area for optional product description. |
-| "Add Skincare Product" | Button (Primary CTA `rounded-button`) | Submits the product payload to `POST /products`. Displays loading spinner during submission. |
-| "Cancel" | Button (Secondary `rounded-button border`) | Cancels the form entry and returns to the Products Tab without saving. |
+| "Add Skincare Product" | Button (Primary CTA `rounded-button`) | Warm terracotta filled button. Submits the product payload to `POST /products`. Displays loading spinner during submission. |
+| "Cancel" | Button (Secondary `rounded-button border`) | White button with a warm terracotta border and label. Cancels the form entry and returns to the Products Tab without saving. |
+
+The header uses a muted sage background with a white title and close icon. Do not show brand or category fields on this form.
+On wider screens, keep the form content in a centered, phone-width column (maximum width 430px); on mobile, it fills the available width with the same side padding as the Library screens.
+When the Library data source is in mock mode, submitting adds an in-memory demo product to the Products list for the current app session and uses an explicitly labeled demo confirmation. This is not a backend save, and the demo entry is cleared when the app reloads.
 
 #### 📊 Data Displayed
 | Field | Source |
 |---|---|
 | Product Name | User-entered string via form state in `useAddProduct.ts`. |
-| Ingredient List | Array of ingredient strings (`ingredients: string[]`) managed in form state. |
+| Ingredient List | Initial ordered ingredient strings managed in form state; users can edit the list. |
 | Product Description | Optional user-entered description string. |
-| Product Image URI | Passed from Camera (3.5) or Upload (3.6); uploaded to Supabase Storage `product-images`. |
+| Product Image URI | Passed from Camera (3.5) or Upload (3.6) for the pending submission flow; it is not shown on this form or uploaded until the storage contract is confirmed. |
 
 #### ✨ Animations & Transitions
 - **Entry:** Form cards slide up; keyboard adjusts view when focusing text inputs.
-- **Interactions:** Tapping the pencil icon focuses the text input. Tapping "Add description" smoothly animates expanding the description box. Button press states provide opacity feedback.
+- **Interactions:** Tapping the product-name pencil enables its input. Tapping the ingredients pencil enables adding/removing rows. Tapping "Add description" expands the description box. Button press states provide opacity feedback.
 - **Exit:** On successful submission, triggers the Add Product Success Overlay (3.8). Tapping Cancel or Close dismisses the form.
 
 #### 🔄 Screen States
@@ -1422,6 +1428,9 @@
 | Tap "Cancel" | Profile Page (8.1) |
 | Tap avatar edit icon | Device image picker (in-app) |
 | Tap "Change Password" | Change Password Screen / Modal |
+
+#### Current Implementation Note
+The Edit Profile route currently provides local preview only. It reads available values from explicit Supabase user metadata, leaves unsupported fields unset, and does not save profile edits or upload the avatar until the profile-field and private avatar-storage contracts are confirmed. The password-change flow is not configured yet.
 
 ---
 

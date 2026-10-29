@@ -29,14 +29,19 @@ export const MOCK_SCAN_RESULT: ScanResult = {
   ],
   compatible_ingredients: [
     {
-      id: 'ing-01',
+      id: 'ingredient-salicylic-acid',
       name: 'Salicylic acid',
       reason: 'Penetrates lipid layers to clear congested pores.',
     },
     {
-      id: 'ing-02',
+      id: 'ingredient-niacinamide',
       name: 'Niacinamide',
       reason: 'Regulates sebum production and strengthens barrier integrity.',
+    },
+    {
+      id: 'ingredient-centella-asiatica',
+      name: 'Centella Asiatica',
+      reason: 'Accelerates skin barrier repair and reduces inflammation.',
     },
     {
       id: 'ing-03',
@@ -67,6 +72,11 @@ export const MOCK_SCAN_RESULT: ScanResult = {
       id: 'ing-08',
       name: 'Aloe Vera',
       reason: 'Soothes dermal inflammation and cools irritated skin.',
+    },
+    {
+      id: 'ingredient-aloe-vera',
+      name: 'Aloe Vera',
+      reason: 'Supports hydration and soothes the feel of irritated skin.',
     },
   ],
   incompatible_pairs: [
@@ -235,4 +245,3 @@ export const MOCK_GALLERY_PHOTOS: GalleryPhotoItem[] = [
     tag: 'daylight',
   },
 ];
-

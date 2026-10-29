@@ -70,7 +70,7 @@ export const MOCK_ARTICLES: Article[] = [
 ];
 
 export const MOCK_LATEST_ANALYSIS: LatestAnalysis = {
-  id: 'mock-analysis-1',
+  id: 'mock-scan-001',
   skin_type: 'Oily',
   conditions: ['Skin Redness'],
   health_score: 89,
