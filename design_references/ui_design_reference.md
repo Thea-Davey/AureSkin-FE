@@ -678,6 +678,10 @@
 
 ---
 
+## 4. Scan Screens
+
+---
+
 ### 4.1 Scan Overlay (Take a Photo / Upload a Photo)
 
 **Reference Image:** `design_references/scan_overlay.png`
