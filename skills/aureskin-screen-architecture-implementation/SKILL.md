@@ -68,7 +68,7 @@ Before creating the plan, read and inspect the following files to locate the tar
      - **Border Radius Presets:** `rounded-card` (16px), `rounded-button` (12px), `rounded-input` (10px), `rounded-badge` (20px), `rounded-full` (9999px).
      - **Font Family Presets:** `font-sans` (Inter 400), `font-sans-medium` (Inter 500), `font-sans-semibold` (Inter 600), `font-sans-bold` (Inter 700), `font-heading` (Outfit 700).
 
-6. **`frontend/src/features/home/**`** || **`src/features/home/**`** (all files)
+6. **`frontend/src/features/home/`** || **`frontend/src/features/home/`** (all files)
    - The completed Home Screen is your living reference implementation. Mirror its MVVM pattern, mock centralization, `USE_MOCK` toggle structure, and component styling conventions.
 
 > ⚠️ **CRITICAL — STRICT DESIGN TOKEN ADHERENCE (NO RAW / ARBITRARY VALUES)**
