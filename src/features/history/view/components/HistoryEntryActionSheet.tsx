@@ -1,6 +1,6 @@
 import { theme } from '@/shared/theme';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Dimensions, Modal, Pressable, Text, View } from 'react-native';
 
 interface HistoryEntryActionSheetProps {
   visible: boolean;
@@ -20,11 +20,64 @@ export function HistoryEntryActionSheet({
   onDelete,
 }: HistoryEntryActionSheetProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [isMounted, setIsMounted] = useState(visible);
+  const sheetOffset = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
   const isDeleting = entryId !== null && deletingEntryId === entryId;
 
   useEffect(() => {
     if (!visible) setConfirmingDelete(false);
   }, [visible]);
+
+  useEffect(() => {
+    const screenHeight = Dimensions.get('window').height;
+
+    if (visible && !isMounted) {
+      setIsMounted(true);
+      return;
+    }
+
+    if (visible) {
+      sheetOffset.setValue(screenHeight);
+      backdropOpacity.setValue(0);
+      const frame = requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(sheetOffset, {
+            toValue: 0,
+            useNativeDriver: true,
+            damping: 24,
+            stiffness: 220,
+            mass: 0.8,
+          }),
+          Animated.timing(backdropOpacity, {
+            toValue: 1,
+            duration: 140,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+
+    if (!isMounted) return;
+
+    const closeAnimation = Animated.parallel([
+      Animated.timing(sheetOffset, {
+        toValue: screenHeight,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]);
+    closeAnimation.start(({ finished }) => {
+      if (finished) setIsMounted(false);
+    });
+    return () => closeAnimation.stop();
+  }, [backdropOpacity, isMounted, sheetOffset, visible]);
 
   const requestDelete = () => {
     if (!entryId) return;
@@ -36,10 +89,15 @@ export function HistoryEntryActionSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-text/40">
-        <Pressable accessibilityLabel="Dismiss scan actions" className="flex-1" onPress={onClose} />
-        <View className="rounded-t-card bg-card px-5 pb-8 pt-5">
+    <Modal visible={isMounted} transparent animationType="none" onRequestClose={onClose}>
+      <View className="flex-1 justify-end">
+        <Animated.View className="absolute inset-0 bg-text/40" style={{ opacity: backdropOpacity }}>
+          <Pressable accessibilityLabel="Dismiss scan actions" className="flex-1" onPress={onClose} />
+        </Animated.View>
+        <Animated.View
+          className="rounded-t-card bg-card px-5 pb-8 pt-5"
+          style={{ transform: [{ translateY: sheetOffset }] }}
+        >
           <Text className="mb-2 text-h3 font-sans-bold text-text">
             {confirmingDelete ? 'Delete this scan?' : 'Scan actions'}
           </Text>
@@ -72,7 +130,7 @@ export function HistoryEntryActionSheet({
           >
             <Text className="text-label font-sans-semibold text-text">{confirmingDelete ? 'Cancel' : 'Close'}</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
