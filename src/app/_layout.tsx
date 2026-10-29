@@ -59,6 +59,8 @@ export default function RootLayout() {
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="scan/camera" options={{ animation: 'fade' }} />
+        <Stack.Screen name="scan/upload" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="scan/submit" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <Toast />
     </QueryClientProvider>

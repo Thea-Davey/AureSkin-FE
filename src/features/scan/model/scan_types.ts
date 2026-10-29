@@ -89,3 +89,22 @@ export interface PhotoFilterOptions {
   searchQuery?: string;
 }
 
+// ── Submit Specific Types (Section 4.4) ──────────────────────────
+
+/**
+ * Route params received by the Scan Submit screen.
+ * imageUri is passed from either /scan/camera (captured photo) or /scan/upload (selected photo).
+ */
+export interface ScanSubmitParams {
+  imageUri: string;
+}
+
+/**
+ * Discriminated source of the image for the Retake navigation decision.
+ * 'camera' → navigate back to /scan/camera
+ * 'upload' → navigate back to /scan/upload
+ * 'unknown' → default fallback to /scan/camera
+ */
+export type ImageSource = 'camera' | 'upload' | 'unknown';
+
+
