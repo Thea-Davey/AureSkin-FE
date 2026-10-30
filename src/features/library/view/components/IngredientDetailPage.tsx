@@ -1,14 +1,12 @@
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
-import type { ReactNode } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BadgeCheck, Star, X } from 'lucide-react-native';
+import { Star, X } from 'lucide-react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { theme } from '../../../../shared/theme';
 import {
@@ -16,6 +14,9 @@ import {
   IngredientCompatibilityStatus,
 } from '../../model/library_types';
 import { IngredientDetailSkeleton } from './IngredientDetailSkeleton';
+import { CompatibilityBadge } from './CompatibilityBadge';
+import { CompatibleNote } from './CompatibleNote';
+import { DescriptionCard } from './DescriptionCard';
 
 interface IngredientDetailPageProps {
   visible: boolean;
@@ -33,85 +34,6 @@ interface IngredientDetailPageProps {
   onRetry: () => void;
   onRetryCompatibility: () => void;
   onToggleFavorite: () => void;
-}
-
-function DetailCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View className="mb-3 rounded-card border border-border bg-card p-4 shadow-sm">
-      <Text className="mb-2 text-h3 font-sans-bold text-text">{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function DetailBullets({
-  items,
-  tone,
-}: {
-  items: string[];
-  tone: 'positive' | 'warning';
-}) {
-  return (
-    <View className="gap-2">
-      {items.map((item) => (
-        <View key={item} className="flex-row items-start gap-2">
-          <View
-            className={`mt-1.5 h-2 w-2 rounded-full ${
-              tone === 'positive' ? 'bg-accent' : 'bg-status-error'
-            }`}
-          />
-          <Text className="flex-1 text-body-sm font-sans text-text">{item}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function CompatibilityBadge({
-  status,
-  isLoading,
-}: {
-  status: IngredientCompatibilityStatus;
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return (
-      <View className="flex-row items-center gap-1 rounded-badge bg-background px-2.5 py-1.5">
-        <ActivityIndicator size="small" color={theme.colors.muted} />
-        <Text className="text-caption font-sans-medium text-muted">Checking</Text>
-      </View>
-    );
-  }
-
-  if (status === 'compatible') {
-    return (
-      <View
-        accessibilityRole="text"
-        accessibilityLabel="Compatible with your latest skin analysis"
-        className="flex-row items-center gap-1 rounded-badge bg-status-success px-2.5 py-1.5"
-      >
-        <BadgeCheck size={14} color={theme.colors.white} />
-        <Text className="text-caption font-sans-semibold text-neutral-white">
-          Compatible
-        </Text>
-      </View>
-    );
-  }
-
-  const label = status === 'scan_needed'
-    ? 'Scan needed'
-    : status === 'unavailable'
-      ? 'Not checked'
-      : 'Not listed';
-  return (
-    <View
-      accessibilityRole="text"
-      accessibilityLabel={label}
-      className="rounded-badge bg-background px-2.5 py-1.5"
-    >
-      <Text className="text-caption font-sans-medium text-muted">{label}</Text>
-    </View>
-  );
 }
 
 export function IngredientDetailPage({
@@ -199,37 +121,46 @@ export function IngredientDetailPage({
             </View>
           ) : canShowDetail ? (
             <>
-              <View className="flex-row items-center gap-2 border-b border-border px-5 py-4">
-                <Text
-                  numberOfLines={2}
-                  className="min-w-0 flex-1 text-h3 font-sans-semibold text-text"
-                >
+              <View className="border-b border-border px-5 py-4">
+                {/* Row 1: [Col 1: Label text "Ingredient Name"] [Col 2: Top-aligned CompatibilityBadge + Favorite Button] */}
+                <View className="flex-row items-center justify-between gap-3">
+                  <Text className="text-body-sm font-sans-medium text-muted">
+                    Ingredient
+                  </Text>
+
+                  {/* Col 2: Top-aligned Compatibility Badge + Favorite Star */}
+                  <View className="flex-row items-center gap-2 self-start">
+                    <CompatibilityBadge
+                      status={compatibilityStatus}
+                      isLoading={isCompatibilityLoading}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${isFavorite ? 'Remove' : 'Add'} ${ingredient.name} ${isFavorite ? 'from' : 'to'} favorites`}
+                      accessibilityState={{
+                        selected: isFavorite,
+                        disabled: isFavoriteLoading || isTogglingFavorite,
+                      }}
+                      disabled={isFavoriteLoading || isTogglingFavorite}
+                      onPress={onToggleFavorite}
+                      hitSlop={8}
+                      className="p-1 active:opacity-70"
+                    >
+                      <Animated.View key={String(isFavorite)} entering={ZoomIn.duration(160)}>
+                        <Star
+                          size={22}
+                          color={isFavorite ? theme.colors.secondary : theme.colors.text}
+                          fill={isFavorite ? theme.colors.secondary : 'transparent'}
+                        />
+                      </Animated.View>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Row 2: Actual name of the ingredient (Full width, not truncated) */}
+                <Text className="mt-1 text-h2 font-sans-bold text-h3">
                   {ingredient.name}
                 </Text>
-                <CompatibilityBadge
-                  status={compatibilityStatus}
-                  isLoading={isCompatibilityLoading}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${isFavorite ? 'Remove' : 'Add'} ${ingredient.name} ${isFavorite ? 'from' : 'to'} favorites`}
-                  accessibilityState={{
-                    selected: isFavorite,
-                    disabled: isFavoriteLoading || isTogglingFavorite,
-                  }}
-                  disabled={isFavoriteLoading || isTogglingFavorite}
-                  onPress={onToggleFavorite}
-                  hitSlop={8}
-                  className="p-1 active:opacity-70"
-                >
-                  <Animated.View key={String(isFavorite)} entering={ZoomIn.duration(160)}>
-                    <Star
-                      size={22}
-                      color={isFavorite ? theme.colors.secondary : theme.colors.text}
-                      fill={isFavorite ? theme.colors.secondary : 'transparent'}
-                    />
-                  </Animated.View>
-                </Pressable>
               </View>
 
               <ScrollView
@@ -254,70 +185,73 @@ export function IngredientDetailPage({
                   </View>
                 ) : null}
 
+                {/* 1. Intro Description (softened to text-muted for clean hierarchy) */}
                 {ingredient.description?.trim() ? (
-                  <Text className="mb-4 text-body-sm font-sans text-text">
+                  <Text className="mb-4 text-body-sm font-sans text-muted leading-relaxed">
                     {ingredient.description}
                   </Text>
                 ) : null}
 
+                {/* 2. What is it? */}
                 {ingredient.what_is_it?.trim() ? (
-                  <DetailCard title="What is it?">
-                    <Text className="text-body-sm font-sans text-text">
-                      {ingredient.what_is_it}
-                    </Text>
-                  </DetailCard>
+                  <DescriptionCard
+                    title="What is it?"
+                    variant="description"
+                    description={ingredient.what_is_it}
+                  />
                 ) : null}
 
+                {/* 3. What does it do? */}
                 {ingredient.benefits?.trim() ? (
-                  <DetailCard title="What does it do?">
-                    <Text className="text-body-sm font-sans text-text">
-                      {ingredient.benefits}
-                    </Text>
-                  </DetailCard>
+                  <DescriptionCard
+                    title="What does it do?"
+                    variant="description"
+                    description={ingredient.benefits}
+                  />
                 ) : null}
 
+                {/* 4. What is it good for? */}
                 {(ingredient.good_for?.length || ingredient.skin_types.length) ? (
-                  <DetailCard title="What is it good for?">
-                    {ingredient.good_for?.length ? (
-                      <DetailBullets items={ingredient.good_for} tone="positive" />
-                    ) : (
-                      <>
-                        <Text className="mb-2 text-body-sm font-sans-medium text-text">
-                          Suitable skin types
-                        </Text>
-                        <DetailBullets
-                          items={ingredient.skin_types.map((skinType) =>
-                            skinType === 'all'
-                              ? 'All skin types'
-                              : `${skinType.charAt(0).toUpperCase()}${skinType.slice(1)} skin`
-                          )}
-                          tone="positive"
-                        />
-                      </>
-                    )}
-                  </DetailCard>
+                  <DescriptionCard
+                    title="What is it good for?"
+                    variant="bulleted"
+                    bulletTone="positive"
+                    bullets={
+                      ingredient.good_for?.length
+                        ? ingredient.good_for
+                        : ingredient.skin_types.map((skinType) =>
+                          skinType === 'all'
+                            ? 'All skin types'
+                            : `${skinType.charAt(0).toUpperCase()}${skinType.slice(1)} skin`
+                        )
+                    }
+                  />
                 ) : null}
 
+                {/* 5. Who should avoid? */}
                 {(ingredient.avoid?.length || ingredient.caution?.trim()) ? (
-                  <DetailCard title="Who should avoid?">
-                    {ingredient.avoid?.length ? (
-                      <DetailBullets items={ingredient.avoid} tone="warning" />
-                    ) : (
-                      <>
-                        <Text className="mb-2 text-caption font-sans-semibold text-muted">
+                  <DescriptionCard
+                    title="Who should avoid?"
+                    variant="bulleted"
+                    bulletTone="negative"
+                    bullets={ingredient.avoid?.length ? ingredient.avoid : []}
+                  >
+                    {ingredient.caution?.trim() ? (
+                      <View className="mt-3 rounded-button border border-status-warning/20 bg-status-warning/10 p-3">
+                        <Text className="text-caption font-sans-semibold text-note-warning-title">
                           Caution
                         </Text>
-                        <Text className="text-body-sm font-sans text-text">
+                        <Text className="mt-0.5 text-body-sm font-sans text-text">
                           {ingredient.caution}
                         </Text>
-                      </>
-                    )}
-                    {ingredient.avoid?.length && ingredient.caution?.trim() ? (
-                      <Text className="mt-3 text-caption font-sans text-muted">
-                        Caution: {ingredient.caution}
-                      </Text>
+                      </View>
                     ) : null}
-                  </DetailCard>
+                  </DescriptionCard>
+                ) : null}
+
+                {/* 6. Compatible Note (Personalized takeaway at the bottom) */}
+                {compatibilityStatus === 'compatible' ? (
+                  <CompatibleNote className="mt-1" />
                 ) : null}
 
                 {favoriteError ? (

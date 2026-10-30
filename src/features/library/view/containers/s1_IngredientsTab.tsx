@@ -1,21 +1,24 @@
-import { useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
+  SectionList,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
-import { Ingredient } from '../../model/library_types';
+import { Ingredient, IngredientSection } from '../../model/library_types';
+import { AlphabetHeader } from '../components/AlphabetHeader';
 import { IngredientListItem } from '../components/IngredientListItem';
 import { IngredientListSkeleton } from '../components/IngredientListSkeleton';
+import { SearchBar } from '../components/SearchBar';
 
 interface S1IngredientsTabProps {
   ingredients: Ingredient[];
+  sections: IngredientSection[];
+  favoriteIds: string[];
+  compatibleIngredientIds?: string[];
   searchQuery: string;
   isLoading: boolean;
   isRefreshing: boolean;
@@ -24,6 +27,7 @@ interface S1IngredientsTabProps {
   hasNextPage: boolean;
   error: string | null;
   onSearchQueryChange: (query: string) => void;
+  onToggleFavorite: (id: string) => void;
   onRefresh: () => void;
   onRetry: () => void;
   onLoadNextPage: () => void;
@@ -32,6 +36,9 @@ interface S1IngredientsTabProps {
 
 export function S1IngredientsTab({
   ingredients,
+  sections,
+  favoriteIds,
+  compatibleIngredientIds = [],
   searchQuery,
   isLoading,
   isRefreshing,
@@ -40,13 +47,12 @@ export function S1IngredientsTab({
   hasNextPage,
   error,
   onSearchQueryChange,
+  onToggleFavorite,
   onRefresh,
   onRetry,
   onLoadNextPage,
   onIngredientPress,
 }: S1IngredientsTabProps) {
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-
   const listEmptyComponent = isLoading ? (
     <IngredientListSkeleton />
   ) : error ? (
@@ -92,59 +98,53 @@ export function S1IngredientsTab({
   ) : undefined;
 
   return (
-    <FlatList
-      className="flex-1"
-      data={ingredients}
-      keyExtractor={(ingredient) => ingredient.id}
-      renderItem={({ item, index }) => (
-        <IngredientListItem
-          ingredient={item}
-          index={index}
-          onPress={onIngredientPress}
-        />
-      )}
-      ListHeaderComponent={
-        <View className="px-5 pb-1 pt-4">
-          <View
-            className={`flex-row items-center rounded-full border bg-card px-4 ${
-              isSearchFocused ? 'border-primary' : 'border-border'
-            }`}
-          >
-            <Search size={20} color={theme.colors.text} />
-            <TextInput
-              accessibilityLabel="Search ingredients"
-              accessibilityHint="Filters the ingredient list by name"
-              value={searchQuery}
-              onChangeText={onSearchQueryChange}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              placeholder="search ingredient"
-              placeholderTextColor={theme.colors.muted}
-              returnKeyType="search"
-              className="ml-3 flex-1 py-3 text-body-sm font-sans text-text"
-            />
-          </View>
-        </View>
-      }
-      ListEmptyComponent={listEmptyComponent}
-      ListFooterComponent={listFooterComponent}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-      onEndReached={() => {
-        if (hasNextPage && !isFetchingNextPage) {
-          onLoadNextPage();
+    <View className="flex-1 rounded-t-card bg-card">
+      {/* 1. Permanently Pinned SearchBar */}
+      <SearchBar
+        value={searchQuery}
+        onChangeText={onSearchQueryChange}
+        placeholder="search ingredients"
+      />
+
+      {/* 2. Scrollable SectionList with Sticky Alphabet Headers */}
+      <SectionList
+        className="flex-1"
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={true}
+        renderSectionHeader={({ section: { title } }) => (
+          <AlphabetHeader letter={title} />
+        )}
+        renderItem={({ item, index }) => (
+          <IngredientListItem
+            ingredient={item}
+            isFavorite={favoriteIds.includes(item.id)}
+            isCompatible={compatibleIngredientIds.includes(item.id)}
+            isFirstInSection={index === 0}
+            onPress={onIngredientPress}
+            onFavoritePress={onToggleFavorite}
+          />
+        )}
+        ListEmptyComponent={listEmptyComponent}
+        ListFooterComponent={listFooterComponent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
         }
-      }}
-      onEndReachedThreshold={0.5}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-      contentContainerClassName="pb-6"
-    />
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            onLoadNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="pb-6"
+      />
+    </View>
   );
 }

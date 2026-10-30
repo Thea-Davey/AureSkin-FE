@@ -1,6 +1,7 @@
 export interface Ingredient {
   id: string;
   name: string;
+  preview_description?: string | null;
   description: string | null;
   benefits: string | null;
   skin_types: string[];
@@ -8,6 +9,11 @@ export interface Ingredient {
   what_is_it?: string | null;
   good_for?: string[];
   avoid?: string[];
+}
+
+export interface IngredientSection {
+  title: string;
+  data: Ingredient[];
 }
 
 export type IngredientCompatibilityStatus =

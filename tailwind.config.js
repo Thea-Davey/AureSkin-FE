@@ -50,6 +50,28 @@ module.exports = {
           success: "#4CAF50",   // Green for success
           info:    "#42A5F5",   // Blue for info
         },
+
+        // Note / Callout tokens (positive, warning, negative)
+        note: {
+          positive: {
+            DEFAULT: "#EBF5EA",
+            border:  "#C8E6C9",
+            element: "#2E7D32",
+            title:   "#1B5E20",
+          },
+          warning: {
+            DEFAULT: "#FFF8E7",
+            border:  "#FFE0B2",
+            element: "#F57C00",
+            title:   "#B76E00",
+          },
+          negative: {
+            DEFAULT: "#FDECEA",
+            border:  "#FFCDD2",
+            element: "#D32F2F",
+            title:   "#C62828",
+          },
+        },
       },
 
       // ── FONT FAMILY ────────────────────────────────────────

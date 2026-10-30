@@ -284,6 +284,9 @@ export function LibraryPage() {
         {activeTab === 'ingredients' ? (
           <S1IngredientsTab
             ingredients={ingredients.ingredients}
+            sections={ingredients.sections}
+            favoriteIds={ingredients.favoriteIds}
+            compatibleIngredientIds={ingredients.compatibleIngredientIds}
             searchQuery={ingredients.searchQuery}
             isLoading={ingredients.isLoading}
             isRefreshing={ingredients.isRefreshing}
@@ -292,6 +295,7 @@ export function LibraryPage() {
             hasNextPage={ingredients.hasNextPage}
             error={ingredients.error}
             onSearchQueryChange={ingredients.actions.setSearchQuery}
+            onToggleFavorite={ingredients.actions.toggleFavorite}
             onRefresh={ingredients.actions.refresh}
             onRetry={ingredients.actions.retry}
             onLoadNextPage={ingredients.actions.loadNextPage}

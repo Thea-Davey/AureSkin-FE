@@ -96,6 +96,7 @@ function normalizeIngredient(value: unknown): Ingredient {
   return {
     id: requiredString(value, 'id'),
     name: requiredString(value, 'name'),
+    preview_description: nullableString(value, 'preview_description'),
     description: nullableString(value, 'description'),
     benefits: nullableString(value, 'benefits'),
     skin_types: Array.isArray(skinTypes) ? skinTypes : [],
