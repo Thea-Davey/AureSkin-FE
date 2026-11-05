@@ -15,7 +15,7 @@ import {
   IngredientCompatibilityStatus,
 } from '../../features/library/model/library_types';
 import { IngredientDetailSkeleton } from '../../features/library/view/components/IngredientDetailSkeleton';
-import { CompatibilityBadge } from '../../features/library/view/components/CompatibilityBadge';
+import { CompatibilityBadge } from './CompatibilityBadge';
 import { CompatibleNote } from '../../features/library/view/components/CompatibleNote';
 import { DescriptionCard } from '../../features/library/view/components/DescriptionCard';
 import { useIngredientDetail } from '../../features/library/viewmodel/useIngredientDetail';

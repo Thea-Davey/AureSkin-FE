@@ -14,13 +14,15 @@ export interface HealthGaugeProps {
   showSublabel?: boolean;
   sublabel?: string;
   textColor?: string;
+  duration?: number;
+  textClassName?: string;
 }
 
 /**
  * HealthGauge
  * Shared animated circular SVG health gauge.
  * Features a background track, animated progress ring fill, and animated counting percentage.
- * Usable across Home (hero summary) and Scan (skin health score card).
+ * Usable across Home (hero summary), Scan (skin health score card), and History list items.
  */
 export function HealthGauge({
   percentage = 0,
@@ -30,6 +32,8 @@ export function HealthGauge({
   showSublabel,
   sublabel = 'HEALTHY',
   textColor,
+  duration,
+  textClassName,
 }: HealthGaugeProps) {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [displayNumber, setDisplayNumber] = useState(0);
@@ -37,6 +41,12 @@ export function HealthGauge({
   const validPercentage = Math.max(0, Math.min(100, isNaN(percentage) ? 0 : percentage));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  const isTiny = size <= 36;
+  const isMini = size <= 52;
+  const isCompact = size < 80;
+  const shouldShowSublabel = showSublabel !== undefined ? showSublabel : !isCompact;
+  const animDuration = duration ?? (isMini ? 500 : 1100);
 
   // Listen to animated value to count up the center percentage number
   useEffect(() => {
@@ -53,10 +63,10 @@ export function HealthGauge({
     animatedValue.setValue(0);
     Animated.timing(animatedValue, {
       toValue: validPercentage,
-      duration: 1100,
+      duration: animDuration,
       useNativeDriver: false,
     }).start();
-  }, [animatedValue, validPercentage]);
+  }, [animatedValue, validPercentage, animDuration]);
 
   // Re-run animation every time the screen comes into focus or reloads
   useFocusEffect(
@@ -69,9 +79,6 @@ export function HealthGauge({
     inputRange: [0, 100],
     outputRange: [circumference, 0],
   });
-
-  const isCompact = size < 80;
-  const shouldShowSublabel = showSublabel !== undefined ? showSublabel : !isCompact;
 
   return (
     <View
@@ -107,11 +114,17 @@ export function HealthGauge({
       {/* Center Label (Counting up with the progress ring) */}
       <View className="absolute items-center justify-center">
         <Text
-          style={textColor ? { color: textColor } : isCompact ? undefined : { color }}
+          style={[
+            textColor ? { color: textColor } : isCompact ? undefined : { color },
+            isTiny ? { fontSize: 10.5, lineHeight: 13 } : undefined,
+          ]}
           className={
-            isCompact
-              ? 'text-body font-sans-bold text-text tracking-tight'
-              : 'text-h2 font-sans-bold tracking-tight'
+            textClassName ??
+            (isMini
+              ? 'text-caption font-sans-bold text-text tracking-tight'
+              : isCompact
+                ? 'text-body font-sans-bold text-text tracking-tight'
+                : 'text-h2 font-sans-bold tracking-tight')
           }
         >
           {displayNumber}%
@@ -130,4 +143,3 @@ export function HealthGauge({
 }
 
 export default HealthGauge;
-

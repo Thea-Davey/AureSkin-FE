@@ -27,6 +27,7 @@ module.exports = {
         },
         // Direct theme tokens (matching theme.colors)
         background: "#F5F0EB",
+        offwhitebg: "#F8F8F8",
         card: "#FFFFFF",
         text: "#2D2D2D",
         muted: "#8A8A8A",
@@ -95,6 +96,7 @@ module.exports = {
         "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
         "caption": ["12px", { lineHeight: "16px", fontWeight: "400" }],
         "label": ["14px", { lineHeight: "20px", fontWeight: "500" }],
+        "extrasmall": ["10px", { lineHeight: "14px", fontWeight: "800" }],
       },
 
       // ── BORDER RADIUS ──────────────────────────────────────

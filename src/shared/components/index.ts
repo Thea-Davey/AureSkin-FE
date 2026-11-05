@@ -29,4 +29,16 @@ export type { PopUpPanelProps } from './PopUpPanel';
 export { HealthGauge } from './HealthGauge';
 export type { HealthGaugeProps } from './HealthGauge';
 
+export { CalendarPickerModal } from './CalendarPickerModal';
+export type { CalendarPickerModalProps } from './CalendarPickerModal';
+
+export { CompatibilityBadge } from './CompatibilityBadge';
+export type { CompatibilityBadgeProps, CompatibilityStatus } from './CompatibilityBadge';
+
+export { IngredientCard } from './IngredientCard';
+export type { IngredientCardProps } from './IngredientCard';
+
+export { ProductCard } from './ProductCard';
+export type { ProductCardProps } from './ProductCard';
+
 

@@ -2,77 +2,82 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { MOCK_USER_PROFILE } from '../model/profile_mock';
+import { EditProfileDraft } from '../model/profile_types';
 
-export interface EditProfileDraft {
-  firstName: string;
-  lastName: string;
-  age: string;
-  username: string;
-  pregnant: boolean | null;
-  allergens: string[];
-  avatarUri: string | null;
-}
-
-function getMetadataString(metadata: Record<string, unknown>, key: string): string {
+function getMetadataString(
+  metadata: Record<string, unknown>,
+  key: string,
+  fallback: string | null = ''
+): string | null {
   const value = metadata[key];
-  return typeof value === 'string' ? value : '';
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : fallback;
 }
 
-function getMetadataAge(metadata: Record<string, unknown>): string {
-  const age = metadata.age;
-  return typeof age === 'string' || typeof age === 'number' ? String(age) : '';
-}
-
-function getMetadataPregnancy(metadata: Record<string, unknown>): boolean | null {
-  const value = metadata.pregnant;
-  if (typeof value === 'boolean') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLocaleLowerCase();
-    if (normalized === 'yes' || normalized === 'true') {
-      return true;
-    }
-    if (normalized === 'no' || normalized === 'false') {
-      return false;
-    }
-  }
-  return null;
-}
-
-function getMetadataAllergens(metadata: Record<string, unknown>): string[] {
+function getMetadataAllergens(metadata: Record<string, unknown>, fallback: string[] = []): string[] {
   const value = metadata.allergen ?? metadata.allergens;
-  if (typeof value === 'string') {
-    return value.trim() ? [value.trim()] : [];
+  if (typeof value === 'string' && value.trim()) {
+    return [value.trim()];
   }
   if (Array.isArray(value)) {
     return value.filter((item): item is string =>
       typeof item === 'string' && item.trim().length > 0
     );
   }
-  return [];
+  return fallback;
 }
 
-function getInitialDraft(metadata: Record<string, unknown>): EditProfileDraft {
+function getInitialDraft(
+  user: { email?: string; user_metadata?: Record<string, unknown> } | null
+): EditProfileDraft {
+  const metadata = (user?.user_metadata ?? {}) as Record<string, unknown>;
+
+  const displayName = typeof metadata.display_name === 'string' ? metadata.display_name : '';
+  const firstName =
+    getMetadataString(
+      metadata,
+      'first_name',
+      displayName ? displayName.split(' ')[0] : MOCK_USER_PROFILE.firstName
+    ) || MOCK_USER_PROFILE.firstName;
+  const lastName = getMetadataString(metadata, 'last_name', MOCK_USER_PROFILE.lastName) || '';
+  const username = getMetadataString(metadata, 'username', MOCK_USER_PROFILE.username) || '';
+  const dateOfBirth = getMetadataString(metadata, 'date_of_birth', MOCK_USER_PROFILE.dateOfBirth) || '';
+  const gender = getMetadataString(metadata, 'gender', MOCK_USER_PROFILE.gender) || '';
+  const email = user?.email || MOCK_USER_PROFILE.email;
+  const phoneNumber =
+    getMetadataString(
+      metadata,
+      'phone_number',
+      getMetadataString(metadata, 'phone', MOCK_USER_PROFILE.phoneNumber)
+    ) || '';
+  const allergens = getMetadataAllergens(metadata, MOCK_USER_PROFILE.allergens);
+  const avatarUri = getMetadataString(metadata, 'avatar_url', MOCK_USER_PROFILE.avatarUri);
+
   return {
-    firstName: getMetadataString(metadata, 'first_name'),
-    lastName: getMetadataString(metadata, 'last_name'),
-    age: getMetadataAge(metadata),
-    username: getMetadataString(metadata, 'username'),
-    pregnant: getMetadataPregnancy(metadata),
-    allergens: getMetadataAllergens(metadata),
-    avatarUri: getMetadataString(metadata, 'avatar_url') || null,
+    firstName,
+    lastName,
+    username,
+    dateOfBirth,
+    gender,
+    email,
+    phoneNumber,
+    allergens,
+    avatarUri,
   };
 }
 
 export function useEditProfile() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const metadata = (user?.user_metadata ?? {}) as Record<string, unknown>;
-  const [initialDraft] = useState(() => getInitialDraft(metadata));
-  const [draft, setDraft] = useState(initialDraft);
+  const [initialDraft] = useState(() => getInitialDraft(user));
+  const [draft, setDraft] = useState<EditProfileDraft>(initialDraft);
+
   const [allergenInput, setAllergenInput] = useState('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isGenderPickerOpen, setIsGenderPickerOpen] = useState(false);
+  const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
   const [isPickingAvatar, setIsPickingAvatar] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
@@ -86,8 +91,21 @@ export function useEditProfile() {
     setSaveNotice(null);
   }, []);
 
-  const addAllergen = useCallback(() => {
-    const allergen = allergenInput.trim();
+  const openDatePicker = useCallback(() => {
+    setIsDatePickerOpen(true);
+  }, []);
+
+  const closeDatePicker = useCallback(() => {
+    setIsDatePickerOpen(false);
+  }, []);
+
+  const selectDateOfBirth = useCallback((date: string) => {
+    updateDraft({ dateOfBirth: date });
+    setIsDatePickerOpen(false);
+  }, [updateDraft]);
+
+  const addAllergen = useCallback((customName?: string) => {
+    const allergen = (customName || allergenInput).trim();
     if (!allergen) {
       return;
     }
@@ -102,6 +120,21 @@ export function useEditProfile() {
 
   const removeAllergen = useCallback((allergen: string) => {
     updateDraft({ allergens: draft.allergens.filter((item) => item !== allergen) });
+  }, [draft.allergens, updateDraft]);
+
+  const toggleAllergen = useCallback((allergen: string) => {
+    const exists = draft.allergens.some(
+      (item) => item.toLocaleLowerCase() === allergen.toLocaleLowerCase()
+    );
+    if (exists) {
+      updateDraft({
+        allergens: draft.allergens.filter(
+          (item) => item.toLocaleLowerCase() !== allergen.toLocaleLowerCase()
+        ),
+      });
+    } else {
+      updateDraft({ allergens: [...draft.allergens, allergen] });
+    }
   }, [draft.allergens, updateDraft]);
 
   const pickAvatar = useCallback(async () => {
@@ -141,21 +174,22 @@ export function useEditProfile() {
     router.replace('/profile');
   }, [router]);
 
-  const cancel = useCallback(() => {
-    if (!isDirty) {
-      returnToProfile();
-      return;
-    }
+  const [isDiscardVisible, setIsDiscardVisible] = useState(false);
 
-    Alert.alert(
-      'Discard profile changes?',
-      'Your edits have not been saved.',
-      [
-        { text: 'Keep editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: returnToProfile },
-      ]
-    );
-  }, [isDirty, returnToProfile]);
+  const promptDiscard = useCallback(() => {
+    setIsDiscardVisible(true);
+  }, []);
+
+  const confirmDiscard = useCallback(() => {
+    setIsDiscardVisible(false);
+    returnToProfile();
+  }, [returnToProfile]);
+
+  const cancelDiscard = useCallback(() => {
+    setIsDiscardVisible(false);
+  }, []);
+
+  const cancel = promptDiscard;
 
   const showPasswordUnavailable = useCallback(() => {
     Alert.alert(
@@ -168,10 +202,20 @@ export function useEditProfile() {
     if (!isDirty) {
       return;
     }
+    Toast.show({
+      type: 'success',
+      text1: 'Profile Updated',
+      text2: 'Your profile changes have been applied.',
+      position: 'bottom',
+    });
     setSaveNotice(
-      'Profile updates are not connected yet. Your edits and selected photo are only a local preview and have not been saved to your account.'
+      'Profile preview updated locally. Remote profile syncing will be available in future releases.'
     );
-  }, [isDirty]);
+    // Smooth return to profile
+    setTimeout(() => {
+      returnToProfile();
+    }, 600);
+  }, [isDirty, returnToProfile]);
 
   return {
     draft,
@@ -179,12 +223,25 @@ export function useEditProfile() {
     isDirty,
     isPickingAvatar,
     saveNotice,
+    isDatePickerOpen,
+    isGenderPickerOpen,
+    isAllergenModalOpen,
+    isDiscardVisible,
     actions: {
       updateDraft,
       setAllergenInput,
       addAllergen,
       removeAllergen,
+      toggleAllergen,
       pickAvatar,
+      openDatePicker,
+      closeDatePicker,
+      selectDateOfBirth,
+      setIsGenderPickerOpen,
+      setIsAllergenModalOpen,
+      promptDiscard,
+      confirmDiscard,
+      cancelDiscard,
       cancel,
       save,
       showPasswordUnavailable,

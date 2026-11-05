@@ -3,6 +3,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { fetchProducts } from '../model/library_api';
+import { fetchHistoryPage } from '../../history/model/history_api';
+import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
 import {
   Product,
   ProductCategory,
@@ -10,6 +12,16 @@ import {
   ProductListFilter,
   ProductListItemModel,
 } from '../model/library_types';
+
+const MOCK_COMPATIBLE_PRODUCT_IDS = new Set([
+  'product-glycolic-toning-solution',
+  'product-niacinamide-serum',
+  'product-foaming-cleanser',
+  'product-centella-serum',
+  'product-hydrating-serum',
+  'product-mineral-sunscreen',
+  'product-daily-moisturizer',
+]);
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -170,6 +182,24 @@ export function useProducts(): UseProductsResult {
     onSuccess: () => setFavoriteError(null),
   });
 
+  const latestAnalysisQuery = useQuery({
+    queryKey: ['library', 'product-list', 'latest-analysis'],
+    queryFn: async () => {
+      const page = await fetchHistoryPage({ limit: 1, offset: 0 });
+      return page.items[0] ?? null;
+    },
+  });
+
+  const latestAnalysisId = latestAnalysisQuery.data?.id;
+  const compatibilityQuery = useQuery({
+    queryKey: ['library', 'product-list-compatibility', latestAnalysisId],
+    queryFn: async () => {
+      if (!latestAnalysisId) return null;
+      return fetchCompatibility(latestAnalysisId);
+    },
+    enabled: Boolean(latestAnalysisId),
+  });
+
   const favoriteIds = savedFavoriteIds ?? EMPTY_FAVORITES;
   const favoriteIdSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const loadedProducts = useMemo(
@@ -177,9 +207,17 @@ export function useProducts(): UseProductsResult {
     [productPages]
   );
   const products = useMemo(() => {
+    const isCompatible = (productId: string) => {
+      if (USE_SCAN_MOCK && MOCK_COMPATIBLE_PRODUCT_IDS.has(productId)) {
+        return true;
+      }
+      return false;
+    };
+
     const listItems: ProductListItemModel[] = loadedProducts.map((product: Product) => ({
       product,
       isFavorite: favoriteIdSet.has(product.id),
+      isCompatible: isCompatible(product.id),
     }));
 
     return selectedListFilter === 'favorites'

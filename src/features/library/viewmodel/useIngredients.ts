@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { fetchIngredients } from '../model/library_api';
 import { Ingredient, IngredientSection } from '../model/library_types';
-import { fetchCompatibility } from '../../scan/model/scan_api';
+import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
+import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
 import { fetchHistoryPage } from '../../history/model/history_api';
 
 const PAGE_SIZE = 20;
@@ -124,7 +125,7 @@ export function useIngredients(): UseIngredientsResult {
       }
 
       const compatibility = await fetchCompatibility(analysisId);
-      if (compatibility.analysis_id !== analysisId) {
+      if (!USE_SCAN_MOCK && compatibility.analysis_id !== analysisId) {
         throw new Error('The compatibility service returned results for a different skin analysis.');
       }
       return compatibility;
@@ -133,9 +134,13 @@ export function useIngredients(): UseIngredientsResult {
   });
 
   const compatibleIngredientIds = useMemo<string[]>(() => {
-    return (
-      compatibilityQuery.data?.compatible_ingredients.map((item) => item.id) ?? []
-    );
+    if (compatibilityQuery.data?.compatible_ingredients?.length) {
+      return compatibilityQuery.data.compatible_ingredients.map((item) => item.id);
+    }
+    if (USE_SCAN_MOCK) {
+      return MOCK_COMPATIBILITY.compatible_ingredients.map((item) => item.id);
+    }
+    return [];
   }, [compatibilityQuery.data]);
 
   const favoriteMutation = useMutation<

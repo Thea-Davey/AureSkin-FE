@@ -26,6 +26,17 @@ export const MOCK_SCAN_RESULT: ScanResult = {
       causes:
         'Over-exfoliation, barrier compromise, weather irritation, or mild contact sensitivity.',
     },
+    {
+      id: 'cond-02',
+      name: 'pores',
+      display_name: 'Enlarged Pores',
+      confidence: 82.0,
+      description:
+        'Visible follicle openings concentrated along the central T-zone and inner cheeks, commonly associated with hyperactive sebaceous gland output and dermal elasticity loss.',
+      symptoms: 'Textured dermal surface with enlarged pore diameter and noticeable shine.',
+      causes:
+        'Elevated sebum excretion, follicular congestion, and natural cellular buildup.',
+    },
   ],
   compatible_ingredients: [
     {

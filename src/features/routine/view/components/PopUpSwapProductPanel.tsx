@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Sparkles } from 'lucide-react-native';
-import { PopUpPanel, SearchBar } from '@/shared/components';
+import { CompatibilityBadge, PopUpPanel, SearchBar } from '@/shared/components';
 import { theme } from '@/shared/theme';
 import {
   formatCategory,
@@ -194,11 +194,7 @@ export function PopUpSwapProductPanel({
                     <Check size={14} color={theme.colors.white} strokeWidth={2.5} />
                   </View>
                 ) : (
-                  <View className="rounded-badge bg-note-positive px-2 py-1 border border-note-positive-border">
-                    <Text className="text-caption font-sans-bold text-note-positive-title">
-                      Compatible
-                    </Text>
-                  </View>
+                  <CompatibilityBadge status="compatible" />
                 )}
               </Pressable>
             );

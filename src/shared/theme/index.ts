@@ -14,6 +14,7 @@ export const theme = {
     accent: "#4CAF50",
     accentLight: "#A5D6A7",
     background: "#F5F0EB",
+    offwhitebg: "#F8F8F8",
     card: "#FFFFFF",
     text: "#2D2D2D",
     muted: "#8A8A8A",

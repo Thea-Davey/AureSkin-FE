@@ -25,6 +25,7 @@ import { ProductDetailSkeleton } from '../../features/library/view/components/Pr
 import { useProductDetail } from '../../features/library/viewmodel/useProductDetail';
 import { useAuthStore } from '../store/authStore';
 import { IngredientDetailPage } from './IngredientDetailPage';
+import { CompatibilityBadge } from './CompatibilityBadge';
 
 export interface ProductDetailPageProps {
   visible: boolean;
@@ -53,53 +54,6 @@ export interface ProductDetailPageProps {
   onToggleFavorite?: () => void;
   onIngredientPress?: (ingredientId: string) => void;
   onDeleteProduct?: (productId: string) => void;
-}
-
-function CompatibilityBadge({
-  status,
-  isLoading,
-}: {
-  status: ProductCompatibilityStatus;
-  isLoading: boolean;
-}) {
-  if (isLoading) {
-    return (
-      <View className="flex-row items-center gap-2 rounded-badge bg-background px-3 py-2">
-        <ActivityIndicator size="small" color={theme.colors.muted} />
-        <Text className="text-caption font-sans-medium text-muted">Checking</Text>
-      </View>
-    );
-  }
-
-  if (status === 'compatible') {
-    return (
-      <View
-        accessibilityRole="text"
-        accessibilityLabel="Compatible"
-        className="rounded-badge bg-status-success px-3 py-2"
-      >
-        <Text className="text-caption font-sans-semibold text-neutral-white">
-          ✓ Compatible
-        </Text>
-      </View>
-    );
-  }
-
-  const label = status === 'scan_needed'
-    ? 'Scan needed'
-    : status === 'review'
-      ? 'Not verified'
-      : 'Not verified';
-
-  return (
-    <View
-      accessibilityRole="text"
-      accessibilityLabel={label}
-      className="rounded-badge bg-background px-3 py-2"
-    >
-      <Text className="text-caption font-sans-medium text-muted">{label}</Text>
-    </View>
-  );
 }
 
 interface InternalProductDetailViewProps {
@@ -237,6 +191,7 @@ function ProductDetailView({
                   <CompatibilityBadge
                     status={compatibilityStatus}
                     isLoading={isCompatibilityLoading}
+                    showScanNeeded
                   />
                 </View>
               </View>

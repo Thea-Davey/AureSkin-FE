@@ -116,7 +116,7 @@ export function MenuOverlay() {
           style={[
             StyleSheet.absoluteFill,
             {
-              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              backgroundColor: 'rgba(0, 0, 0, 0.28)',
               opacity: backdropOpacity,
             },
           ]}

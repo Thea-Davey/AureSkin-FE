@@ -8,10 +8,9 @@ import {
 } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
-import { SearchBar } from '@/shared/components';
+import { IngredientCard, SearchBar } from '@/shared/components';
 import { Ingredient, IngredientSection } from '../../model/library_types';
 import { AlphabetHeader } from '../components/AlphabetHeader';
-import { IngredientListItem } from '../components/IngredientListItem';
 import { IngredientListSkeleton } from '../components/IngredientListSkeleton';
 
 interface S1IngredientsTabProps {
@@ -117,7 +116,7 @@ export function S1IngredientsTab({
           <AlphabetHeader letter={title} />
         )}
         renderItem={({ item, index }) => (
-          <IngredientListItem
+          <IngredientCard
             ingredient={item}
             isFavorite={favoriteIds.includes(item.id)}
             isCompatible={compatibleIngredientIds.includes(item.id)}

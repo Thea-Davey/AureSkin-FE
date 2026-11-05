@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Plus } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
-import { SearchBar } from '@/shared/components';
+import { ProductCard, SearchBar } from '@/shared/components';
 import {
   ProductCategory,
   ProductFilterTarget,
@@ -16,7 +16,6 @@ import {
   ProductListItemModel,
 } from '../../model/library_types';
 import { PopUpProductCategoryPanel } from '../components/PopUpProductCategoryPanel';
-import { ProductListItem } from '../components/ProductListItem';
 import { ProductListSkeleton } from '../components/ProductListSkeleton';
 
 interface S2ProductsTabProps {
@@ -169,7 +168,7 @@ export function S2ProductsTab({
         data={products}
         keyExtractor={(item) => item.product.id}
         renderItem={({ item }) => (
-          <ProductListItem
+          <ProductCard
             item={item}
             isFavoriteDisabled={isFavoritesLoading || isFavoritesError || isTogglingFavorite}
             onPress={onProductPress}

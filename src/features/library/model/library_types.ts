@@ -85,4 +85,5 @@ export type ProductFilterTarget = 'category' | 'list';
 export interface ProductListItemModel {
   product: Product;
   isFavorite: boolean;
+  isCompatible?: boolean;
 }

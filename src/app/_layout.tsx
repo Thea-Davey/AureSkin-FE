@@ -53,9 +53,27 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
-        <Stack.Screen name="history/[id]" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="edit-profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen
+          name="history/[id]"
+          options={{
+            animation: 'slide_from_right',
+            contentStyle: { backgroundColor: '#6B7B4C' },
+          }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{
+            animation: 'slide_from_right',
+            contentStyle: { backgroundColor: '#6B7B4C' },
+          }}
+        />
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            animation: 'slide_from_right',
+            contentStyle: { backgroundColor: '#6B7B4C' },
+          }}
+        />
         <Stack.Screen name="favorites" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="help" options={{ animation: 'slide_from_right' }} />

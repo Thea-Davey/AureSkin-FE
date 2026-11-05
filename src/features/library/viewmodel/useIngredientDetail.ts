@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
-import { fetchCompatibility } from '../../scan/model/scan_api';
+import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
+import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
 import { fetchHistoryPage } from '../../history/model/history_api';
 import {
   Ingredient,
@@ -97,7 +98,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
       }
 
       const compatibility = await fetchCompatibility(analysisId);
-      if (compatibility.analysis_id !== analysisId) {
+      if (!USE_SCAN_MOCK && compatibility.analysis_id !== analysisId) {
         throw new Error('The compatibility service returned results for a different skin analysis.');
       }
       return compatibility;
@@ -143,20 +144,44 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
 
   const savedFavoriteIds = favoritesQuery.data ?? EMPTY_FAVORITES;
   const isFavorite = savedFavoriteIds.includes(ingredientId);
-  const compatibilityStatus: IngredientCompatibilityStatus =
-    latestAnalysisQuery.isLoading
-      ? 'unavailable'
-      : latestAnalysisQuery.isError
-      ? 'unavailable'
-      : !latestAnalysisQuery.data
-        ? 'scan_needed'
-        : compatibilityQuery.isLoading || compatibilityQuery.isError
-          ? 'unavailable'
-          : compatibilityQuery.data?.compatible_ingredients.some(
-              (item) => item.id === ingredientId
-            )
-            ? 'compatible'
-            : 'not_listed';
+  const compatibilityStatus = useMemo<IngredientCompatibilityStatus>(() => {
+    const ingredient = ingredientQuery.data;
+
+    // Check against loaded compatibility data
+    const compatibleList = compatibilityQuery.data?.compatible_ingredients ?? (
+      USE_SCAN_MOCK ? MOCK_COMPATIBILITY.compatible_ingredients : undefined
+    );
+
+    if (compatibleList) {
+      const isMatch = compatibleList.some(
+        (item) =>
+          item.id === ingredientId ||
+          (ingredient?.name && item.name.toLowerCase() === ingredient.name.toLowerCase())
+      );
+      if (isMatch) return 'compatible';
+    }
+
+    if (latestAnalysisQuery.isLoading || compatibilityQuery.isLoading) {
+      return 'unavailable';
+    }
+    if (latestAnalysisQuery.isError || compatibilityQuery.isError) {
+      return USE_SCAN_MOCK ? 'not_listed' : 'unavailable';
+    }
+    if (!latestAnalysisQuery.data && !USE_SCAN_MOCK) {
+      return 'scan_needed';
+    }
+
+    return 'not_listed';
+  }, [
+    compatibilityQuery.data,
+    compatibilityQuery.isError,
+    compatibilityQuery.isLoading,
+    ingredientId,
+    ingredientQuery.data,
+    latestAnalysisQuery.data,
+    latestAnalysisQuery.isError,
+    latestAnalysisQuery.isLoading,
+  ]);
 
   const retry = useCallback(async () => {
     await ingredientQuery.refetch();

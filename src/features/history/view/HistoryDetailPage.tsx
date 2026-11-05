@@ -1,13 +1,15 @@
-import { theme } from '@/shared/theme';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DeleteDialog } from '@/shared/components';
+import { deleteHistoryEntry } from '../model/history_api';
 import { useHistoryDetail } from '../viewmodel/useHistoryDetail';
 import { HistoryDetailHeader, HistoryDetailTab } from './components/HistoryDetailHeader';
 import { HistoryDetailStatus, S1HistoryResults } from './containers/s1_HistoryResults';
 import { S2HistoryCompatibility } from './containers/s2_HistoryCompatibility';
+import { PopUpScanActionPanel } from './components/PopUpScanActionPanel';
 
 interface HistoryDetailPageProps {
   id: string;
@@ -16,13 +18,35 @@ interface HistoryDetailPageProps {
 export function HistoryDetailPage({ id }: HistoryDetailPageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<HistoryDetailTab>('results');
+  const [isActionPanelVisible, setIsActionPanelVisible] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const previousTab = useRef(activeTab);
   const tabTransition = useRef(new Animated.Value(0)).current;
   const historyDetail = useHistoryDetail(id);
+
+  // Preserve last loaded detail during route transitions to prevent white screen flashes on pop
+  const lastDetailRef = useRef(historyDetail.detail);
+  if (historyDetail.detail) {
+    lastDetailRef.current = historyDetail.detail;
+  }
+  const currentDetail = historyDetail.detail ?? lastDetailRef.current;
+
   const goBack = () => {
     if (router.canGoBack()) {
       router.back();
       return;
+    }
+    router.replace('/(tabs)/history');
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleteDialogOpen(false);
+    if (!id) return;
+    try {
+      await deleteHistoryEntry(id);
+    } catch {
+      // Continue navigating back even if deletion failed or was mocked
     }
     router.replace('/(tabs)/history');
   };
@@ -44,26 +68,27 @@ export function HistoryDetailPage({ id }: HistoryDetailPageProps) {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-primary">
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
-      <View className="flex-1 bg-neutral-offwhite">
+      <StatusBar style="light" />
+      <View className="flex-1 bg-background">
         <HistoryDetailHeader
-          createdAt={historyDetail.detail?.created_at ?? null}
+          createdAt={currentDetail?.created_at ?? null}
           activeTab={activeTab}
           onBack={goBack}
           onSelectTab={setActiveTab}
+          onMorePress={() => setIsActionPanelVisible(true)}
         />
-        {historyDetail.detail ? (
+
+        {currentDetail ? (
           <Animated.View className="flex-1" style={{ transform: [{ translateX: tabTransition }] }}>
             {activeTab === 'results' ? (
               <S1HistoryResults
-                detail={historyDetail.detail}
+                detail={currentDetail}
                 isRefreshing={historyDetail.isRefreshing}
                 onRefresh={historyDetail.refresh}
               />
             ) : (
               <S2HistoryCompatibility
-                compatibleIngredients={historyDetail.detail.compatible_ingredients}
-                incompatiblePairs={historyDetail.detail.incompatible_pairs}
+                detail={currentDetail}
                 refreshError={historyDetail.error}
                 isRefreshing={historyDetail.isRefreshing}
                 onRefresh={historyDetail.refresh}
@@ -80,6 +105,26 @@ export function HistoryDetailPage({ id }: HistoryDetailPageProps) {
           />
         )}
       </View>
+
+      {/* 3-Dot Scan Action Panel */}
+      <PopUpScanActionPanel
+        visible={isActionPanelVisible}
+        onClose={() => setIsActionPanelVisible(false)}
+        onDeletePress={() => setIsDeleteDialogOpen(true)}
+      />
+
+      {/* Discard / Delete Confirmation Dialog */}
+      <DeleteDialog
+        visible={isDeleteDialogOpen}
+        title="Delete Scan Record"
+        body="Are you sure you want to delete this scan record? This action cannot be undone."
+        boldPhrase="delete this scan record"
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        onCancel={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setIsDeleteDialogOpen(false)}
+      />
     </SafeAreaView>
   );
 }

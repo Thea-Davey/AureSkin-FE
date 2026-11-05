@@ -1,6 +1,7 @@
 import { theme } from '@/shared/theme';
+import { HealthGauge } from '@/shared/components/HealthGauge';
 import { Image } from 'expo-image';
-import { CalendarDays, MoreHorizontal, UserRound } from 'lucide-react-native';
+import { CalendarDays, MoreHorizontal } from 'lucide-react-native';
 import { Pressable, Text, View } from 'react-native';
 import { HistoryEntry } from '../../model/history_types';
 
@@ -14,7 +15,13 @@ function formatDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? 'Date unavailable'
-    : date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' });
+    : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getScoreColor(val: number): string {
+  if (val >= 80) return theme.colors.accent;
+  if (val >= 60) return theme.colors.status.warning;
+  return theme.colors.status.error;
 }
 
 export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItemProps) {
@@ -28,9 +35,10 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
       accessibilityRole="button"
       accessibilityLabel={`Skin analysis from ${formatDate(entry.created_at)}, ${healthScore}% healthy`}
       accessibilityHint="Opens this scan's results"
-      className="mb-3 flex-row items-center rounded-card border border-border bg-card p-3 active:opacity-80"
+      className="mb-3 min-h-28 flex-row items-center rounded-card border border-border bg-card p-3 shadow-xs active:opacity-85"
     >
-      <View className="h-20 w-20 overflow-hidden rounded-input bg-neutral-offwhite items-center justify-center">
+      {/* ── COL 1: IMAGE ── */}
+      <View className="h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-card bg-secondary/15">
         {entry.image_url ? (
           <Image
             source={{ uri: entry.image_url }}
@@ -39,56 +47,78 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
             accessibilityLabel="Scan photo"
             className="h-full w-full"
           />
-        ) : (
-          <UserRound size={30} color={theme.colors.muted} />
-        )}
+        ) : null}
       </View>
 
-      <View className="ml-3 flex-1">
-        <View className="mb-2 flex-row items-center gap-1">
-          <View className="mr-1 min-w-0 flex-1 flex-row items-center">
+      {/* ── COL 2: [ROW 1: date + health score + 3 dot menu] [ROW 2: skin type + skin condition/s] ── */}
+      <View className="min-w-0 flex-1 self-stretch pl-3.5 justify-start py-0.5">
+        {/* ROW 1: date + health score + 3 dot menu */}
+        <View className="flex-row items-center justify-between">
+          {/* Date with Calendar icon */}
+          <View className="flex-row items-center gap-1.5 flex-1 min-w-0 pr-1.5">
             <CalendarDays size={14} color={theme.colors.muted} />
-            <Text numberOfLines={1} className="ml-1.5 flex-1 text-body-sm font-sans-semibold text-text">
+            <Text numberOfLines={1} className="text-body-sm font-sans-medium text-text">
               {formatDate(entry.created_at)}
             </Text>
           </View>
-          <View className="rounded-badge bg-status-success/15 px-2 py-1">
-            <Text className="text-caption font-sans-bold text-primary">{healthScore}% Healthy</Text>
+
+          {/* Health score + 3 dot menu */}
+          <View className="flex-row items-center gap-1.5 shrink-0">
+            <HealthGauge
+              percentage={healthScore}
+              size={30}
+              strokeWidth={3}
+              color={getScoreColor(healthScore)}
+              showSublabel={false}
+              duration={0}
+            />
+
+            <Pressable
+              onPress={(event) => {
+                event.stopPropagation?.();
+                onMorePress();
+              }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="More actions for this scan"
+              className="h-8 w-8 items-center justify-center -mr-1 active:opacity-60"
+            >
+              <MoreHorizontal size={20} color={theme.colors.muted} />
+            </Pressable>
           </View>
-          <Pressable
-            onPress={(event) => {
-              event.stopPropagation();
-              onMorePress();
-            }}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="More actions for this scan"
-            className="h-8 w-8 items-center justify-center"
-          >
-            <MoreHorizontal size={20} color={theme.colors.muted} />
-          </Pressable>
         </View>
 
-        <View className="mb-2 flex-row flex-wrap items-center gap-1.5">
-          <View className="rounded-badge bg-secondary/25 px-2 py-1">
-            <Text className="text-caption font-sans-medium text-text">
-              {entry.skin_type ?? 'Skin type unavailable'}
-            </Text>
-          </View>
+        {/* ROW 2: skin type + skin condition/s */}
+        <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
+          {entry.skin_type ? (
+            <View className="rounded-badge bg-secondary px-3 py-0.5">
+              <Text className="text-caption font-sans-medium capitalize text-neutral-white">
+                {entry.skin_type}
+              </Text>
+            </View>
+          ) : null}
+
           {visibleConditions.map((condition) => (
-            <View key={condition} className="rounded-badge bg-accent/15 px-2 py-1">
-              <Text className="text-caption font-sans-medium text-text">{condition}</Text>
+            <View key={condition} className="rounded-badge bg-concern px-3 py-0.5">
+              <Text className="text-caption font-sans-medium capitalize text-neutral-white">
+                {condition}
+              </Text>
             </View>
           ))}
+
           {extraConditionCount > 0 && (
-            <Text className="text-caption font-sans-medium text-muted">+{extraConditionCount}</Text>
+            <Text className="text-caption font-sans-medium text-muted">
+              +{extraConditionCount}
+            </Text>
           )}
-          {entry.conditions.length === 0 && (
+
+          {!entry.skin_type && entry.conditions.length === 0 && (
             <Text className="text-caption font-sans text-muted">No conditions detected</Text>
           )}
         </View>
       </View>
-
     </Pressable>
   );
 }
+
+export default HistoryListItem;

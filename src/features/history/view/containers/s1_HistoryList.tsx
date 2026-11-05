@@ -1,9 +1,12 @@
+import React, { useState } from 'react';
 import { theme } from '@/shared/theme';
-import { Filter, Search, X } from 'lucide-react-native';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { DeleteDialog } from '@/shared/components';
+import { SearchBar } from '@/shared/components/SearchBar';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { HistoryEntry, HistoryFilters } from '../../model/history_types';
-import { HistoryEntryActionSheet } from '../components/HistoryEntryActionSheet';
 import { PopUpHistoryFilterPanel } from '../components/PopUpHistoryFilterPanel';
+import { PopUpScanActionPanel } from '../components/PopUpScanActionPanel';
 import { HistoryListItem } from '../components/HistoryListItem';
 
 interface HistoryListProps {
@@ -71,11 +74,12 @@ function HistorySkeleton() {
   return (
     <View accessibilityLabel="Loading scan history" className="gap-3 px-4 pt-3">
       {[0, 1, 2].map((row) => (
-        <View key={row} className="h-28 flex-row items-center rounded-card border border-border bg-card p-3">
-          <View className="h-20 w-20 rounded-input bg-background" />
-          <View className="ml-3 flex-1 gap-3">
-            <View className="h-4 w-2/3 rounded-badge bg-background" />
-            <View className="h-4 w-1/2 rounded-badge bg-background" />
+        <View key={row} className="min-h-28 flex-row items-center rounded-card border border-border bg-card p-3 shadow-xs">
+          <View className="h-24 w-24 rounded-card bg-secondary/15" />
+          <View className="ml-3 flex-1 gap-2.5">
+            <View className="h-4 w-2/3 rounded-badge bg-border/40" />
+            <View className="h-5 w-1/3 rounded-badge bg-border/40" />
+            <View className="h-5 w-1/2 rounded-badge bg-border/40" />
           </View>
         </View>
       ))}
@@ -84,12 +88,21 @@ function HistorySkeleton() {
 }
 
 export function S1HistoryList(props: HistoryListProps) {
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [targetEntryId, setTargetEntryId] = useState<string | null>(null);
+
   const skinTypes = [...new Set(props.entries.map((entry) => entry.skin_type).filter((value): value is string => Boolean(value)))].sort();
   const conditions = [...new Set(props.entries.flatMap((entry) => entry.conditions))].sort();
   const hasActiveFilters = Boolean(
     props.filters.startDate || props.filters.endDate || props.filters.skinTypes.length || props.filters.conditions.length
   );
   const hasQuery = Boolean(props.searchQuery.trim() || hasActiveFilters);
+
+  const handleDeletePress = () => {
+    setTargetEntryId(props.selectedEntryId);
+    props.onCloseEntryActions();
+    setIsConfirmDialogOpen(true);
+  };
 
   const renderItem = ({ item }: { item: HistoryEntry }) => (
     <HistoryListItem
@@ -100,34 +113,24 @@ export function S1HistoryList(props: HistoryListProps) {
   );
 
   return (
-    <View className="flex-1 bg-neutral-offwhite">
-      <View className="px-4 pb-3 pt-4">
-        <View className="flex-row items-center rounded-input border border-border bg-card px-3">
-          <Search size={19} color={theme.colors.muted} />
-          <TextInput
-            value={props.searchQuery}
-            onChangeText={props.onSearchChange}
-            placeholder="search history"
-            placeholderTextColor={theme.colors.muted}
-            accessibilityLabel="Search history by date or skin type"
-            returnKeyType="search"
-            className="ml-2 min-w-0 flex-1 py-3 text-body-sm font-sans text-text"
-          />
-          {props.searchQuery.length > 0 && (
-            <Pressable onPress={() => props.onSearchChange('')} accessibilityRole="button" accessibilityLabel="Clear search" className="h-10 w-10 items-center justify-center">
-              <X size={18} color={theme.colors.muted} />
-            </Pressable>
-          )}
-          <Pressable onPress={props.onOpenFilters} accessibilityRole="button" accessibilityLabel="Filter history" className="ml-1 h-10 w-10 items-center justify-center">
-            <Filter size={19} color={hasActiveFilters ? theme.colors.primary : theme.colors.muted} />
-          </Pressable>
-        </View>
-        {hasActiveFilters && (
-          <Pressable onPress={props.onResetFilters} className="mt-2 self-start">
+    <View className="flex-1 bg-card">
+      <SearchBar
+        style={2}
+        filterIcon={SlidersHorizontal}
+        filterIconColor={hasActiveFilters ? theme.colors.primary : theme.colors.muted}
+        value={props.searchQuery}
+        onChangeText={props.onSearchChange}
+        placeholder="search history"
+        onFilterPress={props.onOpenFilters}
+        className="px-4 pt-4 pb-2 rounded-none bg-transparent"
+      />
+      {hasActiveFilters && (
+        <View className="px-4 pb-2">
+          <Pressable onPress={props.onResetFilters} className="self-start">
             <Text className="text-body-sm font-sans-medium text-primary">Clear filters</Text>
           </Pressable>
-        )}
-      </View>
+        </View>
+      )}
 
       {props.isLoading ? (
         <HistorySkeleton />
@@ -143,7 +146,7 @@ export function S1HistoryList(props: HistoryListProps) {
           data={props.filteredEntries}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerClassName="grow px-4 pb-8"
+          contentContainerClassName="grow px-4 pb-12 pt-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -169,6 +172,7 @@ export function S1HistoryList(props: HistoryListProps) {
         />
       )}
 
+      {/* History Filter Sheet */}
       <PopUpHistoryFilterPanel
         visible={props.isFilterSheetVisible}
         filters={props.filters}
@@ -178,14 +182,40 @@ export function S1HistoryList(props: HistoryListProps) {
         onApply={props.onApplyFilters}
         onReset={props.onResetFilters}
       />
-      <HistoryEntryActionSheet
+
+      {/* PopUp Scan Action Panel (triggered by 3-dots) */}
+      <PopUpScanActionPanel
         visible={props.selectedEntryId !== null}
-        entryId={props.selectedEntryId}
-        deletingEntryId={props.deletingEntryId}
-        error={props.deleteError}
         onClose={props.onCloseEntryActions}
-        onDelete={props.onDeleteEntry}
+        onDeletePress={handleDeletePress}
+      />
+
+      {/* Discard / Delete Dialog */}
+      <DeleteDialog
+        visible={isConfirmDialogOpen}
+        title="Delete Scan Record"
+        body="Are you sure you want to delete this scan record? This action cannot be undone."
+        boldPhrase="delete this scan record"
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        onCancel={() => {
+          setIsConfirmDialogOpen(false);
+          setTargetEntryId(null);
+        }}
+        onConfirm={() => {
+          if (targetEntryId) {
+            props.onDeleteEntry(targetEntryId);
+          }
+          setIsConfirmDialogOpen(false);
+          setTargetEntryId(null);
+        }}
+        onClose={() => {
+          setIsConfirmDialogOpen(false);
+          setTargetEntryId(null);
+        }}
       />
     </View>
   );
 }
+
+export default S1HistoryList;

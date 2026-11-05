@@ -1,5 +1,5 @@
 import { theme } from '@/shared/theme';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, MoreHorizontal } from 'lucide-react-native';
 import { Pressable, Text, View } from 'react-native';
 
 export type HistoryDetailTab = 'results' | 'compatibility';
@@ -9,6 +9,7 @@ interface HistoryDetailHeaderProps {
   activeTab: HistoryDetailTab;
   onBack: () => void;
   onSelectTab: (tab: HistoryDetailTab) => void;
+  onMorePress?: () => void;
 }
 
 function formatDate(value: string | null): string {
@@ -19,7 +20,13 @@ function formatDate(value: string | null): string {
     : date.toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export function HistoryDetailHeader({ createdAt, activeTab, onBack, onSelectTab }: HistoryDetailHeaderProps) {
+export function HistoryDetailHeader({
+  createdAt,
+  activeTab,
+  onBack,
+  onSelectTab,
+  onMorePress,
+}: HistoryDetailHeaderProps) {
   return (
     <View className="bg-primary px-4 pb-4 pt-2">
       <View className="mb-4 min-h-12 flex-row items-center">
@@ -45,6 +52,18 @@ export function HistoryDetailHeader({ createdAt, activeTab, onBack, onSelectTab 
             {formatDate(createdAt)}
           </Text>
         </View>
+
+        {onMorePress ? (
+          <Pressable
+            onPress={onMorePress}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="More actions for this scan"
+            className="ml-2 h-10 w-10 items-center justify-center rounded-full active:opacity-75"
+          >
+            <MoreHorizontal size={22} color={theme.colors.white} />
+          </Pressable>
+        ) : null}
       </View>
 
       <View className="flex-row rounded-button bg-primary-dark p-1">
@@ -84,3 +103,5 @@ export function HistoryDetailHeader({ createdAt, activeTab, onBack, onSelectTab 
     </View>
   );
 }
+
+export default HistoryDetailHeader;

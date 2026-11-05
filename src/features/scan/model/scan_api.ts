@@ -78,7 +78,10 @@ export async function uploadScan(
  */
 export async function fetchCompatibility(analysisId: string): Promise<CompatibilityResponse> {
   if (USE_MOCK) {
-    return MOCK_COMPATIBILITY;
+    return {
+      ...MOCK_COMPATIBILITY,
+      analysis_id: analysisId || MOCK_COMPATIBILITY.analysis_id,
+    };
   }
 
   const response = await api.get(`/scan/${analysisId}/compatibility`);

@@ -1,8 +1,8 @@
 import { theme } from '@/shared/theme';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { S2ResultsTab } from '@/shared/pages/scan_results/containers/s2_ResultsTab';
 import { HistoryDetail } from '../../model/history_types';
-import { HistoryAnalysisHero } from '../components/HistoryAnalysisHero';
-import { HistoryConditionCard } from '../components/HistoryConditionCard';
+import { historyDetailToScanResult } from '../../model/history_adapter';
 
 interface HistoryResultsProps {
   detail: HistoryDetail;
@@ -11,46 +11,15 @@ interface HistoryResultsProps {
 }
 
 export function S1HistoryResults({ detail, isRefreshing, onRefresh }: HistoryResultsProps) {
+  const scanResult = historyDetailToScanResult(detail);
+
   return (
-    <ScrollView
-      className="flex-1 bg-neutral-offwhite"
-      contentContainerClassName="px-4 pb-10 pt-4"
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      <HistoryAnalysisHero
-        imageUrl={detail.image_url}
-        skinType={detail.skin_type}
-        healthScore={detail.health_score}
-      />
-
-      {detail.summary && (
-        <View className="mt-4 rounded-card border border-border bg-card p-4">
-          <Text className="mb-1 text-h3 font-sans-bold text-text">Analysis summary</Text>
-          <Text className="text-body-sm font-sans text-text">{detail.summary}</Text>
-        </View>
-      )}
-
-      <View className="mt-5">
-        <Text className="mb-3 text-h2 font-sans-bold text-text">Concern/s</Text>
-        {detail.conditions.length > 0 ? (
-          detail.conditions.map((condition) => (
-            <HistoryConditionCard key={condition.id} condition={condition} />
-          ))
-        ) : (
-          <View className="rounded-card border border-border bg-card p-4">
-            <Text className="text-body-sm font-sans text-muted">No concerns detected in this scan.</Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+    <S2ResultsTab
+      scanResult={scanResult}
+      imageUri={detail.image_url || ''}
+      isRefreshing={isRefreshing}
+      onRefresh={onRefresh}
+    />
   );
 }
 
@@ -89,3 +58,5 @@ export function HistoryDetailStatus({ isLoading, error, onRetry, onBack }: Histo
     </View>
   );
 }
+
+export default S1HistoryResults;

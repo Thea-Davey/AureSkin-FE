@@ -31,7 +31,7 @@ export function HomePage() {
 
   return (
     <View className="flex-1 bg-primary">
-      <StatusBar style="light" backgroundColor={theme.colors.primary} />
+      <StatusBar style="light" />
 
       {/* Scrollable Dashboard Body */}
       <ScrollView
