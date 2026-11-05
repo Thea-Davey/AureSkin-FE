@@ -62,9 +62,7 @@ export default function RootLayout() {
         <Stack.Screen name="scan/camera" options={{ animation: 'fade' }} />
         <Stack.Screen name="scan/upload" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="scan/submit" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="library/add-product-camera" options={{ animation: 'fade' }} />
-        <Stack.Screen name="library/add-product-upload" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="library/add-product-form" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="library/add-product-form" options={{ animation: 'slide_from_bottom' }} />
       </Stack>
       <Toast />
     </QueryClientProvider>

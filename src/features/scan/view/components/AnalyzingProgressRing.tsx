@@ -49,10 +49,10 @@ export const AnalyzingProgressRing: React.FC<AnalyzingProgressRingProps> = ({
         {/* Animated Outer Glowing Progress Ring */}
         <Animated.View
           style={{ transform: [{ scale: pulseAnim }] }}
-          className="w-64 h-64 rounded-full border-4 border-status-success items-center justify-center shadow-lg"
+          className="w-64 h-64 rounded-full border-4 border-status-success items-center justify-center shadow-lg bg-neutral-text/40"
         >
-          {/* Circular Face Photo Preview */}
-          <View className="w-[236px] h-[236px] rounded-full overflow-hidden bg-neutral-muted/20 items-center justify-center">
+          {/* Circular Face Photo Preview - sized to preserve clear visibility of the outer green ring */}
+          <View className="w-60 h-60 rounded-full overflow-hidden bg-neutral-muted/20 items-center justify-center border-2 border-neutral-muted/30">
             <Image
               source={{ uri: imageUri }}
               className="w-full h-full"

@@ -16,6 +16,7 @@ export function NegativeNote({
       containerClass="bg-note-negative"
       borderClass="border-note-negative-border"
       badgeClass="bg-note-negative-element"
+      bodyClass="text-note-negative-title"
       {...props}
     />
   );

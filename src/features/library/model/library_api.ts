@@ -4,12 +4,14 @@ import {
   IngredientPage,
   IngredientQuery,
   Product,
+  ProductCategory,
   ProductDetail,
   ProductIngredient,
   ProductPage,
   ProductQuery,
 } from './library_types';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_PRODUCT_DETAILS } from './library_mock';
+import { toCanonicalCategory } from '../../../shared/utils/productCategory';
 
 // ============================================================================
 // DATA SOURCE TOGGLE (use mock)
@@ -24,7 +26,10 @@ const MOCK_ADDED_PRODUCTS: ProductDetail[] = [];
 export function addMockProduct(input: {
   name: string;
   description: string;
+  category?: ProductCategory;
   ingredients: string[];
+  skinTypes?: string[];
+  skinConditions?: string[];
 }): ProductDetail {
   if (!USE_MOCK) {
     throw new Error('Mock product creation is only available while Library mock mode is enabled.');
@@ -35,10 +40,13 @@ export function addMockProduct(input: {
     id,
     name: input.name.trim(),
     brand: null,
-    category: 'other',
+    category: input.category || 'other',
     description: input.description.trim() || null,
     image_url: null,
     is_user_added: true,
+    compatible_skin_types: input.skinTypes && input.skinTypes.length > 0 ? input.skinTypes : undefined,
+    target_skin_conditions: input.skinConditions && input.skinConditions.length > 0 ? input.skinConditions : undefined,
+    good_for: input.skinConditions && input.skinConditions.length > 0 ? input.skinConditions : undefined,
     ingredients: input.ingredients.map((name, order) => ({
       id: `${id}-ingredient-${order + 1}`,
       name,
@@ -48,6 +56,35 @@ export function addMockProduct(input: {
 
   MOCK_ADDED_PRODUCTS.unshift(product);
   return product;
+}
+
+export function deleteMockProduct(id: string): void {
+  const addedIndex = MOCK_ADDED_PRODUCTS.findIndex((item) => item.id === id);
+  if (addedIndex !== -1) {
+    MOCK_ADDED_PRODUCTS.splice(addedIndex, 1);
+    return;
+  }
+  const mockProductIndex = MOCK_PRODUCTS.findIndex((item) => item.id === id);
+  if (mockProductIndex !== -1) {
+    MOCK_PRODUCTS.splice(mockProductIndex, 1);
+  }
+  const mockDetailIndex = MOCK_PRODUCT_DETAILS.findIndex((item) => item.id === id);
+  if (mockDetailIndex !== -1) {
+    MOCK_PRODUCT_DETAILS.splice(mockDetailIndex, 1);
+  }
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  if (!id.trim()) {
+    throw new Error('A product ID is required.');
+  }
+
+  if (USE_MOCK) {
+    deleteMockProduct(id);
+    return;
+  }
+
+  await api.delete(`/products/${encodeURIComponent(id)}`);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -159,7 +196,44 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
   }
 
   if (USE_MOCK) {
-    const ingredient = MOCK_INGREDIENTS.find((item) => item.id === id);
+    const rawTarget = id.trim();
+    const target = rawTarget.toLowerCase();
+    const slugTarget = `ingredient-`;
+
+    // 1. Direct match by id or slug
+    let ingredient = MOCK_INGREDIENTS.find(
+      (item) => item.id.toLowerCase() === target || item.id.toLowerCase() === slugTarget
+    );
+
+    // 2. Exact match by name
+    if (!ingredient) {
+      ingredient = MOCK_INGREDIENTS.find(
+        (item) => item.name.toLowerCase() === target
+      );
+    }
+
+    // 3. Substring match
+    if (!ingredient) {
+      ingredient = MOCK_INGREDIENTS.find(
+        (item) =>
+          target.includes(item.name.toLowerCase()) ||
+          item.name.toLowerCase().includes(target)
+      );
+    }
+
+    // 4. Common skincare clinical aliases
+    if (!ingredient) {
+      if (target.includes('aha') || target.includes('glycolic')) {
+        ingredient = MOCK_INGREDIENTS.find((item) => item.id === 'ingredient-glycolic-acid');
+      } else if (target.includes('bha') || target.includes('salicylic')) {
+        ingredient = MOCK_INGREDIENTS.find((item) => item.id === 'ingredient-salicylic-acid');
+      } else if (target.includes('cica') || target.includes('centella')) {
+        ingredient = MOCK_INGREDIENTS.find((item) => item.id === 'ingredient-centella-asiatica');
+      } else if (target.includes('vitamin c') || target.includes('ascorbic')) {
+        ingredient = MOCK_INGREDIENTS.find((item) => item.id === 'ingredient-vitamin-c');
+      }
+    }
+
     if (!ingredient) {
       throw new Error('This ingredient could not be found.');
     }
@@ -284,10 +358,22 @@ function normalizeProductDetail(value: unknown, requestedId: string): ProductDet
     throw new Error('Product detail response contains an invalid "good_for" list.');
   }
 
+  const rawCompatibleSkinTypes = productRecord.compatible_skin_types ?? value.compatible_skin_types;
+  const rawTargetSkinConditions = productRecord.target_skin_conditions ?? value.target_skin_conditions;
+
+  const compatibleSkinTypes = Array.isArray(rawCompatibleSkinTypes)
+    ? rawCompatibleSkinTypes.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : undefined;
+  const targetSkinConditions = Array.isArray(rawTargetSkinConditions)
+    ? rawTargetSkinConditions.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : undefined;
+
   return {
     ...product,
     ingredients,
     good_for: Array.isArray(rawGoodFor) ? rawGoodFor : undefined,
+    compatible_skin_types: compatibleSkinTypes,
+    target_skin_conditions: targetSkinConditions,
   };
 }
 
@@ -322,7 +408,7 @@ export async function fetchProducts(params: ProductQuery): Promise<ProductPage> 
       const matchesQuery = normalizedQuery.length === 0
         || product.name.toLocaleLowerCase().includes(normalizedQuery)
         || product.brand?.toLocaleLowerCase().includes(normalizedQuery);
-      const matchesCategory = category === null || product.category === category;
+      const matchesCategory = category === null || toCanonicalCategory(product.category) === category;
       return matchesQuery && matchesCategory;
     });
     const items = matchingItems.slice(offset, offset + limit);

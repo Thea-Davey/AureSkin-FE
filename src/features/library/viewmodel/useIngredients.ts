@@ -144,11 +144,10 @@ export function useIngredients(): UseIngredientsResult {
     string,
     { previousFavoriteIds: string[] }
   >({
-    mutationFn: async (ingredientId: string) => {
+    mutationFn: async () => {
       const currentFavoriteIds =
         queryClient.getQueryData<string[]>(favoritesQueryKey) ?? EMPTY_FAVORITES;
-      const nextFavoriteIds = toggleFavoriteId(currentFavoriteIds, ingredientId);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(nextFavoriteIds));
+      await AsyncStorage.setItem(storageKey, JSON.stringify(currentFavoriteIds));
     },
     onMutate: async (ingredientId: string) => {
       await queryClient.cancelQueries({ queryKey: favoritesQueryKey });
@@ -170,9 +169,12 @@ export function useIngredients(): UseIngredientsResult {
 
   const toggleFavorite = useCallback(
     (ingredientId: string) => {
+      if (favoritesQuery.isLoading || favoritesQuery.isError || favoriteMutation.isPending) {
+        return;
+      }
       favoriteMutation.mutate(ingredientId);
     },
-    [favoriteMutation]
+    [favoriteMutation, favoritesQuery.isError, favoritesQuery.isLoading]
   );
 
   const refresh = useCallback(async () => {

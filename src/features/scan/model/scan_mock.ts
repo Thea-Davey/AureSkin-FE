@@ -44,32 +44,32 @@ export const MOCK_SCAN_RESULT: ScanResult = {
       reason: 'Accelerates skin barrier repair and reduces inflammation.',
     },
     {
-      id: 'ing-03',
+      id: 'ingredient-clay',
       name: 'Clay',
       reason: 'Absorbs excess surface oil and clarifies dermal impurities.',
     },
     {
-      id: 'ing-04',
+      id: 'ingredient-hyaluronic-acid',
       name: 'Hyaluronic acid',
       reason: 'Provides deep non-comedogenic hydration.',
     },
     {
-      id: 'ing-05',
+      id: 'ingredient-retinol',
       name: 'Retinol',
       reason: 'Accelerates cellular turnover and normalizes keratinization.',
     },
     {
-      id: 'ing-06',
+      id: 'ingredient-dioic-acid',
       name: 'Dioic acid',
       reason: 'Reduces excessive sebum production and evens tone.',
     },
     {
-      id: 'ing-07',
+      id: 'ingredient-omega-fatty-acids',
       name: 'Omega fatty acids',
       reason: 'Replenishes essential skin lipids without clogging pores.',
     },
     {
-      id: 'ing-08',
+      id: 'ingredient-aloe-vera',
       name: 'Aloe Vera',
       reason: 'Soothes dermal inflammation and cools irritated skin.',
     },

@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import {
+  LOGIN_BYPASS,
+  MOCK_BYPASS_SESSION,
+  MOCK_BYPASS_USER,
+} from '../../features/auth/model/auth_bypass';
 
 interface AuthState {
   user: User | null;
@@ -13,13 +18,26 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  session: null,
-  isAuthenticated: false,
-  isLoading: true,
+  user: LOGIN_BYPASS ? MOCK_BYPASS_USER : null,
+  session: LOGIN_BYPASS ? MOCK_BYPASS_SESSION : null,
+  isAuthenticated: LOGIN_BYPASS ? true : false,
+  isLoading: LOGIN_BYPASS ? false : true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    // When dev bypass is active, immediately preserve the mock authenticated state across hot & hard reloads
+    if (LOGIN_BYPASS) {
+      set({
+        session: MOCK_BYPASS_SESSION,
+        user: MOCK_BYPASS_USER,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     set({
       session,
       user: session?.user || null,
@@ -46,7 +64,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   clearSession: async () => {
-    await supabase.auth.signOut();
+    if (!LOGIN_BYPASS) {
+      await supabase.auth.signOut();
+    }
     set({
       session: null,
       user: null,

@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { CheckCircle2, AlertTriangle } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
 import { ScanResult } from '../../../model/scan_types';
+import { IngredientDetailPage } from '@/shared/components/IngredientDetailPage';
 
 interface S3CompatibilityTabProps {
   scanResult: ScanResult;
@@ -13,100 +14,152 @@ interface S3CompatibilityTabProps {
 
 /**
  * Container Section 3: Ingredient Compatibility Tab Content (Section 4.7).
- * Reverted to original clean card layout:
- * - Compatible Ingredients list with names and clinical reasons
- * - Incompatible Pairs cards with combined ingredient titles and interaction details
+ * Strictly formatted into 2 clean containers:
+ * - Container 1: Compatible Ingredients (with label inside container & interactive tap-to-detail)
+ * - Container 2: Incompatible Combinations / Harmful Combinations (matching Reference Image 2:
+ *   label inside container, horizontal rule, clickable pill badge wrappers with "+" operator, and clinical reasons)
+ *
+ * Clicking an ingredient in either container opens the IngredientDetailPage modal.
  */
 export const S3CompatibilityTab: React.FC<S3CompatibilityTabProps> = ({
   scanResult,
   isRefreshing,
   onRefresh,
+  onIngredientPress,
 }) => {
-  return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{ paddingBottom: 40 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.colors.primary}
-          colors={[theme.colors.primary]}
-        />
-      }
-    >
-      {/* 1. Compatible Ingredients to Skin Type Section */}
-      <View className="mt-4 mx-4">
-        <View className="flex-row items-center mb-2.5">
-          <CheckCircle2 size={18} color={theme.colors.accent} aria-hidden={true} />
-          <Text className="ml-1.5 text-body font-sans-bold text-text">
-            Compatible Ingredients to Skin Type
-          </Text>
-        </View>
+  const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
 
-        <View className="rounded-card border border-border bg-card p-4 shadow-xs">
-          {scanResult.compatible_ingredients &&
-          scanResult.compatible_ingredients.length > 0 ? (
-            scanResult.compatible_ingredients.map((item, index) => (
-              <View
+  const compatibleIngredients = scanResult.compatible_ingredients || [];
+  const incompatiblePairs = scanResult.incompatible_pairs || [];
+
+  const handleOpenIngredient = (idOrName: string) => {
+    setSelectedIngredientId(idOrName);
+    onIngredientPress?.(idOrName);
+  };
+
+  return (
+    <>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{ paddingBottom: 48 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
+        {/* ── CONTAINER 1: COMPATIBLE INGREDIENTS (Label inside container) ── */}
+        <View className="mx-4 mt-4 rounded-card border border-border bg-card p-5 shadow-xs">
+          <Text className="text-caption mb-2 font-sans-bold text-accent uppercase tracking-wide">
+            COMPATIBLE INGREDIENTS
+          </Text>
+
+          {compatibleIngredients.length > 0 ? (
+            compatibleIngredients.map((item, index) => (
+              <Pressable
                 key={item.id || index}
-                className={`py-3 ${
-                  index !== 0 ? 'border-t border-border/40' : ''
-                }`}
+                onPress={() => handleOpenIngredient(item.id || item.name)}
+                className={`py-3 active:opacity-60 ${index !== 0 ? 'border-t border-border/40' : ''}`}
+                accessibilityRole="button"
+                accessibilityLabel={`View details for ${item.name}`}
               >
-                <Text className="text-body-sm font-sans-bold text-text">
-                  {item.name}
-                </Text>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-2 flex-1 mr-2">
+                    <View className="w-2 h-2 rounded-full bg-accent" />
+                    <Text className="text-body-sm font-sans-bold text-text">
+                      {item.name}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color={theme.colors.muted} />
+                </View>
                 {item.reason ? (
-                  <Text className="text-caption font-sans text-muted mt-1 leading-4">
+                  <Text className="text-caption font-sans text-muted mt-1 leading-4 pl-4">
                     {item.reason}
                   </Text>
+                ) : null}
+              </Pressable>
+            ))
+          ) : (
+            <Text className="text-body-sm font-sans text-muted py-3">
+              No specific compatible ingredient matches found for this profile.
+            </Text>
+          )}
+        </View>
+
+        {/* ── CONTAINER 2: HARMFUL COMBINATIONS (Replicating Reference Image 2) ── */}
+        <View className="mx-4 mt-4 mb-6 rounded-card border border-border bg-card p-5 shadow-xs">
+          <Text className="text-caption mb-4 font-sans-bold text-error uppercase tracking-wide">
+            HARMFUL COMBINATIONS
+          </Text>
+
+          {incompatiblePairs.length > 0 ? (
+            incompatiblePairs.map((pair, index) => (
+              <View key={index}>
+                {/* Badges Row: [Ingredient A Badge] + [Ingredient B Badge] */}
+                <View className="flex-row flex-wrap items-center gap-y-2">
+                  {/* Ingredient A Badge - Clickable */}
+                  <Pressable
+                    onPress={() => handleOpenIngredient(pair.ingredient_a)}
+                    className="rounded-badge bg-concern border border-concern px-3.5 py-1.5 self-start active:opacity-60"
+                    accessibilityRole="button"
+                    accessibilityLabel={`View details for ${pair.ingredient_a}`}
+                  >
+                    <Text className="text-body-sm font-sans-medium text-white">
+                      {pair.ingredient_a}
+                    </Text>
+                  </Pressable>
+
+                  {/* Operator Plus */}
+                  <Text className="text-body font-sans-bold text-text mx-2.5">
+                    +
+                  </Text>
+
+                  {/* Ingredient B Badge - Clickable */}
+                  <Pressable
+                    onPress={() => handleOpenIngredient(pair.ingredient_b)}
+                    className="rounded-badge bg-concern border border-concern px-3.5 py-1.5 self-start active:opacity-60"
+                    accessibilityRole="button"
+                    accessibilityLabel={`View details for ${pair.ingredient_b}`}
+                  >
+                    <Text className="text-body-sm font-sans-medium text-white">
+                      {pair.ingredient_b}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {/* Rationale / Clinical Conflict Explanation */}
+                <Text className="text-body-sm font-sans text-text mt-3 leading-5">
+                  {pair.reason}
+                </Text>
+
+                {/* Divider between consecutive pairs */}
+                {index < incompatiblePairs.length - 1 ? (
+                  <View className="border-b border-border/50 my-4" />
                 ) : null}
               </View>
             ))
           ) : (
-            <Text className="text-body-sm font-sans text-muted">
-              No specific ingredient matches found.
+            <Text className="text-body-sm font-sans text-muted py-2">
+              No harmful active clashes or incompatible combinations detected.
             </Text>
           )}
         </View>
-      </View>
+      </ScrollView>
 
-      {/* 2. Incompatible Ingredients to mix Section */}
-      <View className="mt-6 mx-4">
-        <View className="flex-row items-center mb-2.5">
-          <AlertTriangle size={18} color={theme.colors.error} aria-hidden={true} />
-          <Text className="ml-1.5 text-body font-sans-bold text-text">
-            Incompatible Ingredients to mix
-          </Text>
-        </View>
-
-        {scanResult.incompatible_pairs &&
-        scanResult.incompatible_pairs.length > 0 ? (
-          scanResult.incompatible_pairs.map((pair, index) => (
-            <View
-              key={index}
-              className="rounded-card border border-border bg-card p-4 mb-3 shadow-xs"
-            >
-              <View className="flex-row items-center justify-between">
-                <Text className="text-body-sm font-sans-bold text-error">
-                  {pair.ingredient_a} + {pair.ingredient_b}
-                </Text>
-              </View>
-              <Text className="text-body-sm font-sans text-muted mt-1.5 leading-5">
-                {pair.reason}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <View className="rounded-card border border-border bg-card p-4 shadow-xs">
-            <Text className="text-body-sm font-sans text-muted">
-              No harmful active clashes detected.
-            </Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+      {/* Ingredient Detail Page Modal */}
+      {selectedIngredientId ? (
+        <IngredientDetailPage
+          visible={Boolean(selectedIngredientId)}
+          ingredientId={selectedIngredientId}
+          onClose={() => setSelectedIngredientId(null)}
+        />
+      ) : null}
+    </>
   );
 };
+
+export default S3CompatibilityTab;

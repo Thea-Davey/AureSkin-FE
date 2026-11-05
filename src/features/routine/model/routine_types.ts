@@ -42,4 +42,5 @@ export interface RoutineSkinProfile {
   concerns: string[];
   health_score: number | null;
   overall_condition: string | null;
+  analysis_date?: string | null;
 }

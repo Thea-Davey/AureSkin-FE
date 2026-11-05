@@ -33,13 +33,8 @@ export interface IngredientQuery {
   offset: number;
 }
 
-export type ProductCategory =
-  | 'cleanser'
-  | 'toner'
-  | 'moisturizer'
-  | 'sunscreen'
-  | 'serum'
-  | 'other';
+import { ProductCategory } from '../../../shared/utils/productCategory';
+export type { ProductCategory };
 
 export interface Product {
   id: string;
@@ -51,13 +46,6 @@ export interface Product {
   is_user_added: boolean;
 }
 
-export type ProductCameraFacing = 'back' | 'front';
-
-export interface CapturedProductPhoto {
-  uri: string;
-  width: number;
-  height: number;
-}
 
 export interface ProductIngredient {
   id: string;
@@ -68,6 +56,8 @@ export interface ProductIngredient {
 export interface ProductDetail extends Product {
   ingredients: ProductIngredient[];
   good_for?: string[];
+  compatible_skin_types?: string[];
+  target_skin_conditions?: string[];
 }
 
 export type ProductCompatibilityStatus =

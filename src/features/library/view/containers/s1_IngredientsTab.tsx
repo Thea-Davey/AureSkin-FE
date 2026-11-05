@@ -7,12 +7,12 @@ import {
   View,
 } from 'react-native';
 import { Search } from 'lucide-react-native';
-import { theme } from '../../../../shared/theme';
+import { theme } from '@/shared/theme';
+import { SearchBar } from '@/shared/components';
 import { Ingredient, IngredientSection } from '../../model/library_types';
 import { AlphabetHeader } from '../components/AlphabetHeader';
 import { IngredientListItem } from '../components/IngredientListItem';
 import { IngredientListSkeleton } from '../components/IngredientListSkeleton';
-import { SearchBar } from '../components/SearchBar';
 
 interface S1IngredientsTabProps {
   ingredients: Ingredient[];
@@ -101,6 +101,7 @@ export function S1IngredientsTab({
     <View className="flex-1 rounded-t-card bg-card">
       {/* 1. Permanently Pinned SearchBar */}
       <SearchBar
+        style={1}
         value={searchQuery}
         onChangeText={onSearchQueryChange}
         placeholder="search ingredients"

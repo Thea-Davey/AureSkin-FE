@@ -16,6 +16,7 @@ export function PositiveNote({
       containerClass="bg-note-positive"
       borderClass="border-note-positive-border"
       badgeClass="bg-note-positive-element"
+      bodyClass="text-note-positive-title"
       {...props}
     />
   );

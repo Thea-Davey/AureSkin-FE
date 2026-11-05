@@ -16,6 +16,7 @@ export function WarningNote({
       containerClass="bg-note-warning"
       borderClass="border-note-warning-border"
       badgeClass="bg-note-warning-element"
+      bodyClass="text-note-warning-title"
       {...props}
     />
   );

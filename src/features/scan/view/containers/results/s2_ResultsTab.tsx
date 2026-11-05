@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { ScrollView, RefreshControl } from 'react-native';
 import { theme } from '@/shared/theme';
+import { WarningNote } from '@/shared/components/WarningNote';
 import { ScanResult } from '../../../model/scan_types';
 import { FacePhotoCard } from '../../components/FacePhotoCard';
-import { SkinTypeBanner } from '../../components/SkinTypeBanner';
 import { HealthScoreCard } from '../../components/HealthScoreCard';
-import { ConditionDetailCard } from '../../components/ConditionDetailCard';
+import { SkinTypeBanner } from '../../components/SkinTypeBanner';
+import { ConditionsCard } from '../../components/ConditionsCard';
+import { HistorySavedBanner } from '../../components/HistorySavedBanner';
 
 interface S2ResultsTabProps {
   scanResult: ScanResult;
@@ -15,10 +17,14 @@ interface S2ResultsTabProps {
 }
 
 /**
- * Container Section 2: Results Tab Content.
- * Scrollable presentation of the primary scan findings:
- * Analyzed Face Photo, Skin Type Banner with confidence badge,
- * Health Score meter, and stacked dermatological Concern/s cards.
+ * Container Section 2: Results Tab Content (Section 4.6).
+ * Redesigned to strictly match Reference Image 1 with 6 ordered containers:
+ * - Container 1: Submitted Face Photo preview
+ * - Container 2: Skin Health Score Card with dynamic score-tier gradient & aligned circle
+ * - Container 3: Skin Type Card with secondary token gradient & aligned confidence circle
+ * - Container 4: Skin Conditions Card with red gradient, circular flame badges, & aligned score pills
+ * - Container 5: History Saved confirmation banner
+ * - Container 6: Medical Disclaimer Callout (WarningNote)
  */
 export const S2ResultsTab: React.FC<S2ResultsTabProps> = ({
   scanResult,
@@ -29,7 +35,7 @@ export const S2ResultsTab: React.FC<S2ResultsTabProps> = ({
   return (
     <ScrollView
       className="flex-1 bg-background"
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 48 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
@@ -40,42 +46,36 @@ export const S2ResultsTab: React.FC<S2ResultsTabProps> = ({
         />
       }
     >
-      {/* 1. Analyzed Face Photo Preview Card */}
+      {/* Container 1: Analyzed Face Photo Preview Card */}
       <FacePhotoCard imageUri={imageUri || scanResult.image_url} />
 
-      {/* 2. Diagnosed Skin Type Banner with Confidence Badge */}
-      <SkinTypeBanner
-        skinType={scanResult.skin_type}
-        confidence={scanResult.skin_type_confidence}
-      />
-
-      {/* 3. Skin Health Score Metric Card */}
+      {/* Container 2: Skin Health Score Result Card (Score-tier gradient + aligned circle) */}
       <HealthScoreCard
         healthScore={scanResult.health_score}
         summary={scanResult.summary}
       />
 
-      {/* 4. Concern/s Heading & Condition Detail Cards */}
-      <View className="mt-5">
-        <Text className="text-h3 font-sans-bold text-text mx-4 mb-3">
-          Concern/s
-        </Text>
+      {/* Container 3: Skin Type Result Card (Secondary token gradient + aligned circle) */}
+      <SkinTypeBanner
+        skinType={scanResult.skin_type}
+        confidence={scanResult.skin_type_confidence}
+      />
 
-        {scanResult.conditions && scanResult.conditions.length > 0 ? (
-          scanResult.conditions.map((condition) => (
-            <ConditionDetailCard
-              key={condition.id}
-              condition={condition}
-            />
-          ))
-        ) : (
-          <View className="mx-4 p-5 rounded-card bg-card border border-border shadow-xs">
-            <Text className="text-body-sm font-sans text-muted text-center">
-              No active skin conditions detected. Your skin barrier appears healthy and balanced.
-            </Text>
-          </View>
-        )}
-      </View>
+      {/* Container 4: Skin Conditions / Concerns Card (Red gradient + flame badges + aligned pills) */}
+      <ConditionsCard conditions={scanResult.conditions} />
+
+      {/* Container 5: Saved to History Confirmation Notice */}
+      <HistorySavedBanner />
+
+      {/* Container 6: Medical Disclaimer Note */}
+      <WarningNote
+        style={2}
+        className="mx-4 mt-4"
+        title="Disclaimer"
+        description="This analysis is intended for educational and informational purposes only and should not be used for the self-diagnosis or treatment of any medical skin condition. If you have concerns about your skin health, please consult a board-certified dermatologist."
+      />
     </ScrollView>
   );
 };
+
+export default S2ResultsTab;

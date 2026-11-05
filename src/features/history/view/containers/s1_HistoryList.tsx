@@ -3,7 +3,7 @@ import { Filter, Search, X } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { HistoryEntry, HistoryFilters } from '../../model/history_types';
 import { HistoryEntryActionSheet } from '../components/HistoryEntryActionSheet';
-import { HistoryFilterSheet } from '../components/HistoryFilterSheet';
+import { PopUpHistoryFilterPanel } from '../components/PopUpHistoryFilterPanel';
 import { HistoryListItem } from '../components/HistoryListItem';
 
 interface HistoryListProps {
@@ -169,7 +169,7 @@ export function S1HistoryList(props: HistoryListProps) {
         />
       )}
 
-      <HistoryFilterSheet
+      <PopUpHistoryFilterPanel
         visible={props.isFilterSheetVisible}
         filters={props.filters}
         skinTypes={skinTypes}

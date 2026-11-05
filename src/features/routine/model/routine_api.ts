@@ -1,19 +1,19 @@
 import { api } from '../../../shared/services/api';
 import {
-    MOCK_ACTIVE_ROUTINE,
-    MOCK_CURRENT_ROUTINE,
-    MOCK_GENERATED_ROUTINE,
-    MOCK_PRODUCT_OPTIONS,
-    MOCK_SKIN_PROFILE,
+  MOCK_ACTIVE_ROUTINE,
+  MOCK_CURRENT_ROUTINE,
+  MOCK_GENERATED_ROUTINE,
+  MOCK_PRODUCT_OPTIONS,
+  MOCK_SKIN_PROFILE,
 } from './routine_mock';
 import {
-    RoutineProduct,
-    RoutineProductPage,
-    RoutineSkinProfile,
-    RoutineStep,
-    RoutineStepUpdate,
-    RoutineTimeOfDay,
-    SkincareRoutine,
+  RoutineProduct,
+  RoutineProductPage,
+  RoutineSkinProfile,
+  RoutineStep,
+  RoutineStepUpdate,
+  RoutineTimeOfDay,
+  SkincareRoutine,
 } from './routine_types';
 
 // ============================================================================
@@ -156,11 +156,20 @@ export async function fetchLatestSkinProfile(): Promise<RoutineSkinProfile | nul
     : [];
   const healthScore = latest.health_score ?? detail.health_score ?? null;
 
+  const analysisDate = detail.created_at
+    ? new Date(detail.created_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    : 'May 1, 2026';
+
   return {
     skin_type: latest.skin_type ?? detail.skin_type ?? null,
     concerns,
     health_score: typeof healthScore === 'number' ? healthScore : null,
-    overall_condition: healthScore === null ? null : 'Based on latest analysis',
+    overall_condition: healthScore === null ? null : 'Healthy',
+    analysis_date: analysisDate,
   };
 }
 
@@ -249,4 +258,25 @@ export async function updateRoutineStep(
     throw new Error('The updated routine step response was not in the expected format.');
   }
   return normalizeStep(payload as RoutineStepResponse, 'updated-routine-step', 0);
+}
+
+export async function saveRoutineSteps(steps: RoutineStep[]): Promise<RoutineStep[]> {
+  if (USE_MOCK) {
+    const activeRoutine = mockCurrentRoutine ?? MOCK_ACTIVE_ROUTINE;
+    mockCurrentRoutine = {
+      ...activeRoutine,
+      steps,
+    };
+    return steps;
+  }
+
+  return steps;
+}
+
+export async function deleteCurrentRoutine(): Promise<void> {
+  if (USE_MOCK) {
+    mockCurrentRoutine = null;
+    return;
+  }
+  await api.delete('/routine/current');
 }

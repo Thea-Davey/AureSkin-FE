@@ -1,13 +1,17 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { addMockProduct } from '../model/library_api';
+import { MOCK_INGREDIENTS } from '../model/library_mock';
+import { ProductCategory } from '../../../shared/utils/productCategory';
+
 export interface AddProductDraft {
   name: string;
   description: string;
+  category: ProductCategory;
   ingredients: string[];
-  imageUri: string | null;
+  skinTypes: string[];
+  skinConditions: string[];
 }
 
 const INITIAL_INGREDIENTS = [
@@ -21,16 +25,22 @@ const INITIAL_INGREDIENTS = [
   'Aloe Vera',
 ];
 
+// Master list of available database ingredients for auto-suggest & validation
+export const MASTER_DATABASE_INGREDIENTS = Array.from(
+  new Set([
+    ...MOCK_INGREDIENTS.map((i) => i.name),
+    ...INITIAL_INGREDIENTS,
+  ])
+).sort((a, b) => a.localeCompare(b));
+
 const EMPTY_DRAFT: AddProductDraft = {
   name: '',
   description: '',
+  category: 'other',
   ingredients: INITIAL_INGREDIENTS,
-  imageUri: null,
+  skinTypes: [],
+  skinConditions: [],
 };
-
-function getImageUri(value: string | string[] | undefined): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
 
 function isDraftDirty(draft: AddProductDraft, initial: AddProductDraft): boolean {
   return JSON.stringify(draft) !== JSON.stringify(initial);
@@ -39,59 +49,95 @@ function isDraftDirty(draft: AddProductDraft, initial: AddProductDraft): boolean
 export function useAddProduct() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const params = useLocalSearchParams<{ imageUri?: string }>();
-  const [initialDraft] = useState<AddProductDraft>(() => ({
-    ...EMPTY_DRAFT,
-    imageUri: getImageUri(params.imageUri),
-  }));
-  const [draft, setDraft] = useState(initialDraft);
-  const [ingredientInput, setIngredientInput] = useState('');
+  const [initialDraft] = useState<AddProductDraft>(() => EMPTY_DRAFT);
+  const [draft, setDraft] = useState<AddProductDraft>(initialDraft);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+  const [isDiscardVisible, setIsDiscardVisible] = useState(false);
 
   const updateDraft = useCallback((updates: Partial<AddProductDraft>) => {
     setDraft((current) => ({ ...current, ...updates }));
     setError(null);
   }, []);
 
-  const addIngredient = useCallback(() => {
-    const name = ingredientInput.trim();
-    if (!name) {
+  const addIngredient = useCallback((name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
       return;
     }
-    if (draft.ingredients.some((item) => item.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+    // Check if ingredient exists in master database
+    const matched = MASTER_DATABASE_INGREDIENTS.find(
+      (item) => item.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (!matched) {
+      setError('Only ingredients from the AureSkin library database can be added.');
+      return;
+    }
+    // Prevent duplicates
+    if (draft.ingredients.some((item) => item.toLowerCase() === matched.toLowerCase())) {
       setError('That ingredient has already been added.');
       return;
     }
 
-    updateDraft({ ingredients: [...draft.ingredients, name] });
-    setIngredientInput('');
-  }, [draft.ingredients, ingredientInput, updateDraft]);
+    updateDraft({ ingredients: [...draft.ingredients, matched] });
+    setError(null);
+  }, [draft.ingredients, updateDraft]);
 
   const removeIngredient = useCallback((ingredient: string) => {
     updateDraft({ ingredients: draft.ingredients.filter((item) => item !== ingredient) });
   }, [draft.ingredients, updateDraft]);
 
+  const setCategory = useCallback((category: ProductCategory) => {
+    updateDraft({ category });
+  }, [updateDraft]);
+
+  const addSkinType = useCallback((type: string) => {
+    if (draft.skinTypes.includes(type)) {
+      return;
+    }
+    updateDraft({ skinTypes: [...draft.skinTypes, type] });
+  }, [draft.skinTypes, updateDraft]);
+
+  const removeSkinType = useCallback((type: string) => {
+    updateDraft({ skinTypes: draft.skinTypes.filter((item) => item !== type) });
+  }, [draft.skinTypes, updateDraft]);
+
+  const addSkinCondition = useCallback((condition: string) => {
+    if (draft.skinConditions.includes(condition)) {
+      return;
+    }
+    updateDraft({ skinConditions: [...draft.skinConditions, condition] });
+  }, [draft.skinConditions, updateDraft]);
+
+  const removeSkinCondition = useCallback((condition: string) => {
+    updateDraft({ skinConditions: draft.skinConditions.filter((item) => item !== condition) });
+  }, [draft.skinConditions, updateDraft]);
+
   const returnToLibrary = useCallback(() => {
-    router.replace('/(tabs)/library');
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/library?tab=products');
+    }
   }, [router]);
 
-  const cancel = useCallback(() => {
+  const promptDiscard = useCallback(() => {
     if (!isDraftDirty(draft, initialDraft)) {
       returnToLibrary();
       return;
     }
-
-    Alert.alert(
-      'Discard product details?',
-      'Your product details and selected photo will be lost.',
-      [
-        { text: 'Keep editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: returnToLibrary },
-      ]
-    );
+    setIsDiscardVisible(true);
   }, [draft, initialDraft, returnToLibrary]);
+
+  const confirmDiscard = useCallback(() => {
+    setIsDiscardVisible(false);
+    returnToLibrary();
+  }, [returnToLibrary]);
+
+  const cancelDiscard = useCallback(() => {
+    setIsDiscardVisible(false);
+  }, []);
 
   const submit = useCallback(async () => {
     if (isSubmitting) {
@@ -113,7 +159,10 @@ export function useAddProduct() {
       addMockProduct({
         name: draft.name,
         description: draft.description,
+        category: draft.category,
         ingredients: draft.ingredients,
+        skinTypes: draft.skinTypes,
+        skinConditions: draft.skinConditions,
       });
       await queryClient.invalidateQueries({ queryKey: ['library', 'products'] });
       setIsSuccessVisible(true);
@@ -135,16 +184,23 @@ export function useAddProduct() {
 
   return {
     draft,
-    ingredientInput,
     error,
     isSubmitting,
     isSuccessVisible,
+    isDiscardVisible,
+    availableIngredients: MASTER_DATABASE_INGREDIENTS,
     actions: {
       updateDraft,
-      setIngredientInput,
+      setCategory,
       addIngredient,
       removeIngredient,
-      cancel,
+      addSkinType,
+      removeSkinType,
+      addSkinCondition,
+      removeSkinCondition,
+      promptDiscard,
+      confirmDiscard,
+      cancelDiscard,
       submit,
       dismissSuccess,
     },

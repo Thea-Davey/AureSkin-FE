@@ -6,7 +6,7 @@ import { useScanSubmit } from '../viewmodel/useScanSubmit';
 import { S1SubmitHeader } from './containers/submit/s1_SubmitHeader';
 import { S2PhotoPreview } from './containers/submit/s2_PhotoPreview';
 import { SubmitControls } from './components/SubmitControls';
-import { SkinGuidanceModal } from './components/SkinGuidanceModal';
+import { PopUpGuidelinesPanel } from './components/PopUpGuidelinesPanel';
 
 /**
  * ScanSubmitPage (Section 4.4).
@@ -59,8 +59,8 @@ export const ScanSubmitPage: React.FC = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* Slide-up Skin Test Guidelines Modal */}
-      <SkinGuidanceModal
+      {/* Slide-up Skin Test Guidelines Panel */}
+      <PopUpGuidelinesPanel
         visible={isGuidanceVisible}
         onClose={closeGuidanceModal}
         tips={guidanceTips}

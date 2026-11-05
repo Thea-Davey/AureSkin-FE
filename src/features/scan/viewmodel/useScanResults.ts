@@ -76,18 +76,10 @@ export function useScanResults(): UseScanResultsReturn {
   }, [router]);
 
   const handleIngredientPress = useCallback(
-    (id?: string) => {
-      if (!id) return;
-      try {
-        router.push({
-          pathname: '/library/ingredient/[id]' as any,
-          params: { id },
-        });
-      } catch {
-        // Safe navigation fallback
-      }
+    (_id?: string) => {
+      // Handled directly via modal sheet in compatibility tab
     },
-    [router]
+    []
   );
 
   const retry = useCallback(() => {

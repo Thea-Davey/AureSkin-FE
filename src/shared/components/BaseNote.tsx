@@ -24,6 +24,8 @@ export interface BaseNoteProps extends NoteProps {
   containerClass: string;
   borderClass: string;
   badgeClass: string;
+  bodyClass?: string;
+  titleClass?: string;
 }
 
 export function BaseNote({
@@ -35,12 +37,14 @@ export function BaseNote({
   containerClass,
   borderClass,
   badgeClass,
+  bodyClass,
+  titleClass = 'text-text',
   className = '',
   testID,
 }: BaseNoteProps) {
   const content = children || (
     description ? (
-      <Text className="text-body-sm font-sans text-text leading-5">
+      <Text className={`text-body-sm font-sans leading-5 ${bodyClass || 'text-text'}`}>
         {description}
       </Text>
     ) : null
@@ -62,7 +66,7 @@ export function BaseNote({
               <IconComponent size={15} color={theme.colors.white} strokeWidth={2.5} />
             </View>
           ) : null}
-          <Text className="text-h3 font-sans-bold text-text flex-1">
+          <Text className={`text-body font-sans-bold font-bold flex-1 ${titleClass || 'text-text'}`}> {/*title*/}
             {title}
           </Text>
         </View>
@@ -88,7 +92,7 @@ export function BaseNote({
         </View>
       ) : null}
       <View className="flex-1">
-        <Text className="text-body font-sans-bold text-text mb-1">
+        <Text className={`text-body font-sans-bold font-bold mb-1 ${titleClass || 'text-text'}`}> {/*title*/}
           {title}
         </Text>
         {content}

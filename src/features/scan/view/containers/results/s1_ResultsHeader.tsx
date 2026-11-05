@@ -3,7 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { X } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
 import { ScanResultsTab } from '../../../model/scan_types';
-import { ResultsTabSwitcher } from '../../components/ResultsTabSwitcher';
+import { ResultsCompatabilityToggle } from '../../components/ResultsCompatabilityToggle';
 
 interface S1ResultsHeaderProps {
   activeTab: ScanResultsTab;
@@ -45,10 +45,11 @@ export const S1ResultsHeader: React.FC<S1ResultsHeaderProps> = ({
         </Pressable>
       </View>
 
-      {/* Dual Tab Segmented Switcher */}
-      <ResultsTabSwitcher
+      {/* Results / Compatibility Toggle Button (Set to Style 2) */}
+      <ResultsCompatabilityToggle
         activeTab={activeTab}
         onSelectTab={onSelectTab}
+      // style={1}
       />
     </View>
   );

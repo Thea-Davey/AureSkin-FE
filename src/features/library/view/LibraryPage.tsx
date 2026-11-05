@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ProductCategory,
   ProductListFilter,
 } from '../model/library_types';
+import { deleteProduct } from '../model/library_api';
 import { useIngredients } from '../viewmodel/useIngredients';
 import { useIngredientDetail } from '../viewmodel/useIngredientDetail';
 import { useProducts } from '../viewmodel/useProducts';
@@ -26,6 +28,7 @@ interface ProductsTabContentProps {
   onIngredientPress: (ingredientId: string) => void;
   onAddProductPress: () => void;
   onDismissNotice: () => void;
+  onDeleteProductSuccess?: (msg: string) => void;
 }
 
 function ProductDetailSheet({
@@ -42,6 +45,7 @@ function ProductDetailSheet({
   onToggleFavorite,
   onRetryFavorites,
   onIngredientPress,
+  onDeleteProduct,
 }: {
   productId: string;
   visible: boolean;
@@ -56,6 +60,7 @@ function ProductDetailSheet({
   onToggleFavorite: (productId: string) => void;
   onRetryFavorites: () => void;
   onIngredientPress: (ingredientId: string) => void;
+  onDeleteProduct?: (productId: string) => void;
 }) {
   const detail = useProductDetail(productId);
   const isFavorite = favoriteIds.includes(productId);
@@ -83,6 +88,7 @@ function ProductDetailSheet({
       onRetryFavorites={onRetryFavorites}
       onToggleFavorite={() => onToggleFavorite(productId)}
       onIngredientPress={onIngredientPress}
+      onDeleteProduct={onDeleteProduct}
     />
   );
 }
@@ -97,8 +103,22 @@ function ProductsTabContent({
   onIngredientPress,
   onAddProductPress,
   onDismissNotice,
+  onDeleteProductSuccess,
 }: ProductsTabContentProps) {
   const products = useProducts();
+  const queryClient = useQueryClient();
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+      await queryClient.invalidateQueries({ queryKey: ['library', 'products'] });
+      await products.actions.refresh();
+      onProductClose();
+      onDeleteProductSuccess?.('Product permanently deleted from your library.');
+    } catch (err) {
+      onDeleteProductSuccess?.(err instanceof Error ? err.message : 'Could not delete product.');
+    }
+  };
 
   return (
     <>
@@ -153,6 +173,7 @@ function ProductsTabContent({
           onToggleFavorite={products.actions.toggleFavorite}
           onRetryFavorites={() => void products.actions.retryFavorites()}
           onIngredientPress={onIngredientPress}
+          onDeleteProduct={handleDeleteProduct}
         />
       ) : null}
     </>
@@ -191,7 +212,16 @@ function IngredientDetailSheet({
 
 export function LibraryPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<LibraryTab>('ingredients');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [activeTab, setActiveTab] = useState<LibraryTab>(() => (params.tab === 'products' ? 'products' : 'ingredients'));
+
+  useEffect(() => {
+    if (params.tab === 'products') {
+      setActiveTab('products');
+    } else if (params.tab === 'ingredients') {
+      setActiveTab('ingredients');
+    }
+  }, [params.tab]);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -226,6 +256,10 @@ export function LibraryPage() {
       Platform.OS === 'android' ? 500 : 350
     );
   };
+
+  const handleAddProductPress = useCallback(() => {
+    router.push('/library/add-product-form');
+  }, [router]);
 
   useEffect(() => () => clearProductDismissFallback(), []);
 
@@ -321,10 +355,9 @@ export function LibraryPage() {
             }}
             onProductDismiss={completeProductIngredientHandoff}
             onIngredientPress={handleProductIngredientPress}
-            onAddProductPress={() => {
-              router.push('/library/add-product-camera');
-            }}
+            onAddProductPress={handleAddProductPress}
             onDismissNotice={() => setNotice(null)}
+            onDeleteProductSuccess={(msg) => setNotice(msg)}
           />
         )}
       </View>

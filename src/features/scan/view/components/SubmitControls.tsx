@@ -21,14 +21,14 @@ export const SubmitControls: React.FC<SubmitControlsProps> = ({
   onSubmit,
 }) => {
   return (
-    <View className="w-full flex-row items-center justify-between px-6 pb-4 pt-2">
-      {/* Left: Retake Button */}
+    <View className="w-full flex-row items-center px-6 pb-4 pt-2">
+      {/* Left: Retake Button (shrink-0) */}
       <Pressable
         onPress={onRetake}
         accessibilityRole="button"
         accessibilityLabel="Retake or reselect photo"
         hitSlop={10}
-        className="flex-row items-center active:opacity-70 py-2 px-1"
+        className="shrink-0 flex-row items-center active:opacity-70 py-2 px-1"
       >
         <RotateCcw size={22} color={theme.colors.card} />
         <Text className="text-body-sm font-sans-semibold text-neutral-white ml-2">
@@ -36,24 +36,24 @@ export const SubmitControls: React.FC<SubmitControlsProps> = ({
         </Text>
       </Pressable>
 
-      {/* Right: Submit Photo Button */}
+      {/* Right: Submit Photo Button (auto-expanding up to Retake button) */}
       <Pressable
         onPress={onSubmit}
         disabled={isSubmitting}
         accessibilityRole="button"
         accessibilityLabel="Submit photo for skin analysis"
-        className="flex-row items-center bg-neutral-white rounded-full pl-5 pr-2 py-2 active:opacity-90 active:scale-[0.98]"
+        className="flex-1 ml-5 flex-row items-center justify-between bg-neutral-white rounded-full pl-6 pr-3 py-3 shadow-sm active:opacity-90 active:scale-[0.98]"
       >
-        <Text className="text-body-sm font-sans-bold text-neutral-text mr-3">
+        <Text className="text-body-sm font-sans-bold font-bold text-neutral-text">
           Submit Photo
         </Text>
 
         {/* Circular Arrow Badge */}
-        <View className="w-8 h-8 rounded-full bg-neutral-text items-center justify-center">
+        <View className="w-12 h-12 rounded-full bg-neutral-text items-center justify-center">
           {isSubmitting ? (
             <ActivityIndicator size="small" color={theme.colors.card} />
           ) : (
-            <ArrowRight size={18} color={theme.colors.card} />
+            <ArrowRight size={24} color={theme.colors.card} />
           )}
         </View>
       </Pressable>

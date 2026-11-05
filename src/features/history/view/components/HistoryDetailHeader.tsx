@@ -52,7 +52,8 @@ export function HistoryDetailHeader({ createdAt, activeTab, onBack, onSelectTab 
           onPress={() => onSelectTab('results')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'results' }}
-          className={`h-10 flex-1 items-center justify-center rounded-button px-1 ${activeTab === 'results' ? 'bg-secondary' : ''}`}
+          style={{ flex: 1, flexBasis: 0, width: '50%' }}
+          className={`h-10 items-center justify-center rounded-button px-1 ${activeTab === 'results' ? 'bg-secondary' : ''}`}
         >
           <Text
             numberOfLines={1}
@@ -67,7 +68,8 @@ export function HistoryDetailHeader({ createdAt, activeTab, onBack, onSelectTab 
           onPress={() => onSelectTab('compatibility')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'compatibility' }}
-          className={`h-10 flex-1 items-center justify-center rounded-button px-1 ${activeTab === 'compatibility' ? 'bg-secondary' : ''}`}
+          style={{ flex: 1, flexBasis: 0, width: '50%' }}
+          className={`h-10 items-center justify-center rounded-button px-1 ${activeTab === 'compatibility' ? 'bg-secondary' : ''}`}
         >
           <Text
             numberOfLines={1}

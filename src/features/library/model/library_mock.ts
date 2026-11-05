@@ -95,11 +95,37 @@ export const MOCK_INGREDIENTS: Ingredient[] = [
   },
   {
     id: 'ingredient-centella-asiatica',
-    name: 'C Parachlorella Beijerinckii Exopolysaccharides',
+    name: 'Centella Asiatica',
     preview_description: 'A healing herb that calms stressed skin and repairs the moisture barrier.',
     description: 'A botanical extract used in skincare formulations.',
     benefits: 'Commonly included in soothing and skin-conditioning products.',
     skin_types: ['sensitive', 'dry'],
+    caution: null,  },
+  {
+    id: 'ingredient-clay',
+    name: 'Clay',
+    preview_description: 'Mineral-rich earth that clarifies pores and regulates dermal shine.',
+    description: 'Natural mineral clay known for its absorption and purifying properties.',
+    benefits: 'Absorbs excess surface oil and helps detoxify congested pores.',
+    skin_types: ['oily', 'combination'],
+    caution: null,
+  },
+  {
+    id: 'ingredient-dioic-acid',
+    name: 'Dioic Acid',
+    preview_description: 'A targeted organic acid that reduces sebum production and evens tone.',
+    description: 'Naturally derived dicarboxylic acid used in targeted clarifying regimens.',
+    benefits: 'Reduces excessive sebum production and evens dermal tone.',
+    skin_types: ['oily', 'acneprone'],
+    caution: null,
+  },
+  {
+    id: 'ingredient-omega-fatty-acids',
+    name: 'Omega Fatty Acids',
+    preview_description: 'Essential building blocks that restore lipid balance and reinforce elasticity.',
+    description: 'Essential polyunsaturated fatty acids supporting epidermal lipid replenishment.',
+    benefits: 'Replenishes the epidermal barrier without clogging follicles.',
+    skin_types: ['dry', 'sensitive', 'all'],
     caution: null,
   },
   {
@@ -524,6 +550,8 @@ export const MOCK_PRODUCTS: Product[] = [
 export const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   {
     ...MOCK_PRODUCTS[0],
+    compatible_skin_types: ['Oily', 'Combination', 'Normal'],
+    target_skin_conditions: ['Dark Spots', 'Large Pores', 'Uneven Texture'],
     good_for: [
       'Oily Skin',
       'Skin Texture',
@@ -551,10 +579,14 @@ export const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
   },
   {
     ...MOCK_PRODUCTS[1],
+    compatible_skin_types: ['Sensitive', 'Dry', 'Normal'],
+    target_skin_conditions: ['Redness', 'Acne'],
     ingredients: [],
   },
   {
     ...MOCK_PRODUCTS[2],
+    compatible_skin_types: ['Dry', 'Normal', 'Combination'],
+    target_skin_conditions: ['Wrinkles', 'Dryness'],
     ingredients: [],
   },
   ...MOCK_PRODUCTS
@@ -563,5 +595,10 @@ export const MOCK_PRODUCT_DETAILS: ProductDetail[] = [
       'product-gentle-cleanser',
       'product-daily-moisturizer',
     ].includes(product.id))
-    .map((product) => ({ ...product, ingredients: [] })),
+    .map((product) => ({
+      ...product,
+      compatible_skin_types: ['Normal', 'Combination'],
+      target_skin_conditions: ['Acne', 'Dark Spots'],
+      ingredients: [],
+    })),
 ];

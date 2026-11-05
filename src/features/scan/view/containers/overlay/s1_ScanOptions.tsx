@@ -30,7 +30,7 @@ export const S1ScanOptions: React.FC<S1ScanOptionsProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   // Align Exit button bottom edge with the center tab button elevation (matching green Scan button position)
-  const exitButtonBottom = insets.bottom + 18;
+  const exitButtonBottom = insets.bottom + 6;
   // Position action buttons 16px above the 80px Exit button
   const actionButtonsBottom = exitButtonBottom + 80 + 16;
 

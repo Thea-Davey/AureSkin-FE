@@ -22,14 +22,17 @@ export default function TabLayout() {
               title={typeof options.title === 'string' ? options.title : 'AureSkin'}
             />
           ),
+          // tabBarShowLabel: true, // Uncomment to re-enable text labels below icons
+          tabBarShowLabel: false,
           tabBarActiveTintColor: theme.colors.primary,
           tabBarInactiveTintColor: theme.colors.muted,
           tabBarStyle: {
             backgroundColor: theme.colors.card,
             borderTopColor: theme.colors.card,
             elevation: 10,
-            height: 80,
+            height: 72, // original 80
             paddingBottom: 8,
+            paddingTop: 8,
           },
         }}>
         <Tabs.Screen
@@ -44,8 +47,15 @@ export default function TabLayout() {
           }}
           options={{
             title: 'Welcome Back!',
-            tabBarLabel: 'Home',
-            tabBarIcon: ({ color }) => <Home color={color} size={24} />,
+            // tabBarLabel: 'Home',
+            tabBarIcon: ({ focused }) => (
+              <Home
+                color={focused ? theme.colors.primary : theme.colors.muted}
+                fill={focused ? theme.colors.primary : 'none'}
+                size={24}
+                strokeWidth={2.2}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -60,8 +70,15 @@ export default function TabLayout() {
           }}
           options={{
             title: 'Library',
-            tabBarLabel: 'Library',
-            tabBarIcon: ({ color }) => <BookOpen color={color} size={24} />,
+            // tabBarLabel: 'Library',
+            tabBarIcon: ({ focused }) => (
+              <BookOpen
+                color={focused ? theme.colors.primary : theme.colors.muted}
+                fill={focused ? theme.colors.primary : 'none'}
+                size={24}
+                strokeWidth={2.2}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -75,7 +92,7 @@ export default function TabLayout() {
           options={{
             headerShown: false,
             title: 'Skin Analysis',
-            tabBarLabel: 'Scan',
+            // tabBarLabel: 'Scan',
             tabBarButton: () => (
               <View className="flex-1 items-center justify-center">
                 {!isScanOverlayOpen ? (
@@ -83,15 +100,15 @@ export default function TabLayout() {
                     onPress={toggleScanOverlay}
                     accessibilityRole="button"
                     accessibilityLabel="Open scan options"
-                    className="bg-primary h-20 w-20 rounded-full items-center justify-center shadow-lg -mt-14 active:opacity-80"
+                    className="h-20 w-20 -mt-12 items-center justify-center rounded-full bg-primary border-4 border-neutral-white shadow-xl active:opacity-80"
                   >
-                    <Scan color={theme.colors.card} size={24} />
-                    <Text className="text-caption text-neutral-white font-sans-bold mt-1">
+                    <Scan color={theme.colors.card} size={24} strokeWidth={2.4} />
+                    {/* <Text className="text-caption text-neutral-white font-sans-bold mt-1">
                       Scan
-                    </Text>
+                    </Text> */}
                   </Pressable>
                 ) : (
-                  <View className="h-20 w-20 -mt-14" />
+                  <View className="h-20 w-20 -mt-12" />
                 )}
               </View>
             ),
@@ -109,8 +126,15 @@ export default function TabLayout() {
           }}
           options={{
             title: 'History',
-            tabBarLabel: 'History',
-            tabBarIcon: ({ color }) => <Clock color={color} size={24} />,
+            // tabBarLabel: 'History',
+            tabBarIcon: ({ focused }) => (
+              <Clock
+                color={focused ? theme.colors.primary : theme.colors.muted}
+                fill={focused ? theme.colors.primary : 'none'}
+                size={24}
+                strokeWidth={2.2}
+              />
+            ),
           }}
         />
         <Tabs.Screen
@@ -125,8 +149,15 @@ export default function TabLayout() {
           }}
           options={{
             title: 'Skincare Routine',
-            tabBarLabel: 'Routine',
-            tabBarIcon: ({ color }) => <User color={color} size={24} />,
+            // tabBarLabel: 'Routine',
+            tabBarIcon: ({ focused }) => (
+              <User
+                color={focused ? theme.colors.primary : theme.colors.muted}
+                fill={focused ? theme.colors.primary : 'none'}
+                size={24}
+                strokeWidth={2.2}
+              />
+            ),
           }}
         />
       </Tabs>

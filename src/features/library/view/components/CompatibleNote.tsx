@@ -1,6 +1,6 @@
 import React from 'react';
 import { BadgeCheck } from 'lucide-react-native';
-import { PositiveNote } from '@/shared/components';
+import { PositiveNote } from '@/shared/components/PositiveNote';
 
 interface CompatibleNoteProps {
   /** Optional custom body override; defaults to Option A text */

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScanCamera } from '../viewmodel/useScanCamera';
 import { S1CameraViewfinder } from './containers/camera/s1_CameraViewfinder';
 import { S2CameraControls } from './containers/camera/s2_CameraControls';
-import { SkinGuidanceModal } from './components/SkinGuidanceModal';
+import { PopUpGuidelinesPanel } from './components/PopUpGuidelinesPanel';
 
 /**
  * ScanCameraPage (Section 4.2).
@@ -63,8 +63,8 @@ export const ScanCameraPage: React.FC = () => {
         onNavigateToUpload={navigateToUpload}
       />
 
-      {/* Skin Test Guidance Modal (Triggered via Help icon ?) */}
-      <SkinGuidanceModal
+      {/* Skin Test Guidance Panel (Triggered via Help icon ?) */}
+      <PopUpGuidelinesPanel
         visible={isGuidanceVisible}
         onClose={closeGuidanceModal}
         tips={guidanceTips}
