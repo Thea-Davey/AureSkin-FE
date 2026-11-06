@@ -33,6 +33,7 @@ export function useHome() {
   } = useQuery<LatestAnalysis | null>({
     queryKey: ['history', 'latest'],
     queryFn: fetchLatestAnalysis,
+    staleTime: 1000 * 60 * 15,
   });
 
   // 2. Today's Routine Query
@@ -42,6 +43,7 @@ export function useHome() {
   } = useQuery<RoutineStep[]>({
     queryKey: ['routine', 'current', timePeriod],
     queryFn: () => fetchTodayRoutine(timePeriod),
+    staleTime: 1000 * 60 * 15,
   });
 
   // 3. Articles Query
@@ -52,6 +54,7 @@ export function useHome() {
   } = useQuery<Article[]>({
     queryKey: ['articles'],
     queryFn: fetchArticles,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
   // Pull-to-refresh

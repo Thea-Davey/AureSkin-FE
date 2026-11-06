@@ -12,7 +12,16 @@ LogBox.ignoreLogs([
   "The action 'ROUTE_NAMES_CHANGED'",
 ]);
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 15, // 15 minutes default stale time for dynamic user data
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours in-memory cache retention
+      refetchOnWindowFocus: false, // Prevent aggressive refetches on app focus switch
+      retry: 1,
+    },
+  },
+});
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
@@ -29,6 +38,10 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const isTermsScreen = segments[1] === 'terms';
+    const isIndexScreen = (segments as unknown as string[]).length === 0 || (segments as unknown as string[])[0] === 'index';
+
+    // Allow bootstrap startup screen to orchestrate prefetching before routing
+    if (isIndexScreen) return;
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to login if not authenticated
@@ -40,11 +53,7 @@ export default function RootLayout() {
   }, [isAuthenticated, isLoading, segments, navigationState?.key]);
 
   if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-neutral-offwhite">
-        <Text className="text-h3 text-neutral-text font-sans-medium">Loading...</Text>
-      </View>
-    );
+    return <View className="flex-1 bg-primary" />;
   }
 
   return (

@@ -95,11 +95,13 @@ export function useIngredients(): UseIngredientsResult {
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     placeholderData: (previousData) => previousData,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours (instant cache access across tabs)
   });
 
   const favoritesQuery = useQuery({
     queryKey: favoritesQueryKey,
     queryFn: () => loadFavorites(storageKey),
+    staleTime: 1000 * 60 * 5,
   });
 
   const favoriteIds = favoritesQuery.data ?? EMPTY_FAVORITES;
@@ -110,6 +112,7 @@ export function useIngredients(): UseIngredientsResult {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const compatibilityQuery = useQuery({
@@ -131,6 +134,7 @@ export function useIngredients(): UseIngredientsResult {
       return compatibility;
     },
     enabled: Boolean(latestAnalysisQuery.data?.id),
+    staleTime: 1000 * 60 * 30,
   });
 
   const compatibleIngredientIds = useMemo<string[]>(() => {

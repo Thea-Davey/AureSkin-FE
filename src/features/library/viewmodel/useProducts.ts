@@ -121,6 +121,7 @@ export function useProducts(): UseProductsResult {
   const favoritesQuery = useQuery({
     queryKey: favoritesQueryKey,
     queryFn: () => loadFavorites(favoritesStorageKey),
+    staleTime: 1000 * 60 * 5,
   });
   const {
     data: savedFavoriteIds,
@@ -141,6 +142,7 @@ export function useProducts(): UseProductsResult {
     }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours (instant cache access across tabs)
   });
   const {
     data: productPages,
@@ -188,6 +190,7 @@ export function useProducts(): UseProductsResult {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const latestAnalysisId = latestAnalysisQuery.data?.id;
@@ -198,6 +201,7 @@ export function useProducts(): UseProductsResult {
       return fetchCompatibility(latestAnalysisId);
     },
     enabled: Boolean(latestAnalysisId),
+    staleTime: 1000 * 60 * 30,
   });
 
   const favoriteIds = savedFavoriteIds ?? EMPTY_FAVORITES;
