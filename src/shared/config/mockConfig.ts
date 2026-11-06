@@ -23,7 +23,8 @@ export type FeatureKey =
   | 'routine'
   | 'favorites'
   | 'about'
-  | 'help';
+  | 'help'
+  | 'profile';
 
 // ============================================================================
 // 1. MASTER OVERRIDE SWITCH
@@ -46,6 +47,7 @@ export const FEATURE_OVERRIDES: Partial<Record<FeatureKey, boolean>> = {
   favorites: undefined,
   about: undefined,
   help: undefined,
+  profile: undefined,
 };
 
 /**

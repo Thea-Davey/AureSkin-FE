@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Animated } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppStore } from '../../../shared/store/appStore';
 
 export interface UseScanReturn {
@@ -74,10 +75,22 @@ export function useScan(): UseScanReturn {
     }
   }, [closeScanOverlay, router]);
 
-  const handleUploadPhoto = useCallback(() => {
+  const handleUploadPhoto = useCallback(async () => {
     closeScanOverlay();
     try {
-      router.push('/scan/upload' as any);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const pickedUri = result.assets[0].uri;
+        router.push({
+          pathname: '/scan/submit' as any,
+          params: { imageUri: pickedUri },
+        });
+      }
     } catch {
       // Fallback handled gracefully
     }

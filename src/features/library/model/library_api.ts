@@ -182,13 +182,14 @@ export async function fetchIngredients(
     params: { q, limit, offset },
   });
 
-  if (!isRecord(response.data) || !isRecord(response.data.data)) {
+  const rawPayload = (response.data as any)?.data;
+  let rawItems: unknown[] = [];
+  if (Array.isArray(rawPayload)) {
+    rawItems = rawPayload;
+  } else if (rawPayload && typeof rawPayload === 'object' && Array.isArray(rawPayload.items)) {
+    rawItems = rawPayload.items;
+  } else {
     throw new Error('The ingredient service returned an unexpected response.');
-  }
-
-  const rawItems = response.data.data.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error('The ingredient service response did not contain an item list.');
   }
 
   const items = rawItems.map(normalizeIngredient);
@@ -434,13 +435,14 @@ export async function fetchProducts(params: ProductQuery): Promise<ProductPage> 
     params: { q, category, limit, offset },
   });
 
-  if (!isRecord(response.data) || !isRecord(response.data.data)) {
+  const rawPayload = (response.data as any)?.data;
+  let rawItems: unknown[] = [];
+  if (Array.isArray(rawPayload)) {
+    rawItems = rawPayload;
+  } else if (rawPayload && typeof rawPayload === 'object' && Array.isArray(rawPayload.items)) {
+    rawItems = rawPayload.items;
+  } else {
     throw new Error('The product service returned an unexpected response.');
-  }
-
-  const rawItems = response.data.data.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error('The product service response did not contain an item list.');
   }
 
   const items = rawItems.map(normalizeProduct);

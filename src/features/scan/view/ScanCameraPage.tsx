@@ -19,10 +19,12 @@ export const ScanCameraPage: React.FC = () => {
     isPermissionGranted,
     isPermissionPending,
     isCapturing,
+    isCameraReady,
     flashAnim,
     recentThumbnail,
     isGuidanceVisible,
     guidanceTips,
+    onCameraReady,
     toggleCameraFacing,
     requestCameraPermission,
     capturePhoto,
@@ -49,6 +51,7 @@ export const ScanCameraPage: React.FC = () => {
         isPermissionGranted={isPermissionGranted}
         isPermissionPending={isPermissionPending}
         flashAnim={flashAnim}
+        onCameraReady={onCameraReady}
         onRequestPermission={requestCameraPermission}
         onOpenGuidance={openGuidanceModal}
         onClose={handleClose}

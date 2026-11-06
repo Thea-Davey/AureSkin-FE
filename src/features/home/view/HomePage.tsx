@@ -49,7 +49,7 @@ export function HomePage() {
         {/* Upper Dashboard Cards (Primary Olive Background) */}
         <View className="px-4 space-y-4 gap-4 pt-3.5 pb-2">
           {/* 1. Hero Card: "How is your skin today?" */}
-          <HeroCard onScanPress={() => router.push('/(tabs)/scan')} />
+          <HeroCard onScanPress={() => router.push('/scan/camera')} />
 
           {/* 2. Latest Analysis Result Section */}
           <S1LatestAnalysis

@@ -118,13 +118,20 @@ function normalizeRoutine(payload: RoutineResponse): SkincareRoutine {
 export async function fetchRoutine(): Promise<SkincareRoutine | null> {
   if (isMockEnabled('routine')) return mockCurrentRoutine;
 
-  const response = await api.get('/routine');
-  const payload = response.data?.data;
-  if (payload === null || payload?.routine === null) return null;
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('The routine response was not in the expected format.');
+  try {
+    const response = await api.get('/routine');
+    const payload = response.data?.data;
+    if (payload === null || payload?.routine === null) return null;
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    return normalizeRoutine(payload.routine ?? payload);
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      return null;
+    }
+    throw error;
   }
-  return normalizeRoutine(payload.routine ?? payload);
 }
 
 function getConditionName(condition: unknown): string {
@@ -138,10 +145,8 @@ export async function fetchLatestSkinProfile(): Promise<RoutineSkinProfile | nul
   if (isMockEnabled('routine')) return MOCK_SKIN_PROFILE;
 
   const response = await api.get('/history', { params: { limit: 1, offset: 0 } });
-  const rawItems = response.data?.data?.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error('The latest scan response was not in the expected format.');
-  }
+  const payload = response.data?.data;
+  const rawItems = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : []);
   if (rawItems.length === 0) return null;
 
   const latest = rawItems[0] as AnalysisListItem;

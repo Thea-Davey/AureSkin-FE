@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { SkinGuidanceTip } from '../model/scan_types';
 import { getSkinGuidanceTips } from '../model/scan_api';
 import { MOCK_CAMERA_PHOTO_URI } from '../model/scan_mock';
@@ -35,7 +36,7 @@ export function useScanSubmit(): UseScanSubmitReturn {
   const params = useLocalSearchParams<{ imageUri?: string }>();
 
   // Extract URI or fall back to mock photo during direct testing
-  const imageUri = params.imageUri || MOCK_CAMERA_PHOTO_URI;
+  const imageUri = params.imageUri || (isMockEnabled('scan') ? MOCK_CAMERA_PHOTO_URI : '');
 
   // Guidance modal state & tips
   const [isGuidanceVisible, setIsGuidanceVisible] = useState<boolean>(false);

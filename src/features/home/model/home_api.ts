@@ -81,24 +81,10 @@ export async function fetchTodayRoutine(timePeriod: string): Promise<RoutineStep
 }
 
 /**
- * Fetch curated skincare articles from the Supabase articles table or mock data.
+ * Fetch curated skincare articles (authentic educational guides).
+ * Displays curated articles in both live and mock modes.
  */
 export async function fetchArticles(): Promise<Article[]> {
-  if (isMockEnabled('home')) {
-    return MOCK_ARTICLES;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .order('published_at', { ascending: false });
-
-    if (error || !data) {
-      return [];
-    }
-    return data as Article[];
-  } catch {
-    return [];
-  }
+  // Curated articles are the actual live educational articles for AureSkin
+  return MOCK_ARTICLES;
 }

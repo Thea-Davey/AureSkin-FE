@@ -4,8 +4,11 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { supabase } from '../../../shared/services/supabase';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { MOCK_USER_PROFILE } from '../model/profile_mock';
 import { EditProfileDraft } from '../model/profile_types';
+import { updateUserProfile } from '../model/profile_api';
 
 function getMetadataString(
   metadata: Record<string, unknown>,
@@ -33,27 +36,28 @@ function getInitialDraft(
   user: { email?: string; user_metadata?: Record<string, unknown> } | null
 ): EditProfileDraft {
   const metadata = (user?.user_metadata ?? {}) as Record<string, unknown>;
+  const mockMode = isMockEnabled('profile');
 
   const displayName = typeof metadata.display_name === 'string' ? metadata.display_name : '';
   const firstName =
     getMetadataString(
       metadata,
       'first_name',
-      displayName ? displayName.split(' ')[0] : MOCK_USER_PROFILE.firstName
-    ) || MOCK_USER_PROFILE.firstName;
-  const lastName = getMetadataString(metadata, 'last_name', MOCK_USER_PROFILE.lastName) || '';
-  const username = getMetadataString(metadata, 'username', MOCK_USER_PROFILE.username) || '';
-  const dateOfBirth = getMetadataString(metadata, 'date_of_birth', MOCK_USER_PROFILE.dateOfBirth) || '';
-  const gender = getMetadataString(metadata, 'gender', MOCK_USER_PROFILE.gender) || '';
-  const email = user?.email || MOCK_USER_PROFILE.email;
+      displayName ? displayName.split(' ')[0] : (mockMode ? MOCK_USER_PROFILE.firstName : '')
+    ) || (mockMode ? MOCK_USER_PROFILE.firstName : '');
+  const lastName = getMetadataString(metadata, 'last_name', mockMode ? MOCK_USER_PROFILE.lastName : '') || '';
+  const username = getMetadataString(metadata, 'username', mockMode ? MOCK_USER_PROFILE.username : '') || '';
+  const dateOfBirth = getMetadataString(metadata, 'date_of_birth', mockMode ? MOCK_USER_PROFILE.dateOfBirth : '') || '';
+  const gender = getMetadataString(metadata, 'gender', mockMode ? MOCK_USER_PROFILE.gender : '') || '';
+  const email = user?.email || (mockMode ? MOCK_USER_PROFILE.email : '');
   const phoneNumber =
     getMetadataString(
       metadata,
       'phone_number',
-      getMetadataString(metadata, 'phone', MOCK_USER_PROFILE.phoneNumber)
+      getMetadataString(metadata, 'phone', mockMode ? MOCK_USER_PROFILE.phoneNumber : '')
     ) || '';
-  const allergens = getMetadataAllergens(metadata, MOCK_USER_PROFILE.allergens);
-  const avatarUri = getMetadataString(metadata, 'avatar_url', MOCK_USER_PROFILE.avatarUri);
+  const allergens = getMetadataAllergens(metadata, mockMode ? MOCK_USER_PROFILE.allergens : []);
+  const avatarUri = getMetadataString(metadata, 'avatar_url', mockMode ? MOCK_USER_PROFILE.avatarUri : null);
 
   return {
     firstName,
@@ -73,7 +77,6 @@ export function useEditProfile() {
   const user = useAuthStore((state) => state.user);
   const [initialDraft] = useState(() => getInitialDraft(user));
   const [draft, setDraft] = useState<EditProfileDraft>(initialDraft);
-
   const [allergenInput, setAllergenInput] = useState('');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isGenderPickerOpen, setIsGenderPickerOpen] = useState(false);
@@ -127,51 +130,49 @@ export function useEditProfile() {
       (item) => item.toLocaleLowerCase() === allergen.toLocaleLowerCase()
     );
     if (exists) {
-      updateDraft({
-        allergens: draft.allergens.filter(
-          (item) => item.toLocaleLowerCase() !== allergen.toLocaleLowerCase()
-        ),
-      });
+      removeAllergen(allergen);
     } else {
       updateDraft({ allergens: [...draft.allergens, allergen] });
     }
-  }, [draft.allergens, updateDraft]);
+  }, [draft.allergens, removeAllergen, updateDraft]);
 
   const pickAvatar = useCallback(async () => {
     if (isPickingAvatar) {
       return;
     }
-
     setIsPickingAvatar(true);
-    setSaveNotice(null);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.85,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         updateDraft({ avatarUri: result.assets[0].uri });
       }
-    } catch (error) {
-      setSaveNotice(
-        error instanceof Error
-          ? `Could not open photo picker: ${error.message}`
-          : 'Could not open photo picker.'
-      );
+    } catch (err) {
+      console.warn('Avatar picker error:', err);
     } finally {
       setIsPickingAvatar(false);
     }
   }, [isPickingAvatar, updateDraft]);
 
+  const showPasswordUnavailable = useCallback(() => {
+    Alert.alert(
+      'Password Reset',
+      'Password modification must be performed via secure email verification in live releases.',
+      [{ text: 'OK' }]
+    );
+  }, []);
+
   const returnToProfile = useCallback(() => {
     if (router.canGoBack()) {
       router.back();
-      return;
+    } else {
+      router.replace('/profile');
     }
-    router.replace('/profile');
   }, [router]);
 
   const [isDiscardVisible, setIsDiscardVisible] = useState(false);
@@ -182,40 +183,59 @@ export function useEditProfile() {
 
   const confirmDiscard = useCallback(() => {
     setIsDiscardVisible(false);
+    setDraft(initialDraft);
     returnToProfile();
-  }, [returnToProfile]);
+  }, [initialDraft, returnToProfile]);
 
   const cancelDiscard = useCallback(() => {
     setIsDiscardVisible(false);
   }, []);
 
-  const cancel = promptDiscard;
+  const cancel = useCallback(() => {
+    if (isDirty) {
+      promptDiscard();
+      return;
+    }
+    returnToProfile();
+  }, [isDirty, promptDiscard, returnToProfile]);
 
-  const showPasswordUnavailable = useCallback(() => {
-    Alert.alert(
-      'Change Password',
-      'Password changes are not configured in this app yet.'
-    );
-  }, []);
-
-  const save = useCallback(() => {
+  const save = useCallback(async () => {
     if (!isDirty) {
       return;
     }
+
+    const success = await updateUserProfile(draft);
+    if (!success) {
+      Toast.show({
+        type: 'error',
+        text1: 'Update Failed',
+        text2: 'Could not save profile changes. Please try again.',
+        position: 'bottom',
+      });
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        useAuthStore.getState().setSession(session);
+      }
+    } catch {
+      // ignore
+    }
+
     Toast.show({
       type: 'success',
       text1: 'Profile Updated',
       text2: 'Your profile changes have been applied.',
       position: 'bottom',
     });
-    setSaveNotice(
-      'Profile preview updated locally. Remote profile syncing will be available in future releases.'
-    );
+
     // Smooth return to profile
     setTimeout(() => {
       returnToProfile();
     }, 600);
-  }, [isDirty, returnToProfile]);
+  }, [isDirty, draft, returnToProfile]);
 
   return {
     draft,

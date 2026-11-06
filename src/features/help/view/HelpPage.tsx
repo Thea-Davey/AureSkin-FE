@@ -16,7 +16,7 @@ import { SupportCard } from './components/SupportCard';
 export function HelpPage() {
   const {
     helpData,
-    expandedGuideId,
+    expandedGuideIds,
     isClearingCache,
     cacheClearedStatus,
     isLoading,
@@ -58,7 +58,7 @@ export function HelpPage() {
             <QuickGuideCard
               key={guide.id}
               guide={guide}
-              isExpanded={expandedGuideId === guide.id}
+              isExpanded={expandedGuideIds.includes(guide.id)}
               onToggle={toggleGuide}
             />
           ))}

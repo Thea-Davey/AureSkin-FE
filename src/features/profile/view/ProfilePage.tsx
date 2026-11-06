@@ -50,7 +50,7 @@ export default function ProfilePage() {
             ) : (
               <View className="w-32 h-32 rounded-full border-4 border-card bg-card items-center justify-center">
                 <Text className="text-display font-sans-bold text-primary">
-                  {profile.firstName.charAt(0)}
+                  {profile.firstName ? profile.firstName.charAt(0).toUpperCase() : 'U'}
                 </Text>
               </View>
             )}
@@ -59,7 +59,7 @@ export default function ProfilePage() {
           {/* Greeting & Edit Profile Outer Container Wrapper */}
           <View className="flex-1 pb-1">
             <Text className="text-h1 font-sans-bold text-neutral-white">
-              {profile.firstName}
+              {profile.firstName || 'User'}
             </Text>
 
             {/* Outer container wrapper for Edit Profile button */}

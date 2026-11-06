@@ -5,7 +5,7 @@ import { HelpData } from '../model/help_types';
 import { fetchHelpData, clearPhotoCache } from '../model/help_api';
 
 export function useHelp() {
-  const [expandedGuideId, setExpandedGuideId] = useState<string | null>('guide-scan');
+  const [expandedGuideIds, setExpandedGuideIds] = useState<string[]>(['guide-scan']);
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [cacheClearedStatus, setCacheClearedStatus] = useState<string | null>(null);
 
@@ -21,7 +21,9 @@ export function useHelp() {
   });
 
   const toggleGuide = useCallback((id: string) => {
-    setExpandedGuideId((prev) => (prev === id ? null : id));
+    setExpandedGuideIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   }, []);
 
   const handleClearCache = useCallback(async () => {
@@ -67,7 +69,7 @@ export function useHelp() {
 
   return {
     helpData,
-    expandedGuideId,
+    expandedGuideIds,
     isClearingCache,
     cacheClearedStatus,
     isLoading,

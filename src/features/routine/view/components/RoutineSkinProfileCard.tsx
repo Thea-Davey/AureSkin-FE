@@ -20,7 +20,7 @@ export function RoutineSkinProfileCard({
   onRetry,
   onStartScan,
 }: RoutineSkinProfileCardProps) {
-  const analysisDate = profile?.analysis_date ?? 'May 1, 2026';
+  const analysisDate = profile?.analysis_date;
   const skinType = profile?.skin_type ?? 'Not available';
   const concernsList = profile?.concerns && profile.concerns.length > 0
     ? profile.concerns
@@ -41,9 +41,11 @@ export function RoutineSkinProfileCard({
       {/* Row 1: Smaller Title & Subtitle */}
       <View className="mb-3">
         <Text className="text-body-sm font-sans-bold text-text">Your Skin Profile</Text>
-        <Text className="mt-0.5 text-caption font-sans text-muted">
-          Based on your latest skin analysis: {analysisDate}
-        </Text>
+        {analysisDate ? (
+          <Text className="mt-0.5 text-caption font-sans text-muted">
+            Based on your latest skin analysis: {analysisDate}
+          </Text>
+        ) : null}
       </View>
 
       {/* Row 2: Content States */}

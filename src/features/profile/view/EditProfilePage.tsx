@@ -52,7 +52,7 @@ export function EditProfilePage() {
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Back to profile"
-          onPress={profile.actions.promptDiscard}
+          onPress={profile.actions.cancel}
           activeOpacity={0.7}
           style={{ top: topInset + 4 }}
           className="absolute right-5 w-10 h-10 items-center justify-center z-30"
@@ -403,7 +403,7 @@ export function EditProfilePage() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Cancel"
-              onPress={profile.actions.promptDiscard}
+              onPress={profile.actions.cancel}
               className="flex-1 rounded-button border border-border bg-card py-3.5 items-center justify-center active:bg-neutral-offwhite"
             >
               <Text className="text-label font-sans-semibold text-text">

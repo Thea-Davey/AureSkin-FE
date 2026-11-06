@@ -18,6 +18,7 @@ export interface S1CameraViewfinderProps {
   isPermissionGranted: boolean;
   isPermissionPending: boolean;
   flashAnim: Animated.Value;
+  onCameraReady?: () => void;
   onRequestPermission: () => Promise<boolean>;
   onOpenGuidance: () => void;
   onClose: () => void;
@@ -33,6 +34,7 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
   isPermissionGranted,
   isPermissionPending,
   flashAnim,
+  onCameraReady,
   onRequestPermission,
   onOpenGuidance,
   onClose,
@@ -100,6 +102,7 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
             <CameraView
               ref={cameraRef}
               facing={facing}
+              onCameraReady={onCameraReady}
               style={StyleSheet.absoluteFill}
             />
 

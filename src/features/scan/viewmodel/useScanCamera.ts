@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Animated, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCameraPermissions, CameraView } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import Toast from 'react-native-toast-message';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { CameraFacing, SkinGuidanceTip } from '../model/scan_types';
 import {
-  USE_MOCK,
   getRecentGalleryThumbnail,
   getSkinGuidanceTips,
 } from '../model/scan_api';
@@ -16,6 +18,7 @@ export interface UseScanCameraReturn {
   isPermissionGranted: boolean;
   isPermissionPending: boolean;
   isCapturing: boolean;
+  isCameraReady: boolean;
   flashAnim: Animated.Value;
   cameraRef: React.RefObject<CameraView | null>;
   recentThumbnail: string | null;
@@ -25,6 +28,7 @@ export interface UseScanCameraReturn {
   guidanceTips: SkinGuidanceTip[];
 
   // User Actions
+  onCameraReady: () => void;
   toggleCameraFacing: () => void;
   requestCameraPermission: () => Promise<boolean>;
   capturePhoto: () => Promise<void>;
@@ -46,6 +50,7 @@ export function useScanCamera(): UseScanCameraReturn {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraFacing>('front');
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [isCameraReady, setIsCameraReady] = useState<boolean>(false);
   const [recentThumbnail, setRecentThumbnail] = useState<string | null>(null);
 
   // Guidance modal state
@@ -98,6 +103,10 @@ export function useScanCamera(): UseScanCameraReturn {
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));
   }, []);
 
+  const onCameraReady = useCallback(() => {
+    setIsCameraReady(true);
+  }, []);
+
   const openGuidanceModal = useCallback(() => {
     setIsGuidanceVisible(true);
   }, []);
@@ -106,11 +115,24 @@ export function useScanCamera(): UseScanCameraReturn {
     setIsGuidanceVisible(false);
   }, []);
 
-  const navigateToUpload = useCallback(() => {
+  const navigateToUpload = useCallback(async () => {
     try {
-      router.push('/scan/upload' as any);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const pickedUri = result.assets[0].uri;
+        router.push({
+          pathname: '/scan/submit' as any,
+          params: { imageUri: pickedUri },
+        });
+      }
     } catch {
-      // Fallback handled gracefully
+      // Fallback to upload view if system picker throws
+      router.push('/scan/upload' as any);
     }
   }, [router]);
 
@@ -145,32 +167,43 @@ export function useScanCamera(): UseScanCameraReturn {
     ]).start();
 
     try {
-      let photoUri: string = MOCK_CAMERA_PHOTO_URI;
+      let photoUri: string | null = null;
 
-      if (!USE_MOCK && Platform.OS !== 'web' && cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.85,
-          skipProcessing: false,
-        });
-        if (photo?.uri) {
-          photoUri = photo.uri;
+      if (!isMockEnabled('scan') && Platform.OS !== 'web' && cameraRef.current) {
+        try {
+          const photo = await cameraRef.current.takePictureAsync({
+            quality: 0.85,
+          });
+          if (photo?.uri) {
+            photoUri = photo.uri;
+          }
+        } catch (camErr) {
+          console.warn('Real camera capture error:', camErr);
         }
-      } else {
-        // Mock capture simulation delay
-        await new Promise((resolve) => setTimeout(resolve, 350));
       }
 
-      // Navigate to Scan Submit (Section 4.4) with captured photo URI
+      if (!photoUri) {
+        if (isMockEnabled('scan')) {
+          await new Promise((resolve) => setTimeout(resolve, 350));
+          photoUri = MOCK_CAMERA_PHOTO_URI;
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'Capture Failed',
+            text2: 'Could not capture photo. Please check camera permissions or upload from gallery.',
+            position: 'bottom',
+          });
+          return;
+        }
+      }
+
+      // Navigate to Scan Submit with captured photo URI
       router.push({
         pathname: '/scan/submit' as any,
         params: { imageUri: photoUri },
       });
     } catch (err) {
-      console.warn('Camera capture failed, using fallback:', err);
-      router.push({
-        pathname: '/scan/submit' as any,
-        params: { imageUri: MOCK_CAMERA_PHOTO_URI },
-      });
+      console.warn('Camera capture failed:', err);
     } finally {
       setIsCapturing(false);
     }
@@ -181,11 +214,13 @@ export function useScanCamera(): UseScanCameraReturn {
     isPermissionGranted,
     isPermissionPending,
     isCapturing,
+    isCameraReady,
     flashAnim,
     cameraRef,
     recentThumbnail,
     isGuidanceVisible,
     guidanceTips,
+    onCameraReady,
     toggleCameraFacing,
     requestCameraPermission,
     capturePhoto,
