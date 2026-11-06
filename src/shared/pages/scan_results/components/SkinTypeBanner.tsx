@@ -9,6 +9,7 @@ import {
   LucideIcon,
 } from 'lucide-react-native';
 import { CardGradientHeader } from './CardGradientHeader';
+import { Card } from '@/shared/components';
 import { theme } from '@/shared/theme';
 
 interface SkinTypeBannerProps {
@@ -67,9 +68,9 @@ export const SkinTypeBanner: React.FC<SkinTypeBannerProps> = ({
     'Your diagnosed skin type based on deep-learning facial analysis.';
 
   return (
-    <View className="mx-4 mt-4 rounded-card border border-border bg-card overflow-hidden shadow-xs">
+    <Card style={2} className="mx-4 mt-4 overflow-hidden items-stretch">
       {/* Top Header Section: Gradient adjusts dynamically to expand up to the divider */}
-      <View className="relative">
+      <View className="relative w-full">
         <CardGradientHeader color={theme.colors.secondary} height="100%" startOpacity={0.25} />
 
         {/* Header Row: Label & Skin Type with Icon (Left) + Aligned Confidence Circle (Right) */}
@@ -110,7 +111,7 @@ export const SkinTypeBanner: React.FC<SkinTypeBannerProps> = ({
       <View className="border-b border-border/30 mx-4" />
 
       {/* Dermal Characteristics Body */}
-      <View className="px-4 pt-3 pb-4">
+      <View className="px-4 pt-3 pb-4 w-full">
         <Text className="text-caption font-sans-bold text-muted uppercase tracking-wider mb-1">
           CHARACTERISTICS
         </Text>
@@ -118,7 +119,7 @@ export const SkinTypeBanner: React.FC<SkinTypeBannerProps> = ({
           {typeDescription}
         </Text>
       </View>
-    </View>
+    </Card>
   );
 };
 

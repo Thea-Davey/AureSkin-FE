@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 import { ScanResult } from '@/features/scan/model/scan_types';
 import { IngredientDetailPage } from '@/shared/components/IngredientDetailPage';
 
@@ -54,7 +55,7 @@ export const S3CompatibilityTab: React.FC<S3CompatibilityTabProps> = ({
         }
       >
         {/* ── CONTAINER 1: COMPATIBLE INGREDIENTS (Label inside container) ── */}
-        <View className="mx-4 mt-4 rounded-card border border-border bg-card p-5 shadow-xs">
+        <Card style={2} className="mx-4 mt-4 p-5 items-stretch">
           <Text className="text-caption mb-2 font-sans-bold text-accent uppercase tracking-wide">
             COMPATIBLE INGREDIENTS
           </Text>
@@ -89,10 +90,10 @@ export const S3CompatibilityTab: React.FC<S3CompatibilityTabProps> = ({
               No specific compatible ingredient matches found for this profile.
             </Text>
           )}
-        </View>
+        </Card>
 
         {/* ── CONTAINER 2: HARMFUL COMBINATIONS (Replicating Reference Image 2) ── */}
-        <View className="mx-4 mt-4 mb-6 rounded-card border border-border bg-card p-5 shadow-xs">
+        <Card style={2} className="mx-4 mt-4 mb-6 p-5 items-stretch">
           <Text className="text-caption mb-4 font-sans-bold text-error uppercase tracking-wide">
             HARMFUL COMBINATIONS
           </Text>
@@ -152,7 +153,7 @@ export const S3CompatibilityTab: React.FC<S3CompatibilityTabProps> = ({
               No harmful active clashes or incompatible combinations detected.
             </Text>
           )}
-        </View>
+        </Card>
       </ScrollView>
 
       {/* Ingredient Detail Page Modal */}

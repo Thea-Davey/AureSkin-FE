@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { Card } from '../../../../shared/components/Card';
 import { HealthGauge } from '../../../../shared/components/HealthGauge';
 import { theme } from '../../../../shared/theme';
 
@@ -15,7 +16,7 @@ export function SkinOverviewCard({
   healthScore = 89,
 }: SkinOverviewCardProps) {
   return (
-    <View className="rounded-card border border-border bg-card p-5 mb-4 shadow-xs">
+    <Card className="p-5 mb-4">
       <Text className="text-body font-sans-bold text-secondary mb-3">
         Skin Overview
       </Text>
@@ -59,6 +60,6 @@ export function SkinOverviewCard({
           />
         </View>
       </View>
-    </View>
+    </Card>
   );
 }

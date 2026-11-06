@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Activity } from 'lucide-react-native';
 import { CardGradientHeader } from './CardGradientHeader';
+import { Card } from '@/shared/components';
 import { HealthGauge } from '@/shared/components/HealthGauge';
 import { theme } from '@/shared/theme';
 
@@ -75,9 +76,9 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
   const tier = getScoreTier(score);
 
   return (
-    <View className="mx-4 mt-4 rounded-card border border-border bg-card overflow-hidden shadow-xs">
+    <Card style={2} className="mx-4 mt-4 overflow-hidden items-stretch">
       {/* Top Header Section: Gradient adjusts dynamically to expand up to the divider */}
-      <View className="relative">
+      <View className="relative w-full">
         <CardGradientHeader color={tier.color} height="100%" startOpacity={0.25} />
 
         {/* Header Row: Icon + Title + Status Badge (Left) & Animated Gauge (Right) */}
@@ -118,7 +119,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
       <View className="border-b border-border/30 mx-4" />
 
       {/* Analysis Insight Body */}
-      <View className="px-4 pt-3 pb-4">
+      <View className="px-4 pt-3 pb-4 w-full">
         <Text className="text-caption font-sans-bold text-muted uppercase tracking-wider mb-1">
           Analysis Summary
         </Text>
@@ -127,7 +128,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
             `Your skin health score of ${score}% reflects your current skin barrier stability and detected condition indicators.`}
         </Text>
       </View>
-    </View>
+    </Card>
   );
 };
 

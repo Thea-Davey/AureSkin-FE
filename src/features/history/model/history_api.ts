@@ -1,13 +1,14 @@
 import { api } from '../../../shared/services/api';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { MOCK_HISTORY_DETAILS, MOCK_HISTORY_ENTRIES } from './history_mock';
 import {
-    HistoryCompatibleIngredient,
-    HistoryCondition,
-    HistoryDetail,
-    HistoryEntry,
-    HistoryIncompatiblePair,
-    HistoryPage,
-    HistoryPageParams,
+  HistoryCompatibleIngredient,
+  HistoryCondition,
+  HistoryDetail,
+  HistoryEntry,
+  HistoryIncompatiblePair,
+  HistoryPage,
+  HistoryPageParams,
 } from './history_types';
 
 // ============================================================================
@@ -15,7 +16,7 @@ import {
 // Set to `true` to use mock data for all History screen features (history list,
 // pagination, and deletion).
 // Set to `false` to fetch real-time live data from FastAPI.
-export const USE_MOCK: boolean = true;
+export const USE_MOCK: boolean = isMockEnabled('history');
 // ============================================================================
 
 const deletedMockEntryIds = new Set<string>();
@@ -89,7 +90,7 @@ function normalizeEntry(item: HistoryResponseItem): HistoryEntry {
 }
 
 export async function fetchHistoryPage({ limit, offset }: HistoryPageParams): Promise<HistoryPage> {
-  if (USE_MOCK) {
+  if (isMockEnabled('history')) {
     const availableEntries = MOCK_HISTORY_ENTRIES.filter((entry) => !deletedMockEntryIds.has(entry.id));
     const items = availableEntries.slice(offset, offset + limit);
     return {
@@ -112,7 +113,7 @@ export async function fetchHistoryPage({ limit, offset }: HistoryPageParams): Pr
 }
 
 export async function deleteHistoryEntry(id: string): Promise<void> {
-  if (USE_MOCK) {
+  if (isMockEnabled('history')) {
     deletedMockEntryIds.add(id);
     return;
   }
@@ -152,29 +153,29 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
   const compatibleIngredients: HistoryCompatibleIngredient[] | null = rawCompatibleIngredients === undefined || rawCompatibleIngredients === null
     ? null
     : rawCompatibleIngredients.map((item, index) => {
-        const ingredient = item.ingredient ?? item;
-        const name = ingredient.name ?? item.name;
-        if (!name) throw new Error('A compatible ingredient was missing its name.');
-        return {
-          id: item.id ?? ingredient.id ?? `${item.id ?? 'compatible'}-${index}`,
-          name,
-          reason: item.reason ?? null,
-        };
-      });
+      const ingredient = item.ingredient ?? item;
+      const name = ingredient.name ?? item.name;
+      if (!name) throw new Error('A compatible ingredient was missing its name.');
+      return {
+        id: item.id ?? ingredient.id ?? `${item.id ?? 'compatible'}-${index}`,
+        name,
+        reason: item.reason ?? null,
+      };
+    });
 
   const incompatiblePairs: HistoryIncompatiblePair[] | null = rawIncompatiblePairs === undefined || rawIncompatiblePairs === null
     ? null
     : rawIncompatiblePairs.map((item, index) => {
-        if (!item.ingredient_a || !item.ingredient_b) {
-          throw new Error('An incompatible ingredient pair was missing an ingredient name.');
-        }
-        return {
-          id: item.id ?? `${item.ingredient_a}-${item.ingredient_b}-${index}`,
-          ingredient_a: item.ingredient_a,
-          ingredient_b: item.ingredient_b,
-          reason: item.reason ?? null,
-        };
-      });
+      if (!item.ingredient_a || !item.ingredient_b) {
+        throw new Error('An incompatible ingredient pair was missing an ingredient name.');
+      }
+      return {
+        id: item.id ?? `${item.ingredient_a}-${item.ingredient_b}-${index}`,
+        ingredient_a: item.ingredient_a,
+        ingredient_b: item.ingredient_b,
+        reason: item.reason ?? null,
+      };
+    });
 
   return {
     ...normalizeEntry(item),
@@ -187,7 +188,7 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
 }
 
 export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
-  if (USE_MOCK) {
+  if (isMockEnabled('history')) {
     if (deletedMockEntryIds.has(id)) {
       throw new Error('This scan is no longer available.');
     }

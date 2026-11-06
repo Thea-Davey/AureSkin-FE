@@ -12,6 +12,7 @@ import {
   LucideIcon,
 } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 import { SkinConditionResult } from '@/features/scan/model/scan_types';
 
 interface ConditionDetailCardProps {
@@ -47,7 +48,7 @@ export const ConditionDetailCard: React.FC<ConditionDetailCardProps> = ({
       : '90%';
 
   return (
-    <View className="rounded-card border border-border bg-card overflow-hidden shadow-xs">
+    <Card style={2} className="overflow-hidden items-stretch">
       {/* Condition Banner Strip */}
       <View className="bg-status-concern border-b border-border/40 px-3.5 py-2.5 flex-row items-center justify-between">
         {/* General Clinical Badge Icon */}
@@ -104,7 +105,7 @@ export const ConditionDetailCard: React.FC<ConditionDetailCardProps> = ({
           </View>
         ) : null}
       </View>
-    </View>
+    </Card>
   );
 };
 

@@ -18,6 +18,10 @@ export function useAuth() {
 
   // Helper to sync Supabase session after our custom API returns a token
   const syncSupabaseSession = async (accessToken: string, refreshToken: string) => {
+    if (!accessToken || !refreshToken) {
+      throw new Error('Authentication session token missing from server response.');
+    }
+
     const { data, error } = await supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -54,10 +58,15 @@ export function useAuth() {
       setIsLoading(true);
       const response = await authApi.login({ email, password });
       
+      const tokenData = (response.data as any)?.data ?? response.data;
+      if (!tokenData?.access_token || !tokenData?.refresh_token) {
+        throw new Error('No authentication tokens were received from server.');
+      }
+
       // Store the session in Supabase client and Zustand
       await syncSupabaseSession(
-        response.data.access_token,
-        response.data.refresh_token
+        tokenData.access_token,
+        tokenData.refresh_token
       );
       
       Toast.show({ type: 'success', text1: 'Welcome back!' });
@@ -96,10 +105,15 @@ export function useAuth() {
       setIsLoading(true);
       const response = await authApi.register({ email, password });
       
+      const tokenData = (response.data as any)?.data ?? response.data;
+      if (!tokenData?.access_token || !tokenData?.refresh_token) {
+        throw new Error('Account was created, but email confirmation is required. Please check your email to confirm your account before logging in.');
+      }
+
       // Store session
       await syncSupabaseSession(
-        response.data.access_token,
-        response.data.refresh_token
+        tokenData.access_token,
+        tokenData.refresh_token
       );
       
       Toast.show({ type: 'success', text1: 'Account created successfully!' });

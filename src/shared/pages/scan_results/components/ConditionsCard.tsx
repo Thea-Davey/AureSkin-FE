@@ -13,6 +13,7 @@ import {
   LucideIcon,
 } from 'lucide-react-native';
 import { CardGradientHeader } from './CardGradientHeader';
+import { Card } from '@/shared/components';
 import { SkinConditionResult } from '@/features/scan/model/scan_types';
 import { theme } from '@/shared/theme';
 
@@ -48,9 +49,9 @@ export const ConditionsCard: React.FC<ConditionsCardProps> = ({ conditions }) =>
   const hasConditions = conditions && conditions.length > 0;
 
   return (
-    <View className="mx-4 mt-4 rounded-card border border-border bg-card overflow-hidden shadow-xs">
+    <Card style={2} className="mx-4 mt-4 overflow-hidden items-stretch">
       {/* Top Header Section: Gradient adjusts dynamically to expand up to the divider */}
-      <View className="relative">
+      <View className="relative w-full">
         <CardGradientHeader color={theme.colors.error} height="100%" startOpacity={0.2} />
 
         {/* Top Header Label: High-contrast & informative */}
@@ -88,7 +89,7 @@ export const ConditionsCard: React.FC<ConditionsCardProps> = ({ conditions }) =>
           return (
             <View
               key={condition.id || index}
-              className={index > 0 ? 'border-t border-border/40' : ''}
+              className={`w-full ${index > 0 ? 'border-t border-border/40' : ''}`}
             >
               {/* Condition Banner Strip */}
               <View className="bg-concern border-y border-border/40 px-3.5 py-2.5 flex-row items-center justify-between">
@@ -159,7 +160,7 @@ export const ConditionsCard: React.FC<ConditionsCardProps> = ({ conditions }) =>
           </Text>
         </View>
       )}
-    </View>
+    </Card>
   );
 };
 

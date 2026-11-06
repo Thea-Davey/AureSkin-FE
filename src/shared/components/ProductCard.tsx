@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Star } from 'lucide-react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { theme } from '../theme';
+import { Card } from './Card';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { Product, ProductListItemModel } from '../../features/library/model/library_types';
 import { getProductCategoryImage, formatCategory } from '../utils/productCategory';
@@ -43,10 +44,11 @@ export function ProductCard({
   }
 
   return (
-    <View
-      className={`mb-3 min-h-28 flex-row items-center rounded-card border border-border bg-card p-3 shadow-sm ${className}`}
+    <Card style={2}
+      className={`mb-3 min-h-28 flex-row items-center p-3${className}`}
     >
       <Pressable
+
         accessibilityRole="button"
         accessibilityLabel={`${product.name}${product.brand ? ` by ${product.brand}` : ''}, ${formatCategory(product.category)}`}
         accessibilityHint="Opens product details and its ingredient list"
@@ -101,7 +103,7 @@ export function ProductCard({
           </Animated.View>
         </Pressable>
       </View>
-    </View>
+    </Card>
   );
 }
 

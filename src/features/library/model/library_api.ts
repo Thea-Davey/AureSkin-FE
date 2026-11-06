@@ -1,4 +1,5 @@
 import { api } from '../../../shared/services/api';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import {
   Ingredient,
   IngredientPage,
@@ -18,7 +19,11 @@ import { toCanonicalCategory } from '../../../shared/utils/productCategory';
 // Set to `true` to use mock data for all Library screen features (ingredient
 // and product browsing, detail views, search, and pagination).
 // Set to `false` to fetch real-time live data from FastAPI and Supabase.
-export const USE_MOCK: boolean = true;
+export function isLibraryMock(): boolean {
+  return isMockEnabled('library');
+}
+
+export const USE_MOCK: boolean = isMockEnabled('library');
 // ============================================================================
 
 const MOCK_ADDED_PRODUCTS: ProductDetail[] = [];
@@ -31,7 +36,7 @@ export function addMockProduct(input: {
   skinTypes?: string[];
   skinConditions?: string[];
 }): ProductDetail {
-  if (!USE_MOCK) {
+  if (!isMockEnabled('library')) {
     throw new Error('Mock product creation is only available while Library mock mode is enabled.');
   }
 
@@ -79,7 +84,8 @@ export async function deleteProduct(id: string): Promise<void> {
     throw new Error('A product ID is required.');
   }
 
-  if (USE_MOCK) {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode');
     deleteMockProduct(id);
     return;
   }
@@ -157,7 +163,8 @@ export async function fetchIngredients(
 ): Promise<IngredientPage> {
   const { q, limit, offset } = params;
 
-  if (USE_MOCK) {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode');
     const normalizedQuery = q.trim().toLocaleLowerCase();
     const matchingItems = MOCK_INGREDIENTS.filter((ingredient) =>
       ingredient.name.toLocaleLowerCase().includes(normalizedQuery)
@@ -170,6 +177,7 @@ export async function fetchIngredients(
     };
   }
 
+  console.log('[Library API] fetchIngredients: Requesting LIVE backend at', api.defaults.baseURL);
   const response = await api.get<unknown>('/ingredients', {
     params: { q, limit, offset },
   });
@@ -195,7 +203,8 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
     throw new Error('An ingredient ID is required.');
   }
 
-  if (USE_MOCK) {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode');
     const rawTarget = id.trim();
     const target = rawTarget.toLowerCase();
     const slugTarget = `ingredient-`;
@@ -382,7 +391,8 @@ export async function fetchProductById(id: string): Promise<ProductDetail> {
     throw new Error('A product ID is required.');
   }
 
-  if (USE_MOCK) {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode');
     const product = MOCK_ADDED_PRODUCTS.find((item) => item.id === id)
       ?? MOCK_PRODUCT_DETAILS.find((item) => item.id === id);
     if (!product) {
@@ -402,7 +412,8 @@ export async function fetchProductById(id: string): Promise<ProductDetail> {
 export async function fetchProducts(params: ProductQuery): Promise<ProductPage> {
   const { q, category, limit, offset } = params;
 
-  if (USE_MOCK) {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode');
     const normalizedQuery = q.trim().toLocaleLowerCase();
     const matchingItems = [...MOCK_ADDED_PRODUCTS, ...MOCK_PRODUCTS].filter((product) => {
       const matchesQuery = normalizedQuery.length === 0

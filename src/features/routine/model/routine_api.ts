@@ -1,4 +1,5 @@
 import { api } from '../../../shared/services/api';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import {
   MOCK_ACTIVE_ROUTINE,
   MOCK_CURRENT_ROUTINE,
@@ -21,7 +22,7 @@ import {
 // Set to `true` to use mock data for Routine screen features (current routine,
 // latest skin profile, generation, product options, and step updates).
 // Set to `false` to fetch real-time live data from FastAPI.
-export const USE_MOCK: boolean = true;
+export const USE_MOCK: boolean = isMockEnabled('routine');
 // ============================================================================
 
 let mockCurrentRoutine = MOCK_CURRENT_ROUTINE;
@@ -115,7 +116,7 @@ function normalizeRoutine(payload: RoutineResponse): SkincareRoutine {
 }
 
 export async function fetchRoutine(): Promise<SkincareRoutine | null> {
-  if (USE_MOCK) return mockCurrentRoutine;
+  if (isMockEnabled('routine')) return mockCurrentRoutine;
 
   const response = await api.get('/routine');
   const payload = response.data?.data;
@@ -134,7 +135,7 @@ function getConditionName(condition: unknown): string {
 }
 
 export async function fetchLatestSkinProfile(): Promise<RoutineSkinProfile | null> {
-  if (USE_MOCK) return MOCK_SKIN_PROFILE;
+  if (isMockEnabled('routine')) return MOCK_SKIN_PROFILE;
 
   const response = await api.get('/history', { params: { limit: 1, offset: 0 } });
   const rawItems = response.data?.data?.items;
@@ -174,7 +175,7 @@ export async function fetchLatestSkinProfile(): Promise<RoutineSkinProfile | nul
 }
 
 export async function generateRoutine(): Promise<SkincareRoutine> {
-  if (USE_MOCK) {
+  if (isMockEnabled('routine')) {
     mockCurrentRoutine = MOCK_GENERATED_ROUTINE;
     return mockCurrentRoutine;
   }
@@ -196,7 +197,7 @@ export async function fetchProductOptions({
   limit: number;
   offset: number;
 }): Promise<RoutineProductPage> {
-  if (USE_MOCK) {
+  if (isMockEnabled('routine')) {
     const normalizedQuery = query.trim().toLocaleLowerCase();
     const filtered = MOCK_PRODUCT_OPTIONS.filter((product) =>
       `${product.name} ${product.brand} ${product.category}`.toLocaleLowerCase().includes(normalizedQuery)
@@ -230,7 +231,7 @@ export async function updateRoutineStep(
   stepId: string,
   updates: RoutineStepUpdate
 ): Promise<RoutineStep> {
-  if (USE_MOCK) {
+  if (isMockEnabled('routine')) {
     const activeRoutine = mockCurrentRoutine ?? MOCK_ACTIVE_ROUTINE;
     const existingStep = activeRoutine.steps.find((step) => step.id === stepId);
     if (!existingStep) throw new Error('The routine step could not be found.');
@@ -261,7 +262,7 @@ export async function updateRoutineStep(
 }
 
 export async function saveRoutineSteps(steps: RoutineStep[]): Promise<RoutineStep[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('routine')) {
     const activeRoutine = mockCurrentRoutine ?? MOCK_ACTIVE_ROUTINE;
     mockCurrentRoutine = {
       ...activeRoutine,
@@ -274,7 +275,7 @@ export async function saveRoutineSteps(steps: RoutineStep[]): Promise<RoutineSte
 }
 
 export async function deleteCurrentRoutine(): Promise<void> {
-  if (USE_MOCK) {
+  if (isMockEnabled('routine')) {
     mockCurrentRoutine = null;
     return;
   }

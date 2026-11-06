@@ -1,4 +1,5 @@
 import { api } from '../../../shared/services/api';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { supabase } from '../../../shared/services/supabase';
 import { LatestAnalysis, RoutineStep, Article } from './home_types';
 import { MOCK_LATEST_ANALYSIS, MOCK_ROUTINE_STEPS, MOCK_ARTICLES } from './home_mock';
@@ -8,14 +9,14 @@ import { MOCK_LATEST_ANALYSIS, MOCK_ROUTINE_STEPS, MOCK_ARTICLES } from './home_
 // Set to `true` to use mock data for all Home screen features (Latest Analysis,
 // Today's Routine, Skincare Articles).
 // Set to `false` to fetch real-time live data from FastAPI and Supabase.
-export const USE_MOCK: boolean = true;
+export const USE_MOCK: boolean = isMockEnabled('home');
 // ============================================================================
 
 /**
  * Fetch the user's latest skin analysis from the backend or mock data.
  */
 export async function fetchLatestAnalysis(): Promise<LatestAnalysis | null> {
-  if (USE_MOCK) {
+  if (isMockEnabled('home')) {
     return MOCK_LATEST_ANALYSIS;
   }
 
@@ -55,7 +56,7 @@ export async function fetchLatestAnalysis(): Promise<LatestAnalysis | null> {
  * Fetch today's personalized routine steps from the backend or mock data.
  */
 export async function fetchTodayRoutine(timePeriod: string): Promise<RoutineStep[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('home')) {
     return MOCK_ROUTINE_STEPS;
   }
 
@@ -83,7 +84,7 @@ export async function fetchTodayRoutine(timePeriod: string): Promise<RoutineStep
  * Fetch curated skincare articles from the Supabase articles table or mock data.
  */
 export async function fetchArticles(): Promise<Article[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('home')) {
     return MOCK_ARTICLES;
   }
 

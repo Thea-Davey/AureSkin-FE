@@ -18,22 +18,22 @@
 In accordance with `aureskin-frontend-rules`:
 - **Background Color Token:** `bg-card` (`#FFFFFF` from `theme.colors.card`).
 - **Border Radius Token:** `rounded-card` (`16px` from `tailwind.config.js`).
-- **Border Requirement:** **No border** (removes existing `border border-border`).
-- **Drop-down Shadow Specification:**
+- **Border Requirement:** `border border-border` (`#E8E0D8` stroke from `theme.colors.border`), overridable via `className`.
+- **Drop-down Shadow Specification (Refined & Soft):**
   - Horizontal offset ($x$): `0`
-  - Vertical offset ($y$): `4`
-  - Blur radius: `10`
+  - Vertical offset ($y$): `2`
+  - Blur radius: `6`
   - Color: `black` (`#000000` / `theme.colors.black`)
-  - Opacity: `10%` (`0.10`)
-  - Android Elevation equivalent: `elevation: 4`
+  - Opacity: `4%` (`0.04`)
+  - Android Elevation equivalent: `elevation: 2`
 - **React Native Style Object:**
   ```typescript
   const cardShadowStyle = {
     shadowColor: theme.colors.black ?? '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   };
   ```
 

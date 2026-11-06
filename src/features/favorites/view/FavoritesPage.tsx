@@ -1,178 +1,156 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { Heart, Sparkles, Bookmark, CheckCircle2 } from 'lucide-react-native';
-import { ModalHeader } from '../../../shared/components/ModalHeader';
-import { theme } from '../../../shared/theme';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { Bookmark } from 'lucide-react-native';
+import { ModalHeader } from '@/shared/components/ModalHeader';
+import { Card } from '@/shared/components/Card';
+import { IngredientDetailPage } from '@/shared/components/IngredientDetailPage';
+import { ProductDetailPage } from '@/shared/components/ProductDetailPage';
+import { theme } from '@/shared/theme';
+import { useFavorites } from '../viewmodel/useFavorites';
+import { FavoriteCard } from './components/FavoriteCard';
+import { FavoriteFilter } from '../model/favorites_types';
 
-type FilterType = 'all' | 'products' | 'ingredients';
+export function FavoritesPage() {
+  const {
+    items,
+    counts,
+    activeFilter,
+    isLoading,
+    isRefreshing,
+    error,
+    selectedIngredientId,
+    selectedProductId,
+    actions,
+  } = useFavorites();
 
-export default function FavoritesPage() {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-
-  const sampleFavorites = [
-    {
-      id: 'fav-1',
-      type: 'product',
-      title: 'Hydrating Gentle Foam Cleanser',
-      brand: 'CeraVe',
-      category: 'Cleanser',
-      matchScore: '96% Compatible',
-      description: 'Contains Ceramides & Hyaluronic Acid to gently restore the moisture barrier.',
-    },
-    {
-      id: 'fav-2',
-      type: 'ingredient',
-      title: 'Niacinamide (Vitamin B3)',
-      brand: 'Active Ingredient',
-      category: 'Pore & Sebum Control',
-      matchScore: '100% Compatible',
-      description: 'Strengthens epidermal barrier function and regulates excess sebum excretion.',
-    },
-    {
-      id: 'fav-3',
-      type: 'product',
-      title: 'Daily UV Barrier Mineral SPF 50+',
-      brand: 'La Roche-Posay',
-      category: 'Sunscreen',
-      matchScore: '92% Compatible',
-      description: 'Broad-spectrum physical protection suitable for sensitive, acne-prone skin.',
-    },
+  const filterTabs: { id: FavoriteFilter; label: string; count: number }[] = [
+    { id: 'all', label: 'All', count: counts.all },
+    { id: 'products', label: 'Products', count: counts.products },
+    { id: 'ingredients', label: 'Ingredients', count: counts.ingredients },
   ];
-
-  const filteredItems = sampleFavorites.filter((item) => {
-    if (activeFilter === 'products') return item.type === 'product';
-    if (activeFilter === 'ingredients') return item.type === 'ingredient';
-    return true;
-  });
 
   return (
     <View className="flex-1 bg-background">
       <ModalHeader title="Favorites" />
 
-      {/* Filter Tabs */}
-      <View className="flex-row px-5 pt-4 pb-3 bg-background border-b border-border/50">
-        <TouchableOpacity
-          onPress={() => setActiveFilter('all')}
-          activeOpacity={0.8}
-          className={`px-4 py-2 rounded-badge mr-2.5 ${
-            activeFilter === 'all'
-              ? 'bg-primary'
-              : 'bg-card border border-border'
-          }`}
-        >
-          <Text
-            className={`text-caption font-sans-semibold ${
-              activeFilter === 'all' ? 'text-neutral-white' : 'text-muted'
-            }`}
-          >
-            All (3)
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveFilter('products')}
-          activeOpacity={0.8}
-          className={`px-4 py-2 rounded-badge mr-2.5 ${
-            activeFilter === 'products'
-              ? 'bg-primary'
-              : 'bg-card border border-border'
-          }`}
-        >
-          <Text
-            className={`text-caption font-sans-semibold ${
-              activeFilter === 'products' ? 'text-neutral-white' : 'text-muted'
-            }`}
-          >
-            Products (2)
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setActiveFilter('ingredients')}
-          activeOpacity={0.8}
-          className={`px-4 py-2 rounded-badge ${
-            activeFilter === 'ingredients'
-              ? 'bg-primary'
-              : 'bg-card border border-border'
-          }`}
-        >
-          <Text
-            className={`text-caption font-sans-semibold ${
-              activeFilter === 'ingredients' ? 'text-neutral-white' : 'text-muted'
-            }`}
-          >
-            Ingredients (1)
-          </Text>
-        </TouchableOpacity>
+      {/* Filter Tabs (3 Containers: All, Products, Ingredients) */}
+      <View className="flex-row px-5 pt-4 pb-3 bg-background border-b border-border/40">
+        {filterTabs.map((tab) => {
+          const isActive = activeFilter === tab.id;
+          return (
+            <Pressable
+              key={tab.id}
+              onPress={() => actions.setFilter(tab.id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              className={`px-4 py-2 rounded-badge mr-2.5 ${
+                isActive ? 'bg-primary' : 'bg-card border border-border'
+              }`}
+            >
+              <Text
+                className={`text-caption font-sans-semibold ${
+                  isActive ? 'text-neutral-white' : 'text-text'
+                }`}
+              >
+                {tab.label} ({tab.count})
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <ScrollView
-        className="flex-1 px-5 pt-4"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        className="flex-1 pt-4"
+        contentContainerStyle={{ paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={actions.refresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
       >
-        {filteredItems.length === 0 ? (
-          <View className="items-center justify-center py-20 px-6">
-            <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
-              <Bookmark size={30} color={theme.colors.primary} />
-            </View>
-            <Text className="text-h3 font-sans-bold text-text text-center">
-              No favorites in this category
-            </Text>
-            <Text className="text-body-sm font-sans text-muted text-center mt-1">
-              Tap the heart icon on any product or ingredient in the Library to save it here.
+        {isLoading ? (
+          <View className="items-center justify-center py-20">
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <Text className="mt-3 text-body-sm font-sans text-muted">
+              Loading your favorites...
             </Text>
           </View>
-        ) : (
-          filteredItems.map((item) => (
-            <View
-              key={item.id}
-              className="bg-card rounded-card border border-border p-4 mb-3 shadow-sm"
-            >
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="flex-row items-center">
-                  <View className="bg-primary/15 px-2.5 py-0.5 rounded-badge mr-2">
-                    <Text className="text-caption font-sans-bold text-primary uppercase">
-                      {item.type}
-                    </Text>
-                  </View>
-                  <Text className="text-caption font-sans-medium text-muted">
-                    {item.brand} • {item.category}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Heart size={20} color={theme.colors.error} fill={theme.colors.error} />
-                </TouchableOpacity>
-              </View>
-
-              <Text className="text-h3 font-sans-bold text-text">
-                {item.title}
+        ) : error ? (
+          <View className="mx-5 my-6">
+            <Card style={2} className="p-6 items-center">
+              <Text className="text-body font-sans-bold text-status-error mb-1">
+                Unable to load favorites
               </Text>
-
-              <Text className="text-body-sm font-sans text-muted mt-1 leading-5">
-                {item.description}
+              <Text className="text-body-sm font-sans text-muted text-center mb-4">
+                {error}
               </Text>
-
-              <View className="flex-row items-center mt-3 pt-2.5 border-t border-border/50">
-                <CheckCircle2 size={15} color={theme.colors.secondary} />
-                <Text className="text-caption font-sans-semibold text-secondary ml-1.5">
-                  {item.matchScore}
+              <Pressable
+                onPress={() => void actions.refresh()}
+                className="bg-primary rounded-button px-5 py-2.5"
+              >
+                <Text className="text-label font-sans-semibold text-neutral-white">
+                  Retry
                 </Text>
-                <View className="flex-1" />
-                <View className="flex-row items-center">
-                  <Sparkles size={13} color={theme.colors.muted} />
-                  <Text className="text-caption font-sans text-muted ml-1">
-                    Saved from Library
-                  </Text>
-                </View>
+              </Pressable>
+            </Card>
+          </View>
+        ) : items.length === 0 ? (
+          <View className="mx-5 my-12 items-center">
+            <Card style={2} className="p-8 items-center w-full">
+              <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
+                <Bookmark size={28} color={theme.colors.primary} />
               </View>
-            </View>
+              <Text className="text-h3 font-sans-bold text-text text-center">
+                No favorites in this category
+              </Text>
+              <Text className="text-body-sm font-sans text-muted text-center mt-1.5 leading-5 max-w-xs">
+                Tap the star icon on any ingredient or product in the Library to save it here.
+              </Text>
+            </Card>
+          </View>
+        ) : (
+          items.map((item) => (
+            <FavoriteCard
+              key={item.id}
+              item={item}
+              styleVariant={item.type === 'ingredient' ? 1 : 2}
+              onPress={() => actions.openItem(item)}
+              onFavoritePress={() => actions.toggleFavorite(item.id)}
+            />
           ))
         )}
       </ScrollView>
+
+      {/* Ingredient Detail Sheet Modal */}
+      {selectedIngredientId ? (
+        <IngredientDetailPage
+          visible={Boolean(selectedIngredientId)}
+          ingredientId={selectedIngredientId}
+          onClose={actions.closeIngredientDetail}
+        />
+      ) : null}
+
+      {/* Product Detail Sheet Modal */}
+      {selectedProductId ? (
+        <ProductDetailPage
+          visible={Boolean(selectedProductId)}
+          productId={selectedProductId}
+          onClose={actions.closeProductDetail}
+        />
+      ) : null}
     </View>
   );
 }
+
+export default FavoritesPage;

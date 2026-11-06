@@ -4,7 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 // LOGIN BYPASS TOGGLE
 // Set to `true` to allow entering the app without backend / network connection.
 // Set to `false` for real authentication via FastAPI & Supabase.
-export const LOGIN_BYPASS: boolean = true;
+export const LOGIN_BYPASS: boolean = false;
 // ============================================================================
 
 export const MOCK_BYPASS_USER: User = {

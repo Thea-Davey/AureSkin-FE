@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 import { FAQ } from '../../model/home_types';
 
 // Enable LayoutAnimation on Android
@@ -32,7 +33,7 @@ export function FAQItem({ faq }: FAQItemProps) {
   };
 
   return (
-    <View className="bg-card rounded-card mb-3 border border-border shadow-xs overflow-hidden">
+    <Card className="mb-3 overflow-hidden">
       <TouchableOpacity
         onPress={toggleOpen}
         activeOpacity={0.75}
@@ -59,6 +60,6 @@ export function FAQItem({ faq }: FAQItemProps) {
           </Text>
         </View>
       )}
-    </View>
+    </Card>
   );
 }

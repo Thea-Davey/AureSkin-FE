@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { ChevronRight } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 import { Article } from '../../model/home_types';
 
 interface ArticleCardProps {
@@ -20,10 +21,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
   };
 
   return (
-    <TouchableOpacity
+    <Card
       onPress={handleOpenArticle}
-      activeOpacity={0.85}
-      className="bg-card rounded-card p-4 mb-4 border border-border shadow-xs"
+      accessibilityRole="button"
+      accessibilityLabel={`View article: ${article.title}`}
+      className="p-4 mb-4"
     >
       {/* Top Row: Title + "See Article" Link */}
       <View className="flex-row items-center justify-between mb-2.5">
@@ -57,6 +59,6 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </View>
         )}
       </View>
-    </TouchableOpacity>
+    </Card>
   );
 }

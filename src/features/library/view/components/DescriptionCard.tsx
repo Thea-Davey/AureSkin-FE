@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { View, Text } from 'react-native';
 import { Droplet } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 
 export type BulletTone = 'positive' | 'negative' | 'ingredient';
 
@@ -48,7 +49,7 @@ export function DescriptionCard({
   };
 
   return (
-    <View className={`mb-3 rounded-card border border-border bg-card p-4 shadow-xs ${className}`}>
+    <Card className={`mb-3 p-4 ${className}`}>
       {/* Category Card Title: Styled with text-body-sm font-sans-bold text-muted for clean hierarchy */}
       <Text className="mb-2 text-body-sm font-sans-bold text-secondary-dark">   {/* text-secondary-dark change: secondary-dark to primary, muted, accent*/}
         {title}
@@ -77,6 +78,6 @@ export function DescriptionCard({
 
       {/* Extra Children (e.g. Caution notes, custom paragraphs) */}
       {children}
-    </View>
+    </Card>
   );
 }

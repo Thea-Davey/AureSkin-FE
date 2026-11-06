@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Image } from 'react-native';
 import { Info, X } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 
 export function S3SkinTestGuide() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -15,7 +16,7 @@ export function S3SkinTestGuide() {
 
   return (
     <View className="mb-7">
-      <View className="bg-background rounded-card p-4 border border-border shadow-xs overflow-visible relative">
+      <Card className="p-4 overflow-visible relative bg-background">
         {/* Top Header: Info Icon + Title */}
         <View className="flex-row items-center mb-3">
           <View className="mr-2">
@@ -58,7 +59,7 @@ export function S3SkinTestGuide() {
           }}
           resizeMode="contain"
         />
-      </View>
+      </Card>
 
       {/* Guide Steps Modal */}
       <Modal

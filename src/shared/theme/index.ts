@@ -22,6 +22,7 @@ export const theme = {
     error: "#E53935",
     concern: "#fa8b89ff",
     white: "#FFFFFF",
+    black: "#000000",
     beige: "#f8f0e7ff",
 
     // Status colors (matching tailwind.config.js)

@@ -22,3 +22,8 @@ export interface TokenResponse {
   expires_in: number;
   user: UserResponse;
 }
+
+export interface AuthResponse {
+  data: TokenResponse;
+  message?: string;
+}

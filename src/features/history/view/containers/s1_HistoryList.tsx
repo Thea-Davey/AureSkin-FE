@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { theme } from '@/shared/theme';
-import { DeleteDialog } from '@/shared/components';
+import { Card, DeleteDialog } from '@/shared/components';
 import { SearchBar } from '@/shared/components/SearchBar';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -74,14 +74,14 @@ function HistorySkeleton() {
   return (
     <View accessibilityLabel="Loading scan history" className="gap-3 px-4 pt-3">
       {[0, 1, 2].map((row) => (
-        <View key={row} className="min-h-28 flex-row items-center rounded-card border border-border bg-card p-3 shadow-xs">
+        <Card key={row} className="min-h-28 flex-row items-center p-3">
           <View className="h-24 w-24 rounded-card bg-secondary/15" />
           <View className="ml-3 flex-1 gap-2.5">
             <View className="h-4 w-2/3 rounded-badge bg-border/40" />
             <View className="h-5 w-1/3 rounded-badge bg-border/40" />
             <View className="h-5 w-1/2 rounded-badge bg-border/40" />
           </View>
-        </View>
+        </Card>
       ))}
     </View>
   );
@@ -113,7 +113,7 @@ export function S1HistoryList(props: HistoryListProps) {
   );
 
   return (
-    <View className="flex-1 bg-card">
+    <View className="flex-1 bg-background">
       <SearchBar
         style={2}
         filterIcon={SlidersHorizontal}

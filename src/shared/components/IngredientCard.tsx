@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { Star } from 'lucide-react-native';
 import { theme } from '../theme';
+import { Card } from './Card';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { Ingredient } from '../../features/library/model/library_types';
 
@@ -36,18 +37,23 @@ export function IngredientCard({
     'Learn more about this ingredient in the detail view.';
 
   return (
-    <Animated.View entering={FadeIn}>
-      <Pressable
+    <Animated.View
+      entering={FadeIn}
+      className="w-full"
+      style={{ width: '100%' }}
+    >
+      <Card
+        variant={2}
         accessibilityRole="button"
         accessibilityLabel={`View details for ${ingredient.name}`}
         accessibilityHint="Opens ingredient details"
         onPress={() => onPress(ingredient.id)}
-        className={`mx-5 mb-3 rounded-card border border-border bg-card px-5 py-4 shadow-sm active:opacity-80 ${
+        className={`mx-5 mb-3 px-5 py-4 self-stretch items-stretch ${
           isFirstInSection ? 'mt-3' : ''
         } ${className}`}
       >
         {/* Row 1: [Col 1: Ingredient Name] [Col 2: Compact Compatibility Badge + Favorite Button (Top Aligned)] */}
-        <View className="flex-row items-start justify-between gap-3">
+        <View className="w-full flex-row items-start justify-between gap-3">
           <Text className="min-w-0 flex-1 text-body font-sans-bold text-text">
             {ingredient.name}
           </Text>
@@ -68,7 +74,7 @@ export function IngredientCard({
               accessibilityState={{ selected: isFavorite }}
               onPress={() => onFavoritePress(ingredient.id)}
               hitSlop={8}
-              className="p-1 active:opacity-70"
+              className="active:opacity-70"
             >
               <Animated.View key={String(isFavorite)} entering={ZoomIn.duration(160)}>
                 <Star
@@ -84,11 +90,11 @@ export function IngredientCard({
         {/* Row 2: Full-width Preview Description */}
         <Text
           numberOfLines={3}
-          className="mt-2 text-body-sm font-sans text-muted leading-5"
+          className="w-full mt-2 text-body-sm font-sans text-muted leading-5"
         >
           {previewText}
         </Text>
-      </Pressable>
+      </Card>
     </Animated.View>
   );
 }

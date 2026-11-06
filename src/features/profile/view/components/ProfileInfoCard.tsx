@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ChevronRight, Wheat } from 'lucide-react-native';
+import { Card } from '../../../../shared/components/Card';
 import { theme } from '../../../../shared/theme';
 
 interface ProfileInfoCardProps {
@@ -18,7 +19,7 @@ export function ProfileInfoCard({
     allergens.length > 0 ? allergens.join(', ') : 'None';
 
   return (
-    <View className="rounded-card border border-border bg-card p-5 mb-4 shadow-xs">
+    <Card className="p-5 mb-4">
       <Text className="text-body font-sans-bold text-secondary">
         Profile Information
       </Text>
@@ -74,7 +75,7 @@ export function ProfileInfoCard({
         </Text>
         <ChevronRight size={18} color={theme.colors.muted} />
       </TouchableOpacity>
-    </View>
+    </Card>
   );
 }
 

@@ -1,4 +1,5 @@
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components/Card';
 import { HealthGauge } from '@/shared/components/HealthGauge';
 import { Image } from 'expo-image';
 import { CalendarDays, MoreHorizontal } from 'lucide-react-native';
@@ -30,12 +31,13 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
   const extraConditionCount = Math.max(0, entry.conditions.length - visibleConditions.length);
 
   return (
-    <Pressable
+    <Card
+      style={2}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Skin analysis from ${formatDate(entry.created_at)}, ${healthScore}% healthy`}
       accessibilityHint="Opens this scan's results"
-      className="mb-3 min-h-28 flex-row items-center rounded-card border border-border bg-card p-3 shadow-xs active:opacity-85"
+      className="mb-3 min-h-28 flex-row items-center p-3"
     >
       {/* ── COL 1: IMAGE ── */}
       <View className="h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-card bg-secondary/15">
@@ -117,7 +119,7 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
           )}
         </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 

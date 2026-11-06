@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Image } from 'react-native';
 import { Info, X } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Card } from '@/shared/components';
 
 export function SkinTestGuideTip() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -14,7 +15,7 @@ export function SkinTestGuideTip() {
   ];
 
   return (
-    <View className="bg-background rounded-card p-4 mb-7 border border-border shadow-xs overflow-visible relative">
+    <Card className="p-4 mb-7 overflow-visible relative">
       {/* Top Header: Info Icon + Title */}
       <View className="flex-row items-center mb-3">
         <View className="mr-2">
@@ -114,6 +115,6 @@ export function SkinTestGuideTip() {
           </View>
         </View>
       </Modal>
-    </View>
+    </Card>
   );
 }

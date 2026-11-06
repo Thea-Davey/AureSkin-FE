@@ -22,6 +22,8 @@ export interface SearchBarProps {
   onFilterPress?: () => void;
   /** Additional container styling */
   className?: string;
+  /** Additional styling for inner search input capsule (e.g. custom bg, border) */
+  inputClassName?: string;
   /** Test identifier */
   testID?: string;
 }
@@ -36,6 +38,7 @@ export function SearchBar({
   filterIconColor,
   onFilterPress,
   className = '',
+  inputClassName = '',
   testID,
 }: SearchBarProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -61,17 +64,30 @@ export function SearchBar({
     .filter(Boolean)
     .join(' ');
 
+  const hasCustomInputBg = inputClassName.includes('bg-');
+  const hasCustomInputBorder = inputClassName.includes('border-');
+
+  const innerCapsuleClasses = [
+    'flex-row items-center rounded-full border pl-4',
+    hasCustomInputBg ? '' : 'bg-card',
+    hasCustomInputBorder
+      ? ''
+      : isFocused
+        ? 'border-primary'
+        : 'border-border',
+    filterLabel || filterIcon ? 'pr-2' : value.length > 0 ? 'pr-2' : 'pr-4',
+    inputClassName,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <View
       testID={testID}
       className={containerClasses}
       style={hasCustomPadding && className.includes('px-0') ? { paddingHorizontal: 0 } : undefined}
     >
-      <View
-        className={`flex-row items-center rounded-full border bg-card pl-4 ${
-          filterLabel || filterIcon ? 'pr-2' : value.length > 0 ? 'pr-2' : 'pr-4'
-        } ${isFocused ? 'border-primary' : 'border-border'}`}
-      >
+      <View className={innerCapsuleClasses}>
         <Search size={20} color={isFocused ? theme.colors.primary : theme.colors.muted} />
         <TextInput
           accessibilityLabel={placeholder}

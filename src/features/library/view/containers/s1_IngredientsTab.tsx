@@ -97,13 +97,15 @@ export function S1IngredientsTab({
   ) : undefined;
 
   return (
-    <View className="flex-1 rounded-t-card bg-card">
+    <View className="flex-1 rounded-t-card bg-background">
       {/* 1. Permanently Pinned SearchBar */}
       <SearchBar
         style={1}
         value={searchQuery}
         onChangeText={onSearchQueryChange}
         placeholder="search ingredients"
+        className="bg-background"
+      // inputClassName="bg-card"
       />
 
       {/* 2. Scrollable SectionList with Sticky Alphabet Headers */}

@@ -11,7 +11,7 @@ export function HistoryPage() {
   return (
     <View className="flex-1 bg-primary">
       <StatusBar style="light" />
-      <View className="flex-1 rounded-t-card bg-card overflow-hidden">
+      <View className="flex-1 rounded-t-card bg-background overflow-hidden">
         <S1HistoryList
           entries={history.entries}
           filteredEntries={history.filteredEntries}

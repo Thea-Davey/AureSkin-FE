@@ -1,4 +1,5 @@
 import { api } from '../../../shared/services/api';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import {
   ScanResult,
   CompatibilityResponse,
@@ -18,7 +19,7 @@ import {
 // Set to `true` to use mock data for all Scan screen features (Scan Analysis,
 // Camera Capture Simulation, Gallery Photos Grid, Health Score, Compatibility).
 // Set to `false` to fetch real-time live data from FastAPI and Supabase.
-export const USE_MOCK: boolean = true;
+export const USE_MOCK: boolean = isMockEnabled('scan');
 // ============================================================================
 
 /**
@@ -31,7 +32,7 @@ export async function uploadScan(
   imageUri: string,
   signal?: AbortSignal
 ): Promise<ScanResult> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         resolve();
@@ -77,7 +78,7 @@ export async function uploadScan(
  * - Mock: returns compatibility slice from MOCK_COMPATIBILITY
  */
 export async function fetchCompatibility(analysisId: string): Promise<CompatibilityResponse> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     return {
       ...MOCK_COMPATIBILITY,
       analysis_id: analysisId || MOCK_COMPATIBILITY.analysis_id,
@@ -93,7 +94,7 @@ export async function fetchCompatibility(analysisId: string): Promise<Compatibil
  * Returns null if not available or permission denied.
  */
 export async function getRecentGalleryThumbnail(): Promise<string | null> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     return MOCK_GALLERY_THUMBNAIL;
   }
   return null;
@@ -103,7 +104,7 @@ export async function getRecentGalleryThumbnail(): Promise<string | null> {
  * Fetch skin analysis capture guidelines for the guidance modal.
  */
 export async function getSkinGuidanceTips(): Promise<SkinGuidanceTip[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     return MOCK_SKIN_GUIDANCE_TIPS;
   }
   return MOCK_SKIN_GUIDANCE_TIPS;
@@ -114,7 +115,7 @@ export async function getSkinGuidanceTips(): Promise<SkinGuidanceTip[]> {
  * Supports optional client-side query string filtering.
  */
 export async function fetchGalleryPhotos(query?: string): Promise<GalleryPhotoItem[]> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     // Artificial brief loading delay for realistic transition
     await new Promise((resolve) => setTimeout(resolve, 200));
     if (!query || query.trim() === '') {
@@ -138,7 +139,7 @@ export async function fetchGalleryPhotos(query?: string): Promise<GalleryPhotoIt
  * - Mock: returns MOCK_SCAN_RESULT
  */
 export async function fetchScanResult(analysisId?: string): Promise<ScanResult> {
-  if (USE_MOCK) {
+  if (isMockEnabled('scan')) {
     await new Promise((resolve) => setTimeout(resolve, 300));
     return MOCK_SCAN_RESULT;
   }

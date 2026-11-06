@@ -151,10 +151,11 @@ export function S2ProductsTab({
   ) : undefined;
 
   return (
-    <View className="flex-1 rounded-t-card bg-card">
+    <View className="flex-1 rounded-t-card bg-background">
       {/* 1. Permanently Pinned Style 2 SearchBar with Filter Button */}
       <SearchBar
         style={2}
+        className="bg-background"
         value={searchQuery}
         onChangeText={onSearchQueryChange}
         placeholder="search products"

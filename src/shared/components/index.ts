@@ -1,4 +1,7 @@
-export { AppHeader } from './AppHeader';
+export { AppHeader, DEFAULT_HEADER_TITLE_SIZE } from './AppHeader';
+export type { AppHeaderProps, AppHeaderFontSize } from './AppHeader';
+export { BottomNavBar, AppBottomNavBar } from './BottomNavBar';
+export type { BottomNavBarProps } from './BottomNavBar';
 export { MenuOverlay } from './MenuOverlay';
 export { ModalHeader } from './ModalHeader';
 
@@ -34,6 +37,9 @@ export type { CalendarPickerModalProps } from './CalendarPickerModal';
 
 export { CompatibilityBadge } from './CompatibilityBadge';
 export type { CompatibilityBadgeProps, CompatibilityStatus } from './CompatibilityBadge';
+
+export { Card } from './Card';
+export type { CardProps } from './Card';
 
 export { IngredientCard } from './IngredientCard';
 export type { IngredientCardProps } from './IngredientCard';

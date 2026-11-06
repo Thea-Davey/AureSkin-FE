@@ -9,7 +9,7 @@ export function TermsPage() {
   const { height } = useWindowDimensions();
 
   // Dynamic card height filling ~65% of screen (at least 480px, max 620px)
-  const cardHeight = Math.max(480, Math.min(height * 0.65, 620));
+  const cardHeight = Math.max(620, Math.min(height * 0.65, 620));
 
   return (
     <AuthScreenWrapper>
@@ -20,8 +20,8 @@ export function TermsPage() {
               Terms and Conditions
             </Text>
 
-            <ScrollView 
-              className="flex-1 pr-2" 
+            <ScrollView
+              className="flex-1 pr-2"
               showsVerticalScrollIndicator={true}
               contentContainerStyle={{ paddingBottom: 12 }}
             >
