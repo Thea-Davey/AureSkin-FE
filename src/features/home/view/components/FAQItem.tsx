@@ -54,8 +54,8 @@ export function FAQItem({ faq }: FAQItemProps) {
       </TouchableOpacity>
 
       {isOpen && (
-        <View className="px-4 pb-4 pt-1 border-t border-border">
-          <Text className="text-caption font-sans text-text leading-5">
+        <View className="px-4 pb-4 pt-3 border-t border-border">
+          <Text className="text-caption font-sans text-muted leading-5">
             {faq.answer}
           </Text>
         </View>

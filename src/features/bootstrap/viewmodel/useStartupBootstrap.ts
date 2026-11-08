@@ -5,8 +5,9 @@ import { useAuthStore } from '../../../shared/store/authStore';
 import { BOOTSTRAP_STEPS } from '../model/bootstrap_types';
 import { prefetchAppResources } from '../model/bootstrap_api';
 
-const MINIMUM_DISPLAY_MS = 1200;
-const FAIL_SAFE_TIMEOUT_MS = 3500;
+const COLD_BOOT_MINIMUM_DISPLAY_MS = 1200;
+const FAST_PATH_MINIMUM_DISPLAY_MS = 350;
+const FAIL_SAFE_TIMEOUT_MS = 4500;
 
 export function useStartupBootstrap() {
   const router = useRouter();
@@ -43,21 +44,23 @@ export function useStartupBootstrap() {
 
     async function runBootstrap() {
       startTimeRef.current = Date.now();
+      let isFast = false;
 
-      // Start prefetching
+      // Start prefetching / disk hydration
       try {
-        await prefetchAppResources(queryClient, (stepId) => {
+        const result = await prefetchAppResources(queryClient, (stepId) => {
           if (isMounted) handleStepProgress(stepId);
         });
+        isFast = result.isFastPath;
       } catch (err) {
         console.warn('[Bootstrap] Preload error:', err);
       }
 
       if (!isMounted) return;
 
-      // Ensure minimum display duration for smooth UX
+      const minDisplay = isFast ? FAST_PATH_MINIMUM_DISPLAY_MS : COLD_BOOT_MINIMUM_DISPLAY_MS;
       const elapsed = Date.now() - startTimeRef.current;
-      const remaining = Math.max(0, MINIMUM_DISPLAY_MS - elapsed);
+      const remaining = Math.max(0, minDisplay - elapsed);
 
       setTimeout(() => {
         if (!isMounted) return;
@@ -68,7 +71,7 @@ export function useStartupBootstrap() {
         // Brief delay at 100% before transition
         setTimeout(() => {
           if (isMounted) navigateToDestination();
-        }, 250);
+        }, isFast ? 100 : 250);
       }, remaining);
     }
 

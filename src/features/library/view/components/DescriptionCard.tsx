@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { View, Text } from 'react-native';
 import { Droplet } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
-import { Card } from '@/shared/components';
+import { Card } from '@/shared/components/Card';
 
 export type BulletTone = 'positive' | 'negative' | 'ingredient';
 

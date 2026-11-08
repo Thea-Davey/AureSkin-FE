@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { getCachedProducts } from '../../../shared/storage/catalogStorage';
+import { toCanonicalCategory } from '../../../shared/utils/productCategory';
 import { fetchProducts } from '../model/library_api';
 import { fetchHistoryPage } from '../../history/model/history_api';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
@@ -134,12 +136,36 @@ export function useProducts(): UseProductsResult {
 
   const productsQuery = useInfiniteQuery({
     queryKey: ['library', 'products', debouncedQuery, selectedCategory],
-    queryFn: ({ pageParam }) => fetchProducts({
-      q: debouncedQuery,
-      category: selectedCategory,
-      limit: PAGE_SIZE,
-      offset: pageParam,
-    }),
+    queryFn: async ({ pageParam }) => {
+      try {
+        return await fetchProducts({
+          q: debouncedQuery,
+          category: selectedCategory,
+          limit: PAGE_SIZE,
+          offset: pageParam,
+        });
+      } catch (err) {
+        // Offline / Network fallback: read from local disk cache
+        const cached = await getCachedProducts();
+        if (cached && cached.length > 0) {
+          const filtered = cached.filter((item) => {
+            const matchesQuery =
+              debouncedQuery.length === 0 ||
+              item.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+              (item.brand ? item.brand.toLowerCase().includes(debouncedQuery.toLowerCase()) : false);
+            const matchesCategory =
+              selectedCategory === null || toCanonicalCategory(item.category) === selectedCategory;
+            return matchesQuery && matchesCategory;
+          });
+          const items = filtered.slice(pageParam, pageParam + PAGE_SIZE);
+          return {
+            items,
+            nextOffset: pageParam + items.length < filtered.length ? pageParam + items.length : null,
+          };
+        }
+        throw err;
+      }
+    },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     staleTime: 1000 * 60 * 60 * 24, // 24 hours (instant cache access across tabs)

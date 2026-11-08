@@ -71,8 +71,8 @@ export const MOCK_ARTICLES: Article[] = [
 
 export const MOCK_LATEST_ANALYSIS: LatestAnalysis = {
   id: 'mock-scan-001',
-  skin_type: 'Oily',
-  conditions: ['Skin Redness'],
+  skin_type: 'Combination',
+  conditions: ['Redness', "Inflammatory Acne", "Pores"],
   health_score: 89,
   created_at: '2026-05-01T08:00:00Z',
 };

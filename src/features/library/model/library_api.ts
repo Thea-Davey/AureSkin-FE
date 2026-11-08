@@ -1,5 +1,6 @@
 import { api } from '../../../shared/services/api';
 import { isMockEnabled } from '@/shared/config/mockConfig';
+import { getCachedIngredients, getCachedProducts } from '../../../shared/storage/catalogStorage';
 import {
   Ingredient,
   IngredientPage,
@@ -137,6 +138,7 @@ function normalizeIngredient(value: unknown): Ingredient {
   }
 
   return {
+    ...value,
     id: requiredString(value, 'id'),
     name: requiredString(value, 'name'),
     preview_description: nullableString(value, 'preview_description'),
@@ -199,6 +201,39 @@ export async function fetchIngredients(
   };
 }
 
+/**
+ * Fetches the entire ingredients catalog from the backend (or mock)
+ * by iterating pages of 100 items until complete.
+ */
+export async function fetchAllIngredients(): Promise<Ingredient[]> {
+  if (isMockEnabled('library')) {
+    return [...MOCK_INGREDIENTS];
+  }
+
+  const allIngredients: Ingredient[] = [];
+  const pageSize = 100;
+  let offset = 0;
+  let hasMore = true;
+  let safetyCounter = 0;
+
+  while (hasMore && safetyCounter < 50) {
+    safetyCounter++;
+    const page = await fetchIngredients({
+      q: '',
+      limit: pageSize,
+      offset,
+    });
+    allIngredients.push(...page.items);
+    if (page.nextOffset !== null && page.items.length === pageSize) {
+      offset = page.nextOffset;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allIngredients;
+}
+
 export async function fetchIngredientById(id: string): Promise<Ingredient> {
   if (!id.trim()) {
     throw new Error('An ingredient ID is required.');
@@ -250,12 +285,22 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
     return ingredient;
   }
 
-  const response = await api.get<unknown>(`/ingredients/${encodeURIComponent(id)}`);
-  if (!isRecord(response.data) || !isRecord(response.data.data)) {
-    throw new Error('The ingredient service returned an unexpected detail response.');
-  }
+  try {
+    const response = await api.get<unknown>(`/ingredients/${encodeURIComponent(id)}`);
+    if (!isRecord(response.data) || !isRecord(response.data.data)) {
+      throw new Error('The ingredient service returned an unexpected detail response.');
+    }
 
-  return normalizeIngredient(response.data.data);
+    return normalizeIngredient(response.data.data);
+  } catch (err) {
+    // Offline / Network fallback: look up in cached ingredients list
+    const cached = await getCachedIngredients();
+    const found = cached?.find((item) => item.id === id);
+    if (found) {
+      return found;
+    }
+    throw err;
+  }
 }
 
 function requiredProductString(record: Record<string, unknown>, key: string): string {
@@ -294,6 +339,7 @@ function normalizeProduct(value: unknown): Product {
   }
 
   return {
+    ...value,
     id: requiredProductString(value, 'id'),
     name: requiredProductString(value, 'name'),
     brand,
@@ -402,12 +448,25 @@ export async function fetchProductById(id: string): Promise<ProductDetail> {
     return product;
   }
 
-  const response = await api.get<unknown>(`/products/${encodeURIComponent(id)}`);
-  if (!isRecord(response.data) || !isRecord(response.data.data)) {
-    throw new Error('The product service returned an unexpected detail response.');
-  }
+  try {
+    const response = await api.get<unknown>(`/products/${encodeURIComponent(id)}`);
+    if (!isRecord(response.data) || !isRecord(response.data.data)) {
+      throw new Error('The product service returned an unexpected detail response.');
+    }
 
-  return normalizeProductDetail(response.data.data, id);
+    return normalizeProductDetail(response.data.data, id);
+  } catch (err) {
+    // Offline / Network fallback: look up in cached products list
+    const cached = await getCachedProducts();
+    const found = cached?.find((item) => item.id === id);
+    if (found) {
+      return {
+        ...found,
+        ingredients: [],
+      };
+    }
+    throw err;
+  }
 }
 
 export async function fetchProducts(params: ProductQuery): Promise<ProductPage> {
@@ -450,4 +509,38 @@ export async function fetchProducts(params: ProductQuery): Promise<ProductPage> 
     items,
     nextOffset: getNextProductOffset(offset, limit, items),
   };
+}
+
+/**
+ * Fetches the entire products catalog from the backend (or mock)
+ * by iterating pages of 100 items until complete.
+ */
+export async function fetchAllProducts(): Promise<Product[]> {
+  if (isMockEnabled('library')) {
+    return [...MOCK_ADDED_PRODUCTS, ...MOCK_PRODUCTS];
+  }
+
+  const allProducts: Product[] = [];
+  const pageSize = 100;
+  let offset = 0;
+  let hasMore = true;
+  let safetyCounter = 0;
+
+  while (hasMore && safetyCounter < 50) {
+    safetyCounter++;
+    const page = await fetchProducts({
+      q: '',
+      category: null,
+      limit: pageSize,
+      offset,
+    });
+    allProducts.push(...page.items);
+    if (page.nextOffset !== null && page.items.length === pageSize) {
+      offset = page.nextOffset;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allProducts;
 }

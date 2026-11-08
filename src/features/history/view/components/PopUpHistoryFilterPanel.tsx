@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { CalendarDays } from 'lucide-react-native';
-import { CalendarPickerModal, PopUpPanel } from '@/shared/components';
+import { CalendarPickerModal } from '@/shared/components/CalendarPickerModal';
+import { PopUpPanel } from '@/shared/components/PopUpPanel';
 import { theme } from '@/shared/theme';
 import { HistoryFilters } from '../../model/history_types';
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { DeleteDialog } from '@/shared/components';
+import { DeleteDialog } from '@/shared/components/DeleteDialog';
 import { deleteHistoryEntry } from '../model/history_api';
 import { useHistoryDetail } from '../viewmodel/useHistoryDetail';
 import { HistoryDetailHeader, HistoryDetailTab } from './components/HistoryDetailHeader';

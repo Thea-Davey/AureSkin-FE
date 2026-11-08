@@ -34,7 +34,7 @@ export function useHistory() {
     queryKey: ['history', 'list'],
     initialPageParam: 0,
     queryFn: ({ pageParam }) => fetchHistoryPage({ limit: PAGE_SIZE, offset: pageParam }),
-    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    getNextPageParam: (lastPage) => lastPage?.nextOffset ?? undefined,
   });
 
   const deleteMutation = useMutation({
@@ -45,25 +45,39 @@ export function useHistory() {
     },
   });
 
-  const entries = useMemo(
-    () => historyQuery.data?.pages.flatMap((page) => page.items) ?? [],
-    [historyQuery.data]
-  );
+  const entries = useMemo(() => {
+    const pages = historyQuery.data?.pages;
+    if (!Array.isArray(pages)) return [];
+    return pages.flatMap((page) => (Array.isArray(page?.items) ? page.items : []));
+  }, [historyQuery.data]);
 
   const filteredEntries = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
     return entries.filter((entry) => {
-      const dateValue = entry.created_at.slice(0, 10);
-      const matchesSearch = !normalizedQuery || [
-        formatDateForSearch(entry.created_at),
-        entry.skin_type ?? '',
-      ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
-      const matchesStartDate = !filters.startDate || dateValue >= filters.startDate;
-      const matchesEndDate = !filters.endDate || dateValue <= filters.endDate;
-      const matchesSkinType = filters.skinTypes.length === 0 || filters.skinTypes.includes(entry.skin_type ?? '');
-      const matchesConditions = filters.conditions.length === 0 || filters.conditions.some((condition) => entry.conditions.includes(condition));
+      if (!entry) return false;
+      const createdAt = typeof entry.created_at === 'string' ? entry.created_at : '';
+      const dateValue = createdAt.slice(0, 10);
+      const matchesSearch =
+        !normalizedQuery ||
+        [formatDateForSearch(createdAt), entry.skin_type ?? ''].some((value) =>
+          value.toLocaleLowerCase().includes(normalizedQuery)
+        );
+      const matchesStartDate = !filters.startDate || (dateValue && dateValue >= filters.startDate);
+      const matchesEndDate = !filters.endDate || (dateValue && dateValue <= filters.endDate);
+      const matchesSkinType =
+        filters.skinTypes.length === 0 || filters.skinTypes.includes(entry.skin_type ?? '');
+      const entryConditions = Array.isArray(entry.conditions) ? entry.conditions : [];
+      const matchesConditions =
+        filters.conditions.length === 0 ||
+        filters.conditions.some((condition) => entryConditions.includes(condition));
 
-      return matchesSearch && matchesStartDate && matchesEndDate && matchesSkinType && matchesConditions;
+      return (
+        matchesSearch &&
+        matchesStartDate &&
+        matchesEndDate &&
+        matchesSkinType &&
+        matchesConditions
+      );
     });
   }, [entries, filters, searchQuery]);
 

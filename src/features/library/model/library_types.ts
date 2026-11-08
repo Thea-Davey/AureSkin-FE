@@ -1,14 +1,22 @@
 export interface Ingredient {
   id: string;
   name: string;
+  scientific_name?: string | null;
   preview_description?: string | null;
+  short_description?: string | null;
   description: string | null;
+  what_is_it?: string | null;
+  what_does_it_do?: string | null;
+  who_is_it_good_for?: string | null;
+  who_should_avoid?: string | null;
+  url?: string | null;
   benefits: string | null;
   skin_types: string[];
+  skin_conditions?: string[];
   caution: string | null;
-  what_is_it?: string | null;
   good_for?: string[];
   avoid?: string[];
+  [key: string]: unknown; // Allow any future Supabase columns without stripping
 }
 
 export interface IngredientSection {
@@ -41,9 +49,18 @@ export interface Product {
   name: string;
   brand: string | null;
   category: string;
+  type?: string | null;
+  country?: string | null;
   description: string | null;
   image_url: string | null;
+  raw_ingredients?: string | null;
+  after_use?: string | null;
+  skin_types?: string[] | null;
+  skin_conditions?: string[] | null;
   is_user_added: boolean;
+  added_by?: string | null;
+  created_at?: string | null;
+  [key: string]: unknown; // Allow any future Supabase columns without stripping
 }
 
 

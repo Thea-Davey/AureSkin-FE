@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { theme } from '@/shared/theme';
-import { Card, DeleteDialog } from '@/shared/components';
+import { Card } from '@/shared/components/Card';
+import { DeleteDialog } from '@/shared/components/DeleteDialog';
 import { SearchBar } from '@/shared/components/SearchBar';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -91,8 +92,20 @@ export function S1HistoryList(props: HistoryListProps) {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [targetEntryId, setTargetEntryId] = useState<string | null>(null);
 
-  const skinTypes = [...new Set(props.entries.map((entry) => entry.skin_type).filter((value): value is string => Boolean(value)))].sort();
-  const conditions = [...new Set(props.entries.flatMap((entry) => entry.conditions))].sort();
+  const skinTypes = [
+    ...new Set(
+      (props.entries ?? [])
+        .map((entry) => entry?.skin_type)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ].sort();
+  const conditions = [
+    ...new Set(
+      (props.entries ?? []).flatMap((entry) =>
+        Array.isArray(entry?.conditions) ? entry.conditions : []
+      )
+    ),
+  ].sort();
   const hasActiveFilters = Boolean(
     props.filters.startDate || props.filters.endDate || props.filters.skinTypes.length || props.filters.conditions.length
   );

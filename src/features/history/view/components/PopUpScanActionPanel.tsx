@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
-import { PopUpPanel } from '@/shared/components';
+import { PopUpPanel } from '@/shared/components/PopUpPanel';
 import { theme } from '@/shared/theme';
 
 export interface PopUpScanActionPanelProps {

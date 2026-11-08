@@ -79,7 +79,7 @@ export function AnalysisSummaryCard({
             className="bg-secondary rounded-card p-2.5 justify-between"
           >
             <Text className="text-caption font-sans-semibold text-text">
-              Skin Type:
+              SKIN TYPE:
             </Text>
             <Text
               numberOfLines={1}
@@ -95,15 +95,15 @@ export function AnalysisSummaryCard({
             style={{ flex: 3 }}
             className="bg-background rounded-card p-2.5 justify-between"
           >
-            <Text className="text-caption font-sans-semibold text-muted">
-              Skin Condition/s:
+            <Text className="text-caption font-sans-semibold text-text">
+              SKIN CONDITION:
             </Text>
             <View className="flex-row flex-wrap gap-1 mt-1">
               {latestAnalysis.conditions && latestAnalysis.conditions.length > 0 ? (
                 latestAnalysis.conditions.slice(0, 2).map((condition, idx) => (
                   <View
                     key={idx}
-                    className="bg-error px-2 py-0.5 rounded-badge"
+                    className="bg-concern px-2 py-0.5 rounded-badge"
                   >
                     <Text
                       numberOfLines={1}

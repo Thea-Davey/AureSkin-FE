@@ -7,7 +7,7 @@ interface HeroCardProps {
 
 export function HeroCard({ onScanPress }: HeroCardProps) {
   return (
-    <View className="bg-background rounded-card p-5 border border-border shadow-xs overflow-visible relative mb-6">
+    <View className="bg-background rounded-card p-5 border border-border shadow-xs overflow-visible relative mb-4">
       {/* Row 1: Title */}
       <Text className="text-h2 font-sans-bold text-text mb-2.5">
         How is your skin today?
@@ -40,8 +40,8 @@ export function HeroCard({ onScanPress }: HeroCardProps) {
             source={require('@/assets/images/home-img1.png')}
             style={{
               position: 'absolute',
-              right: -16,
-              bottom: -56,
+              right: -12,
+              bottom: -55.69,
               width: 172,
               height: 172,
               zIndex: 20,

@@ -47,7 +47,7 @@ export function HomePage() {
         }
       >
         {/* Upper Dashboard Cards (Primary Olive Background) */}
-        <View className="px-4 space-y-4 gap-4 pt-3.5 pb-2">
+        <View className="px-4 space-y-4 gap-0 pt-3.5 -mb-2">
           {/* 1. Hero Card: "How is your skin today?" */}
           <HeroCard onScanPress={() => router.push('/scan/camera')} />
 
@@ -69,7 +69,7 @@ export function HomePage() {
         {/* Lower Dashboard Section: White Curved Sheet Starts Here */}
         <View className="bg-card rounded-t-card px-5 pt-6 pb-28 mt-2 shadow-sm min-h-screen">
           {/* 1. Learn more about Skincare! */}
-          <View className="mb-2">
+          <View className="-mb-2">
             <Text className="text-h3 font-sans-bold text-text mb-3">
               Learn more about Skincare!
             </Text>
@@ -77,7 +77,7 @@ export function HomePage() {
           </View>
 
           {/* 2. Interesting for you */}
-          <View className="mb-4">
+          <View className="-mb-2">
             <Text className="text-h3 font-sans-bold text-text mb-3">
               Interesting for you
             </Text>

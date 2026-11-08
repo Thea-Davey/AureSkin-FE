@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { getCachedIngredients } from '../../../shared/storage/catalogStorage';
 import { fetchIngredients } from '../model/library_api';
 import { Ingredient, IngredientSection } from '../model/library_types';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
@@ -86,12 +87,31 @@ export function useIngredients(): UseIngredientsResult {
 
   const query = useInfiniteQuery({
     queryKey: ['library', 'ingredients', debouncedQuery],
-    queryFn: ({ pageParam }) =>
-      fetchIngredients({
-        q: debouncedQuery,
-        limit: PAGE_SIZE,
-        offset: pageParam,
-      }),
+    queryFn: async ({ pageParam }) => {
+      try {
+        return await fetchIngredients({
+          q: debouncedQuery,
+          limit: PAGE_SIZE,
+          offset: pageParam,
+        });
+      } catch (err) {
+        // Offline / Network error fallback: load from persistent local disk cache
+        const cached = await getCachedIngredients();
+        if (cached && cached.length > 0) {
+          const filtered = debouncedQuery
+            ? cached.filter((item) =>
+                item.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+              )
+            : cached;
+          const items = filtered.slice(pageParam, pageParam + PAGE_SIZE);
+          return {
+            items,
+            nextOffset: pageParam + items.length < filtered.length ? pageParam + items.length : null,
+          };
+        }
+        throw err;
+      }
+    },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     placeholderData: (previousData) => previousData,

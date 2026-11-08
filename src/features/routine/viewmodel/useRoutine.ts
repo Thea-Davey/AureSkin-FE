@@ -1,5 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { useAuthStore } from '../../../shared/store/authStore';
+import { saveCachedRoutine } from '../../../shared/storage/catalogStorage';
 import {
   deleteCurrentRoutine,
   fetchLatestSkinProfile,
@@ -38,10 +40,19 @@ export function useRoutine() {
   const [showDeleteRoutineDialog, setShowDeleteRoutineDialog] = useState(false);
   const [showDeleteCurrentRoutineDialog, setShowDeleteCurrentRoutineDialog] = useState(false);
 
+  const userId = useAuthStore((state) => state.user?.id);
+
   // Queries
   const routineQuery = useQuery({
     queryKey: ['routine', 'current'],
-    queryFn: fetchRoutine,
+    queryFn: async () => {
+      const routine = await fetchRoutine();
+      if (userId) {
+        saveCachedRoutine(userId, routine);
+      }
+      return routine;
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
   const profileQuery = useQuery({
@@ -54,6 +65,9 @@ export function useRoutine() {
     mutationFn: generateRoutine,
     onSuccess: async (routine) => {
       queryClient.setQueryData<SkincareRoutine>(['routine', 'current'], routine);
+      if (userId) {
+        await saveCachedRoutine(userId, routine);
+      }
       setShowDeleteRoutineDialog(false);
       setShowNewAnalysisDialog(false);
       setIsEditing(false);
@@ -93,6 +107,9 @@ export function useRoutine() {
     mutationFn: deleteCurrentRoutine,
     onSuccess: async () => {
       queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], null);
+      if (userId) {
+        await saveCachedRoutine(userId, null);
+      }
       setShowDeleteCurrentRoutineDialog(false);
       await queryClient.invalidateQueries({ queryKey: ['routine', 'current'] });
     },
@@ -103,7 +120,11 @@ export function useRoutine() {
     onSuccess: async (savedSteps) => {
       queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], (current) => {
         if (!current) return current;
-        return { ...current, steps: savedSteps };
+        const updated = { ...current, steps: savedSteps };
+        if (userId) {
+          saveCachedRoutine(userId, updated);
+        }
+        return updated;
       });
       setIsEditing(false);
       await queryClient.invalidateQueries({ queryKey: ['routine', 'current'] });
