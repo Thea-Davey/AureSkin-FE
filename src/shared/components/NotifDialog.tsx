@@ -92,8 +92,8 @@ export function NotifDialog({
             </Pressable>
 
             {/* Alert / Exclamation Icon in White Ring */}
-            <View className="mb-3 h-14 w-14 items-center justify-center rounded-full border-2 border-white">
-              <AlertCircle size={32} color={theme.colors.white} strokeWidth={2.2} />
+            <View className="mb-3 h-14 w-14 items-center justify-center rounded-full">
+              <AlertCircle size={42} color={theme.colors.white} strokeWidth={2} />
             </View>
 
             {/* Title */}

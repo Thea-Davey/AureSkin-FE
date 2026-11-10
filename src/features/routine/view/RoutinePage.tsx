@@ -1,5 +1,5 @@
-import React from 'react';
-import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { theme } from '@/shared/theme';
 import { DeleteDialog } from '@/shared/components';
+import { useAppStore } from '@/shared/store/appStore';
 import { useRoutine } from '../viewmodel/useRoutine';
 import { DeleteRoutineDialog } from './components/DeleteRoutineDialog';
+import { DiscardRoutineDialog } from './components/DiscardRoutineDialog';
 import { NewSkinAnalysisDetectedDialog } from './components/NewSkinAnalysisDetectedDialog';
 import { PopUpOptionPanel } from './components/PopUpOptionPanel';
 import { PopUpSwapProductPanel } from './components/PopUpSwapProductPanel';
@@ -22,6 +24,13 @@ import { S2RoutineSteps } from './containers/s2_RoutineSteps';
 export function RoutinePage() {
   const router = useRouter();
   const routineState = useRoutine();
+
+  useFocusEffect(
+    useCallback(() => {
+      routineState.checkNewAnalysisOnFocus();
+    }, [routineState.checkNewAnalysisOnFocus])
+  );
+
   const isLoadingRoutine = routineState.isRoutineLoading;
   const canGenerate =
     routineState.skinProfile !== null &&
@@ -75,12 +84,18 @@ export function RoutinePage() {
               skinProfile={routineState.skinProfile}
               activeTimeOfDay={routineState.activeTimeOfDay}
               isEditing={routineState.isEditing}
+              displayedSteps={routineState.displayedSteps}
               onToggleTimeOfDay={routineState.setActiveTimeOfDay}
               onOpenMenu={routineState.openSkinProfileMenu}
               onStartEditing={routineState.startEditing}
               onCancelEditing={routineState.cancelEditing}
               onSaveEditing={routineState.saveEditing}
               onOpenSwapProduct={routineState.openSwapProduct}
+              onMoveUp={routineState.moveStepUp}
+              onMoveDown={routineState.moveStepDown}
+              onDeleteStep={routineState.deleteStep}
+              onAddStep={routineState.addStep}
+              onSelectCategory={routineState.updateStepCategory}
             />
           ) : (
             <S1EmptyRoutine
@@ -91,7 +106,7 @@ export function RoutinePage() {
               generationError={routineState.generationError}
               canGenerate={canGenerate}
               onRetryProfile={routineState.actions.retryProfile}
-              onStartScan={() => router.push('/(tabs)/scan')}
+              onStartScan={() => useAppStore.getState().openScanOverlay()}
               onGenerate={routineState.actions.generate}
               onDismissGenerationError={routineState.actions.clearGenerationError}
             />
@@ -132,6 +147,13 @@ export function RoutinePage() {
         visible={routineState.showNewAnalysisDialog}
         onKeepCurrentRoutine={routineState.dismissNewAnalysisDialog}
         onGenerateNewRoutine={routineState.confirmNewAnalysisRoutine}
+      />
+
+      {/* Discard Unsaved Changes Confirmation Dialog */}
+      <DiscardRoutineDialog
+        visible={routineState.showDiscardDialog}
+        onKeepEditing={routineState.cancelDiscard}
+        onDiscard={routineState.confirmDiscard}
       />
 
       {/* Swap Product Bottom Sheet */}

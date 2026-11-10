@@ -137,13 +137,6 @@ export function S1HistoryList(props: HistoryListProps) {
         onFilterPress={props.onOpenFilters}
         className="px-4 pt-4 pb-2 rounded-none bg-transparent"
       />
-      {hasActiveFilters && (
-        <View className="px-4 pb-2">
-          <Pressable onPress={props.onResetFilters} className="self-start">
-            <Text className="text-body-sm font-sans-medium text-primary">Clear filters</Text>
-          </Pressable>
-        </View>
-      )}
 
       {props.isLoading ? (
         <HistorySkeleton />

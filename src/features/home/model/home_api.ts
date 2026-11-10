@@ -70,10 +70,13 @@ export async function fetchTodayRoutine(timePeriod: string): Promise<RoutineStep
         s.time_of_day.toLowerCase() === timePeriod
     );
 
-    return filtered.map((s: { step_number: number; step_name: string; description: string }) => ({
-      step_number: s.step_number,
-      title: s.step_name,
-      description: s.description,
+    return filtered.map((s: any, idx: number) => ({
+      id: s.id,
+      step_number: s.step_number ?? idx + 1,
+      title: s.step_name || s.category || `Step ${idx + 1}`,
+      category: s.step_name || s.category || 'Step',
+      product_name: s.product?.name || s.product_name || null,
+      description: s.description || '',
     }));
   } catch {
     return [];

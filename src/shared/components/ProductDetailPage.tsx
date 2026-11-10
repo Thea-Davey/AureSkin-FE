@@ -26,6 +26,7 @@ import { useProductDetail } from '../../features/library/viewmodel/useProductDet
 import { useAuthStore } from '../store/authStore';
 import { IngredientDetailPage } from './IngredientDetailPage';
 import { CompatibilityBadge } from './CompatibilityBadge';
+import { CloseButton } from './CloseButton';
 
 export interface ProductDetailPageProps {
   visible: boolean;
@@ -121,23 +122,14 @@ function ProductDetailView({
       onRequestClose={handleClose}
       onDismiss={onDismiss}
     >
-      <View className="flex-1 bg-card">
-        {/* Modal Header Bar */}
-        <SafeAreaView edges={['top']} className="border-b border-border bg-card">
-          <View className="flex-row items-center justify-between px-5 py-3">
-            <Text className="text-body font-sans-semibold text-text">
-              Product Details
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close product details"
-              onPress={handleClose}
-              hitSlop={8}
-              className="p-1 active:opacity-70"
-            >
-              <X size={22} color={theme.colors.muted} />
-            </Pressable>
-          </View>
+      <View className="flex-1 bg-card relative">
+        {/* Floating Top-Right Close Button with Translucent Circle Container */}
+        <SafeAreaView edges={['top']} className="absolute top-2 right-4 z-30 bg-primary rounded-full mt-4">
+          <CloseButton
+            onPress={handleClose}
+            iconSize={22}
+            accessibilityLabel="Close product details"
+          />
         </SafeAreaView>
 
         {isLoading ? (
@@ -235,11 +227,18 @@ function ProductDetailView({
                   {product.brand ?? 'Community product'}
                 </Text>
 
-                {/* Row 4: Category badge (Enlarged size) */}
-                <View className="mt-3 self-start rounded-badge bg-secondary px-4 py-1.5 shadow-xs">
-                  <Text className="text-body-sm font-sans-semibold text-neutral-white">
-                    {formatCategory(product.category)}
-                  </Text>
+                {/* Row 4: Category badge + Actual type if 'other' */}
+                <View className="mt-3 flex-row items-center gap-2.5">
+                  <View className="self-start rounded-badge bg-secondary px-4 py-1.5 shadow-xs">
+                    <Text className="text-body-sm font-sans-semibold text-neutral-white">
+                      {formatCategory(product.category)}
+                    </Text>
+                  </View>
+                  {product.category?.toLowerCase() === 'other' && product.type ? (
+                    <Text className="text-body-sm font-sans text-muted">
+                      {product.type.replace(/_/g, ' ')}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
@@ -330,7 +329,7 @@ function ProductDetailView({
                   title="Target Skin Conditions"
                   variant="bulleted"
                   bullets={product.target_skin_conditions && product.target_skin_conditions.length > 0 ? product.target_skin_conditions : product.good_for}
-                  bulletTone="positive"
+                  bulletTone="negative"
                   className="mx-5 mt-3"
                 />
               ) : null}
@@ -437,6 +436,7 @@ function ProductDetailSelfFetching({
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: favoritesQueryKey });
+      await queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
 
@@ -511,11 +511,11 @@ export function ProductDetailPage(props: ProductDetailPageProps) {
         favoriteError={props.favoriteError ?? null}
         onClose={props.onClose}
         onDismiss={props.onDismiss}
-        onRetry={props.onRetry ?? (() => {})}
-        onRetryCompatibility={props.onRetryCompatibility ?? (() => {})}
-        onRetryFavorites={props.onRetryFavorites ?? (() => {})}
-        onToggleFavorite={props.onToggleFavorite ?? (() => {})}
-        onIngredientPress={props.onIngredientPress ?? (() => {})}
+        onRetry={props.onRetry ?? (() => { })}
+        onRetryCompatibility={props.onRetryCompatibility ?? (() => { })}
+        onRetryFavorites={props.onRetryFavorites ?? (() => { })}
+        onToggleFavorite={props.onToggleFavorite ?? (() => { })}
+        onIngredientPress={props.onIngredientPress ?? (() => { })}
         onDeleteProduct={props.onDeleteProduct}
       />
     );

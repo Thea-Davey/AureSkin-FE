@@ -1,9 +1,10 @@
+import React, { useState, useEffect } from 'react';
 import { theme } from '@/shared/theme';
 import { Card } from '@/shared/components/Card';
 import { HealthGauge } from '@/shared/components/HealthGauge';
 import { Image } from 'expo-image';
-import { CalendarDays, MoreHorizontal } from 'lucide-react-native';
-import { Pressable, Text, View } from 'react-native';
+import { CalendarDays, MoreHorizontal, UserRound } from 'lucide-react-native';
+import { Pressable, Text, View, Image as RNImage } from 'react-native';
 import { HistoryEntry } from '../../model/history_types';
 
 interface HistoryListItemProps {
@@ -26,9 +27,32 @@ function getScoreColor(val: number): string {
 }
 
 export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItemProps) {
+  const [useRNImage, setUseRNImage] = useState<boolean>(false);
+  const [imageFailed, setImageFailed] = useState<boolean>(false);
   const healthScore = Math.max(0, Math.min(100, Math.round(entry.health_score)));
   const visibleConditions = entry.conditions.slice(0, 2);
   const extraConditionCount = Math.max(0, entry.conditions.length - visibleConditions.length);
+
+  const cleanImageUrl = (entry.image_url || '').trim().replace(/\?$/, '');
+
+  useEffect(() => {
+    setUseRNImage(false);
+    setImageFailed(false);
+  }, [cleanImageUrl]);
+
+  const handleExpoError = (err: any) => {
+    console.warn('[HistoryListItem] expo-image error on:', cleanImageUrl, err);
+    if (!useRNImage) {
+      setUseRNImage(true);
+      return;
+    }
+    setImageFailed(true);
+  };
+
+  const handleRNError = (err: any) => {
+    console.warn('[HistoryListItem] RNImage error on:', cleanImageUrl, err);
+    setImageFailed(true);
+  };
 
   return (
     <Card
@@ -41,15 +65,30 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
     >
       {/* ── COL 1: IMAGE ── */}
       <View className="h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-card bg-secondary/15">
-        {entry.image_url ? (
-          <Image
-            source={{ uri: entry.image_url }}
-            contentFit="cover"
-            transition={150}
-            accessibilityLabel="Scan photo"
-            className="h-full w-full"
-          />
-        ) : null}
+        {cleanImageUrl && !imageFailed ? (
+          !useRNImage ? (
+            <Image
+              key={`expo-${cleanImageUrl}`}
+              source={{ uri: cleanImageUrl }}
+              contentFit="cover"
+              transition={150}
+              style={{ width: '100%', height: '100%' }}
+              onError={handleExpoError}
+              accessibilityLabel="Scan photo"
+            />
+          ) : (
+            <RNImage
+              key={`rn-${cleanImageUrl}`}
+              source={{ uri: cleanImageUrl }}
+              resizeMode="cover"
+              style={{ width: '100%', height: '100%' }}
+              onError={handleRNError}
+              accessibilityLabel="Scan photo"
+            />
+          )
+        ) : (
+          <UserRound size={32} color={theme.colors.muted} />
+        )}
       </View>
 
       {/* ── COL 2: [ROW 1: date + health score + 3 dot menu] [ROW 2: skin type + skin condition/s] ── */}
@@ -68,8 +107,8 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
           <View className="flex-row items-center gap-1.5 shrink-0">
             <HealthGauge
               percentage={healthScore}
-              size={30}
-              strokeWidth={3}
+              size={22}
+              strokeWidth={2}
               color={getScoreColor(healthScore)}
               showSublabel={false}
               duration={0}
@@ -101,7 +140,11 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
           ) : null}
 
           {visibleConditions.map((condition) => (
-            <View key={condition} className="rounded-badge bg-concern px-3 py-0.5">
+            <View
+              key={condition}
+              style={{ backgroundColor: theme.colors.concern }}
+              className="rounded-badge bg-concern px-3 py-0.5"
+            >
               <Text className="text-caption font-sans-medium capitalize text-neutral-white">
                 {condition}
               </Text>

@@ -9,14 +9,14 @@ import { OAuthButton } from './components/OAuthButton';
 import { BypassNoticeBanner } from './components/BypassNoticeBanner';
 
 export function LoginPage() {
-  const { 
-    email, 
-    setEmail, 
-    password, 
-    setPassword, 
-    isLoading, 
-    handleLogin, 
-    handleGoogleAuth, 
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    handleLogin,
+    handleGoogleAuth,
     handleFacebookAuth,
     isBypassActive,
   } = useAuth();
@@ -47,13 +47,13 @@ export function LoginPage() {
           editable={!isLoading}
         />
 
-        <AuthButton 
-          title="Sign in" 
-          onPress={handleLogin} 
-          isLoading={isLoading} 
+        <AuthButton
+          title="Sign in"
+          onPress={handleLogin}
+          isLoading={isLoading}
         />
 
-        <View className="flex-row items-center my-6">
+        {/* <View className="flex-row items-center my-6">
           <View className="flex-1 h-[1px] bg-neutral-border" />
           <Text className="mx-4 text-body-sm text-neutral-muted font-sans-medium">
             – Or sign in with –
@@ -64,9 +64,9 @@ export function LoginPage() {
         <View className="flex-row gap-4 mb-6">
           <OAuthButton provider="Google" onPress={handleGoogleAuth} isLoading={isLoading} />
           <OAuthButton provider="Facebook" onPress={handleFacebookAuth} isLoading={isLoading} />
-        </View>
+        </View> */}
 
-        <View className="flex-row justify-center">
+        <View className="flex-row justify-center mt-6">
           <Text className="text-body-sm text-neutral-text font-sans">
             Don't have an account?{' '}
           </Text>

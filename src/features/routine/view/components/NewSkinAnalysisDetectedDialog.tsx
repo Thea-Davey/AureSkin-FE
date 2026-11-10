@@ -19,8 +19,8 @@ export function NewSkinAnalysisDetectedDialog({
       subtitle="Current routine might not be aligned with new analysis"
       body="Would you like to generate new routine based on your new skin profile?"
       boldPhrase="generate new routine"
-      cancelLabel="Keep Current Routine"
-      confirmLabel="Generate New Routine"
+      cancelLabel="Keep Current"
+      confirmLabel="Generate New"
       onCancel={onKeepCurrentRoutine}
       onConfirm={onGenerateNewRoutine}
       onClose={onKeepCurrentRoutine}

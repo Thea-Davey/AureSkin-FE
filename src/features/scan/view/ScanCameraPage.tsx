@@ -18,6 +18,7 @@ export const ScanCameraPage: React.FC = () => {
     cameraRef,
     isPermissionGranted,
     isPermissionPending,
+    canAskAgain,
     isCapturing,
     isCameraReady,
     flashAnim,
@@ -50,6 +51,7 @@ export const ScanCameraPage: React.FC = () => {
         cameraRef={cameraRef}
         isPermissionGranted={isPermissionGranted}
         isPermissionPending={isPermissionPending}
+        canAskAgain={canAskAgain}
         flashAnim={flashAnim}
         onCameraReady={onCameraReady}
         onRequestPermission={requestCameraPermission}

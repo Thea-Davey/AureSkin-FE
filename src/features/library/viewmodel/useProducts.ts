@@ -7,6 +7,7 @@ import { toCanonicalCategory } from '../../../shared/utils/productCategory';
 import { fetchProducts } from '../model/library_api';
 import { fetchHistoryPage } from '../../history/model/history_api';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
+import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
 import {
   Product,
   ProductCategory,
@@ -208,6 +209,10 @@ export function useProducts(): UseProductsResult {
       setFavoriteError(error.message || 'Unable to save this favorite. Please try again.');
     },
     onSuccess: () => setFavoriteError(null),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: favoritesQueryKey });
+      await queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
   });
 
   const latestAnalysisQuery = useQuery({
@@ -237,23 +242,77 @@ export function useProducts(): UseProductsResult {
     [productPages]
   );
   const products = useMemo(() => {
-    const isCompatible = (productId: string) => {
-      if (USE_SCAN_MOCK && MOCK_COMPATIBLE_PRODUCT_IDS.has(productId)) {
+    const compatibility = compatibilityQuery.data ?? (USE_SCAN_MOCK ? MOCK_COMPATIBILITY : undefined);
+    const analysis = latestAnalysisQuery.data;
+    const userSkinType = (analysis?.skin_type ?? (USE_SCAN_MOCK ? 'combination' : null))?.toLowerCase();
+
+    const compatibleNames = new Set(
+      (compatibility?.compatible_ingredients ?? [])
+        .map((ci) => ci.name.toLowerCase().trim())
+        .filter(Boolean)
+    );
+    const incompatiblePairs = compatibility?.incompatible_pairs ?? [];
+
+    const isProductCompatible = (product: Product): boolean => {
+      if (USE_SCAN_MOCK && MOCK_COMPATIBLE_PRODUCT_IDS.has(product.id)) {
         return true;
       }
-      return false;
+      if (!analysis && !USE_SCAN_MOCK) {
+        return false;
+      }
+
+      const rawIngs = (product.raw_ingredients || '').toLowerCase();
+
+      // Check for incompatible conflicts
+      if (rawIngs && incompatiblePairs.length > 0) {
+        const hasConflict = incompatiblePairs.some((pair) => {
+          const a = (pair.ingredient_a || '').toLowerCase().trim();
+          const b = (pair.ingredient_b || '').toLowerCase().trim();
+          return a && b && rawIngs.includes(a) && rawIngs.includes(b);
+        });
+        if (hasConflict) {
+          return false;
+        }
+      }
+
+      // Check skin type match
+      const productTypes = Array.isArray(product.skin_types)
+        ? product.skin_types.map((t) => t.toLowerCase().trim())
+        : [];
+      const skinTypeMatches = userSkinType
+        ? productTypes.length === 0 || productTypes.includes(userSkinType) || productTypes.includes('all')
+        : false;
+
+      // Check if product contains any known compatible active ingredients
+      let hasCompatibleIngredient = false;
+      if (rawIngs && compatibleNames.size > 0) {
+        for (const name of compatibleNames) {
+          if (name && rawIngs.includes(name)) {
+            hasCompatibleIngredient = true;
+            break;
+          }
+        }
+      }
+
+      return skinTypeMatches || hasCompatibleIngredient;
     };
 
     const listItems: ProductListItemModel[] = loadedProducts.map((product: Product) => ({
       product,
       isFavorite: favoriteIdSet.has(product.id),
-      isCompatible: isCompatible(product.id),
+      isCompatible: isProductCompatible(product),
     }));
 
     return selectedListFilter === 'favorites'
       ? listItems.filter((item) => item.isFavorite)
       : listItems;
-  }, [favoriteIdSet, loadedProducts, selectedListFilter]);
+  }, [
+    favoriteIdSet,
+    loadedProducts,
+    selectedListFilter,
+    compatibilityQuery.data,
+    latestAnalysisQuery.data,
+  ]);
 
   useEffect(() => {
     if (

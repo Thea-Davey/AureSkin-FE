@@ -1,6 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { useScanStore } from '../../scan/model/scanStore';
 import { saveCachedRoutine } from '../../../shared/storage/catalogStorage';
 import {
   deleteCurrentRoutine,
@@ -12,6 +14,7 @@ import {
   updateRoutineStep,
 } from '../model/routine_api';
 import { RoutineProduct, RoutineStep, RoutineStepUpdate, SkincareRoutine } from '../model/routine_types';
+import { toCanonicalCategory } from '../../../shared/utils/productCategory';
 
 const PRODUCT_PAGE_SIZE = 20;
 
@@ -27,6 +30,9 @@ export function useRoutine() {
 
   // Inline Step Editing State
   const [isEditing, setIsEditing] = useState(false);
+  const [editingSteps, setEditingSteps] = useState<RoutineStep[]>([]);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [pendingTabSwitch, setPendingTabSwitch] = useState<'morning' | 'evening' | null>(null);
 
   // Product Swapping Bottom Sheet State
   const [swappingStepId, setSwappingStepId] = useState<string | null>(null);
@@ -55,14 +61,78 @@ export function useRoutine() {
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
+  // Current saved steps for the active time of day
+  const activeTimeOfDaySteps = useMemo(() => {
+    const allSteps = routineQuery.data?.steps ?? [];
+    const filtered = allSteps.filter((step) => step.time_of_day === activeTimeOfDay);
+
+    // Deduplicate by step_name / category to ensure at most 1 step per product type
+    const seen = new Set<string>();
+    const deduped: RoutineStep[] = [];
+    for (const step of filtered) {
+      const key = (step.step_name || '').toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(step);
+      }
+    }
+
+    return deduped.sort((a, b) => a.step_number - b.step_number);
+  }, [routineQuery.data?.steps, activeTimeOfDay]);
+
+  // Steps currently displayed in the UI (editing draft vs saved steps)
+  const displayedSteps = useMemo(() => {
+    return isEditing ? editingSteps : activeTimeOfDaySteps;
+  }, [isEditing, editingSteps, activeTimeOfDaySteps]);
+
+  // Determine if there are unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    if (!isEditing) return false;
+    if (editingSteps.length !== activeTimeOfDaySteps.length) return true;
+    for (let i = 0; i < editingSteps.length; i++) {
+      const edit = editingSteps[i];
+      const orig = activeTimeOfDaySteps[i];
+      if (edit.id !== orig.id) return true;
+      if (edit.product_id !== orig.product_id) return true;
+      if (edit.step_name !== orig.step_name) return true;
+      if (edit.description !== orig.description) return true;
+      if (edit.step_number !== orig.step_number) return true;
+    }
+    return false;
+  }, [isEditing, editingSteps, activeTimeOfDaySteps]);
+
   const profileQuery = useQuery({
     queryKey: ['routine', 'skin-profile'],
     queryFn: fetchLatestSkinProfile,
   });
 
+  const hasNewScanForRoutine = useScanStore((state) => state.hasNewScanForRoutine);
+  const dismissedAnalysisIdRef = useRef<string | null>(null);
+
+  const checkNewAnalysisOnFocus = useCallback(() => {
+    const latestAnalysisId = profileQuery.data?.analysis_id;
+    const currentRoutineAnalysisId = routineQuery.data?.based_on_analysis_id;
+
+    if (!latestAnalysisId || dismissedAnalysisIdRef.current === latestAnalysisId) {
+      return;
+    }
+
+    if (
+      hasNewScanForRoutine ||
+      (currentRoutineAnalysisId && currentRoutineAnalysisId !== latestAnalysisId)
+    ) {
+      setShowNewAnalysisDialog(true);
+    }
+  }, [hasNewScanForRoutine, profileQuery.data?.analysis_id, routineQuery.data?.based_on_analysis_id]);
+
   // Mutations
   const generationMutation = useMutation({
     mutationFn: generateRoutine,
+    onMutate: () => {
+      setShowDeleteRoutineDialog(false);
+      setShowNewAnalysisDialog(false);
+      useScanStore.getState().setHasNewScanForRoutine(false);
+    },
     onSuccess: async (routine) => {
       queryClient.setQueryData<SkincareRoutine>(['routine', 'current'], routine);
       if (userId) {
@@ -72,15 +142,34 @@ export function useRoutine() {
       setShowNewAnalysisDialog(false);
       setIsEditing(false);
       await queryClient.invalidateQueries({ queryKey: ['routine'] });
+      Toast.show({
+        type: 'success',
+        text1: 'Routine Generated',
+        text2: 'Your personalized skincare routine is ready!',
+      });
+    },
+    onError: (err: any) => {
+      setShowDeleteRoutineDialog(false);
+      setShowNewAnalysisDialog(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Generation Failed',
+        text2: err?.message || 'Could not generate routine. Please try again.',
+      });
     },
   });
 
+  const targetSwapCategory = useMemo(() => {
+    return swappingStepName ? toCanonicalCategory(swappingStepName) : undefined;
+  }, [swappingStepName]);
+
   const productOptionsQuery = useInfiniteQuery({
-    queryKey: ['routine', 'product-options', productSearch],
+    queryKey: ['routine', 'product-options', targetSwapCategory, productSearch],
     enabled: swappingStepId !== null,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       fetchProductOptions({
+        category: targetSwapCategory,
         query: productSearch,
         limit: PRODUCT_PAGE_SIZE,
         offset: pageParam,
@@ -89,29 +178,69 @@ export function useRoutine() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ stepId, updates }: { stepId: string; updates: RoutineStepUpdate }) =>
-      updateRoutineStep(stepId, updates),
-    onSuccess: async (updatedStep, variables) => {
+    mutationFn: ({
+      stepId,
+      updates,
+    }: {
+      stepId: string;
+      updates: RoutineStepUpdate;
+      productFallback?: RoutineProduct | null;
+    }) => updateRoutineStep(stepId, updates),
+    onSuccess: (updatedStep, variables) => {
       queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], (current) => {
         if (!current) return current;
+        const mergedProduct = updatedStep.product ?? variables.productFallback ?? null;
         const updatedSteps = current.steps.map((step) =>
-          step.id === variables.stepId ? { ...step, ...updatedStep } : step
+          step.id === variables.stepId
+            ? { ...step, ...updatedStep, product: mergedProduct }
+            : step
         );
-        return { ...current, steps: updatedSteps };
+        const updated = { ...current, steps: updatedSteps };
+        if (userId) {
+          saveCachedRoutine(userId, updated);
+        }
+        return updated;
       });
-      await queryClient.invalidateQueries({ queryKey: ['routine', 'current'] });
     },
   });
 
   const deleteRoutineMutation = useMutation({
     mutationFn: deleteCurrentRoutine,
-    onSuccess: async () => {
+    onMutate: async () => {
+      setShowDeleteCurrentRoutineDialog(false);
+      setShowSkinProfileMenu(false);
       queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], null);
       if (userId) {
         await saveCachedRoutine(userId, null);
       }
+    },
+    onSuccess: async () => {
       setShowDeleteCurrentRoutineDialog(false);
-      await queryClient.invalidateQueries({ queryKey: ['routine', 'current'] });
+      setShowSkinProfileMenu(false);
+      queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], null);
+      if (userId) {
+        await saveCachedRoutine(userId, null);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['routine'] });
+      Toast.show({
+        type: 'success',
+        text1: 'Routine Deleted',
+        text2: 'Your skincare routine has been removed.',
+      });
+    },
+    onError: (err: any) => {
+      setShowDeleteCurrentRoutineDialog(false);
+      setShowSkinProfileMenu(false);
+      // Ensure local routine remains cleared even on network interruption
+      queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], null);
+      if (userId) {
+        saveCachedRoutine(userId, null);
+      }
+      Toast.show({
+        type: 'info',
+        text1: 'Routine Cleared',
+        text2: 'Your routine has been reset.',
+      });
     },
   });
 
@@ -127,12 +256,129 @@ export function useRoutine() {
         return updated;
       });
       setIsEditing(false);
+      setEditingSteps([]);
       await queryClient.invalidateQueries({ queryKey: ['routine', 'current'] });
     },
   });
 
   const refresh = async () => {
     await Promise.all([routineQuery.refetch(), profileQuery.refetch()]);
+  };
+
+  // Start editing: clone the current activeTimeOfDaySteps into editingSteps draft
+  const startEditing = () => {
+    setEditingSteps([...activeTimeOfDaySteps]);
+    setIsEditing(true);
+  };
+
+  // Immediate cancel
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditingSteps([]);
+    setShowDiscardDialog(false);
+    setPendingTabSwitch(null);
+  };
+
+  // User taps "Cancel" in header: check if dirty first
+  const promptCancelEditing = () => {
+    if (hasUnsavedChanges) {
+      setShowDiscardDialog(true);
+    } else {
+      cancelEditing();
+    }
+  };
+
+  // User switches Morning / Night tab
+  const switchTimeOfDay = (targetTab: 'morning' | 'evening') => {
+    if (targetTab === activeTimeOfDay) return;
+    if (isEditing) {
+      if (hasUnsavedChanges) {
+        setPendingTabSwitch(targetTab);
+        setShowDiscardDialog(true);
+        return;
+      }
+      // No unsaved changes: exit editing cleanly and switch
+      setIsEditing(false);
+      setEditingSteps([]);
+    }
+    setActiveTimeOfDay(targetTab);
+  };
+
+  const confirmDiscard = () => {
+    setShowDiscardDialog(false);
+    setIsEditing(false);
+    setEditingSteps([]);
+    if (pendingTabSwitch) {
+      setActiveTimeOfDay(pendingTabSwitch);
+      setPendingTabSwitch(null);
+    }
+  };
+
+  const cancelDiscard = () => {
+    setShowDiscardDialog(false);
+    setPendingTabSwitch(null);
+  };
+
+  // Step manipulation functions for edit mode
+  const moveStepUp = (index: number) => {
+    if (index === 0) return;
+    setEditingSteps((prev) => {
+      const reordered = [...prev];
+      const temp = reordered[index - 1];
+      reordered[index - 1] = reordered[index];
+      reordered[index] = temp;
+      return reordered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
+    });
+  };
+
+  const moveStepDown = (index: number) => {
+    setEditingSteps((prev) => {
+      if (index === prev.length - 1) return prev;
+      const reordered = [...prev];
+      const temp = reordered[index + 1];
+      reordered[index + 1] = reordered[index];
+      reordered[index] = temp;
+      return reordered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
+    });
+  };
+
+  const deleteStep = (stepId: string) => {
+    setEditingSteps((prev) => {
+      const filtered = prev.filter((s) => s.id !== stepId);
+      return filtered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
+    });
+  };
+
+  const addStep = (categoryName = 'Select Skincare', categoryDesc = 'Tap to choose category and product.'): string => {
+    const newStepNumber = (isEditing ? editingSteps.length : activeTimeOfDaySteps.length) + 1;
+    const newId = `custom-step-${Date.now()}`;
+    const newStep: RoutineStep = {
+      id: newId,
+      step_number: newStepNumber,
+      step_name: categoryName,
+      description: categoryDesc,
+      time_of_day: activeTimeOfDay,
+      product_id: null,
+      product: null,
+    };
+    setEditingSteps((prev) => [...prev, newStep]);
+    return newId;
+  };
+
+  const updateStepCategory = (stepId: string, categoryName: string, categoryDesc: string) => {
+    setEditingSteps((prev) =>
+      prev.map((step) =>
+        step.id === stepId
+          ? {
+              ...step,
+              step_name: categoryName,
+              description: categoryDesc,
+              product_id: null,
+              product: null,
+            }
+          : step
+      )
+    );
   };
 
   // Swapping product handlers
@@ -145,7 +391,7 @@ export function useRoutine() {
     setSwappingProductId(currentProductId);
     const resolvedName =
       stepName ||
-      routineQuery.data?.steps.find((s) => s.id === stepId)?.step_name;
+      (isEditing ? editingSteps : (routineQuery.data?.steps ?? [])).find((s) => s.id === stepId)?.step_name;
     setSwappingStepName(resolvedName);
     setProductSearch('');
   };
@@ -159,24 +405,51 @@ export function useRoutine() {
 
   const selectProductForStep = (product: RoutineProduct | null) => {
     if (!swappingStepId) return;
-    const currentRoutine = routineQuery.data;
-    if (!currentRoutine) return;
 
-    const targetStep = currentRoutine.steps.find((s) => s.id === swappingStepId);
-    if (!targetStep) return;
-
-    // Update step via mutation or local update
-    updateMutation.mutate({
-      stepId: swappingStepId,
-      updates: { product_id: product?.id ?? null },
-    });
+    if (isEditing) {
+      // While in edit mode, update editing draft immediately
+      setEditingSteps((prev) =>
+        prev.map((step) =>
+          step.id === swappingStepId
+            ? { ...step, product_id: product?.id ?? null, product: product ?? null }
+            : step
+        )
+      );
+    } else {
+      // Safety fallback outside edit mode
+      const currentRoutine = routineQuery.data;
+      if (currentRoutine) {
+        const targetStep = currentRoutine.steps.find((s) => s.id === swappingStepId);
+        if (targetStep) {
+          const updatedStepWithProduct = {
+            ...targetStep,
+            product_id: product?.id ?? null,
+            product: product ?? null,
+          };
+          queryClient.setQueryData<SkincareRoutine | null>(['routine', 'current'], (current) => {
+            if (!current) return current;
+            const updatedSteps = current.steps.map((step) =>
+              step.id === swappingStepId ? updatedStepWithProduct : step
+            );
+            return { ...current, steps: updatedSteps };
+          });
+          updateMutation.mutate({
+            stepId: swappingStepId,
+            updates: { product_id: product?.id ?? null },
+            productFallback: product,
+          });
+        }
+      }
+    }
     closeSwapProduct();
   };
 
   // Save steps edited for active time of day
-  const handleSaveEditing = (updatedTimeOfDaySteps: RoutineStep[]) => {
+  const handleSaveEditing = () => {
     const currentRoutine = routineQuery.data;
     if (!currentRoutine) return;
+
+    const stepsToSave = isEditing ? editingSteps : activeTimeOfDaySteps;
 
     // Keep other time-of-day steps unchanged
     const otherSteps = currentRoutine.steps.filter((s) =>
@@ -185,9 +458,18 @@ export function useRoutine() {
         : s.time_of_day === 'morning'
     );
 
-    const mergedSteps = [...otherSteps, ...updatedTimeOfDaySteps].sort(
-      (a, b) => a.step_number - b.step_number
-    );
+    // Number steps consistently per time of day (1..N)
+    const renumberedStepsToSave = stepsToSave.map((s, idx) => ({
+      ...s,
+      step_number: idx + 1,
+      time_of_day: activeTimeOfDay,
+    }));
+    const renumberedOtherSteps = otherSteps.map((s, idx) => ({
+      ...s,
+      step_number: idx + 1,
+    }));
+
+    const mergedSteps = [...renumberedOtherSteps, ...renumberedStepsToSave];
 
     saveAllStepsMutation.mutate(mergedSteps);
   };
@@ -206,13 +488,21 @@ export function useRoutine() {
 
     // Day / Night Tab
     activeTimeOfDay,
-    setActiveTimeOfDay,
+    setActiveTimeOfDay: switchTimeOfDay,
+    switchTimeOfDay,
 
-    // Inline Editing
+    // Steps & Inline Editing
+    displayedSteps,
     isEditing,
-    startEditing: () => setIsEditing(true),
-    cancelEditing: () => setIsEditing(false),
+    hasUnsavedChanges,
+    startEditing,
+    cancelEditing: promptCancelEditing,
     saveEditing: handleSaveEditing,
+    moveStepUp,
+    moveStepDown,
+    deleteStep,
+    addStep,
+    updateStepCategory,
 
     // Product Swapping
     swapSheetVisible: swappingStepId !== null,
@@ -228,6 +518,10 @@ export function useRoutine() {
     isProductOptionsLoading: productOptionsQuery.isLoading,
 
     // Dialogs
+    showDiscardDialog,
+    confirmDiscard,
+    cancelDiscard,
+
     showSkinProfileMenu,
     openSkinProfileMenu: () => setShowSkinProfileMenu(true),
     closeSkinProfileMenu: () => setShowSkinProfileMenu(false),
@@ -247,10 +541,21 @@ export function useRoutine() {
     closeDeleteCurrentRoutineDialog: () => setShowDeleteCurrentRoutineDialog(false),
 
     showNewAnalysisDialog,
+    checkNewAnalysisOnFocus,
     openNewAnalysisDialog: () => setShowNewAnalysisDialog(true),
-    dismissNewAnalysisDialog: () => setShowNewAnalysisDialog(false),
+    dismissNewAnalysisDialog: () => {
+      setShowNewAnalysisDialog(false);
+      useScanStore.getState().setHasNewScanForRoutine(false);
+      if (profileQuery.data?.analysis_id) {
+        dismissedAnalysisIdRef.current = profileQuery.data.analysis_id;
+      }
+    },
     confirmNewAnalysisRoutine: () => {
       setShowNewAnalysisDialog(false);
+      useScanStore.getState().setHasNewScanForRoutine(false);
+      if (profileQuery.data?.analysis_id) {
+        dismissedAnalysisIdRef.current = profileQuery.data.analysis_id;
+      }
       setShowDeleteRoutineDialog(true);
     },
 
@@ -261,6 +566,8 @@ export function useRoutine() {
       retryRoutine: () => void routineQuery.refetch(),
       retryProfile: () => void profileQuery.refetch(),
       clearGenerationError: () => generationMutation.reset(),
+      confirmDiscard,
+      cancelDiscard,
     },
   };
 }

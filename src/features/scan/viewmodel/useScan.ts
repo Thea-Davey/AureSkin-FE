@@ -3,6 +3,7 @@ import { Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppStore } from '../../../shared/store/appStore';
+import { useScanStore, normalizeFileUri } from '../model/scanStore';
 
 export interface UseScanReturn {
   visible: boolean;
@@ -85,7 +86,8 @@ export function useScan(): UseScanReturn {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const pickedUri = result.assets[0].uri;
+        const pickedUri = normalizeFileUri(result.assets[0].uri);
+        useScanStore.getState().setCapturedImageUri(pickedUri);
         router.push({
           pathname: '/scan/submit' as any,
           params: { imageUri: pickedUri },

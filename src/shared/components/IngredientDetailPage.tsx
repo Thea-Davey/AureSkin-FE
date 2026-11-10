@@ -19,6 +19,35 @@ import { CompatibilityBadge } from './CompatibilityBadge';
 import { CompatibleNote } from '../../features/library/view/components/CompatibleNote';
 import { DescriptionCard } from '../../features/library/view/components/DescriptionCard';
 import { useIngredientDetail } from '../../features/library/viewmodel/useIngredientDetail';
+import { cleanIngredientDescription } from '../../features/library/model/library_api';
+import { CloseButton } from './CloseButton';
+
+const CAUTION_DESCRIPTIONS: Record<string, string> = {
+  'related allergy': 'Individuals with known sensitivities or allergic reactions to this ingredient or related botanical/chemical compounds should avoid use.',
+  'sensitive': 'May cause irritation, redness, or stinging on reactive or sensitive skin. Patch test before applying to facial areas.',
+  'impaired skin barrier': 'Avoid using on compromised, peeling, or actively inflamed skin barriers until the natural moisture barrier has recovered.',
+  'dry dehydrated': 'May exert an astringent or drying effect on moisture-depleted skin; ensure sufficient barrier hydration if used.',
+  'dry and dehydrated skin': 'May exert an astringent or drying effect on moisture-depleted skin; ensure sufficient barrier hydration if used.',
+  'oily': 'Can be comedogenic or overly occlusive for sebum-rich, congestion-prone skin profiles.',
+  'gluten allergy': 'Contains wheat-derived components or processing traces that may trigger reactions in individuals with celiac disease or gluten allergies.',
+  'gluten allery': 'Contains wheat-derived components or processing traces that may trigger reactions in individuals with celiac disease or gluten allergies.',
+  'pregnancy': 'Contraindicated or advised against during pregnancy and lactation; consult with a physician prior to topical use.',
+};
+
+function formatSkinTypeLabel(raw: string): string {
+  const norm = raw.trim().toLowerCase();
+  if (norm === 'all') return 'All skin types';
+  if (norm === 'acneprone' || norm === 'acne-prone' || norm === 'acne prone') return 'Acne-Prone skin';
+  return `${norm.charAt(0).toUpperCase()}${norm.slice(1)} skin`;
+}
+
+function formatConditionLabel(raw: string): string {
+  const clean = raw.trim().replace(/_/g, ' ').toLowerCase();
+  return clean
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 export interface IngredientDetailPageProps {
   visible: boolean;
@@ -90,15 +119,11 @@ function IngredientDetailView({
       <View className="flex-1 bg-primary">
         <SafeAreaView edges={['top']} className="bg-primary">
           <View className="h-16 flex-row items-center justify-end px-5">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close ingredient details"
+            <CloseButton
               onPress={onClose}
-              hitSlop={10}
-              className="rounded-full p-2 active:bg-primary-light"
-            >
-              <X size={24} color={theme.colors.white} />
-            </Pressable>
+              iconSize={24}
+              accessibilityLabel="Close ingredient details"
+            />
           </View>
         </SafeAreaView>
 
@@ -209,12 +234,15 @@ function IngredientDetailView({
                   </View>
                 ) : null}
 
-                {/* 1. Intro Description */}
-                {ingredient.description?.trim() ? (
-                  <Text className="mb-4 text-body-sm font-sans text-muted leading-relaxed">
-                    {ingredient.description}
-                  </Text>
-                ) : null}
+                {/* 1. Intro Description (Filtered to 1 clean paragraph without boilerplate) */}
+                {(() => {
+                  const cleaned = cleanIngredientDescription(ingredient.description ?? ingredient.short_description);
+                  return cleaned ? (
+                    <Text className="mb-4 text-body-sm font-sans text-muted leading-relaxed">
+                      {cleaned}
+                    </Text>
+                  ) : null;
+                })()}
 
                 {/* 2. What is it? */}
                 {ingredient.what_is_it?.trim() ? (
@@ -225,55 +253,96 @@ function IngredientDetailView({
                   />
                 ) : null}
 
-                {/* 3. What does it do? */}
-                {ingredient.benefits?.trim() ? (
-                  <DescriptionCard
-                    title="What does it do?"
-                    variant="description"
-                    description={ingredient.benefits}
-                  />
-                ) : null}
-
-                {/* 4. What is it good for? */}
-                {(ingredient.good_for?.length || ingredient.skin_types.length) ? (
+                {/* 3. What is it good for? (Benefits from Supabase) */}
+                {(ingredient.benefits?.trim() || ingredient.what_does_it_do?.trim()) ? (
                   <DescriptionCard
                     title="What is it good for?"
-                    variant="bulleted"
-                    bulletTone="positive"
-                    bullets={
-                      ingredient.good_for?.length
-                        ? ingredient.good_for
-                        : ingredient.skin_types.map((skinType) =>
-                          skinType === 'all'
-                            ? 'All skin types'
-                            : `${skinType.charAt(0).toUpperCase()}${skinType.slice(1)} skin`
-                        )
-                    }
+                    variant="description"
+                    description={ingredient.benefits?.trim() || ingredient.what_does_it_do?.trim()}
                   />
                 ) : null}
 
-                {/* 5. Who should avoid? */}
-                {(ingredient.avoid?.length || ingredient.caution?.trim()) ? (
+                {/* 4. Compatible Skin Types (Green dot bullet) */}
+                {ingredient.skin_types && ingredient.skin_types.length > 0 ? (
                   <DescriptionCard
-                    title="Who should avoid?"
+                    title="Compatible Skin Types"
                     variant="bulleted"
-                    bulletTone="negative"
-                    bullets={ingredient.avoid?.length ? ingredient.avoid : []}
-                  >
-                    {ingredient.caution?.trim() ? (
-                      <View className="mt-3 rounded-button border border-status-warning/20 bg-status-warning/10 p-3">
-                        <Text className="text-caption font-sans-semibold text-note-warning-title">
-                          Caution
-                        </Text>
-                        <Text className="mt-0.5 text-body-sm font-sans text-text">
-                          {ingredient.caution}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </DescriptionCard>
+                    bulletTone="positive"
+                    bullets={ingredient.skin_types.map(formatSkinTypeLabel)}
+                  />
                 ) : null}
 
-                {/* 6. Compatible Note */}
+                {/* 5. Target Skin Conditions (Red dot bullet) */}
+                {ingredient.skin_conditions && ingredient.skin_conditions.length > 0 ? (
+                  <DescriptionCard
+                    title="Target Skin Conditions"
+                    variant="bulleted"
+                    bulletTone="negative"
+                    bullets={ingredient.skin_conditions.map(formatConditionLabel)}
+                  />
+                ) : null}
+
+                {/* 6. Who should avoid? (Red bullet dot + Caution containers for matching triggers) */}
+                {(() => {
+                  const rawAvoid = ingredient.avoid?.length
+                    ? ingredient.avoid
+                    : typeof ingredient.who_should_avoid === 'string'
+                      ? ingredient.who_should_avoid.split(',').map((s) => s.trim()).filter(Boolean)
+                      : [];
+                  const avoidList = rawAvoid.map((item) => item.replace(/[\[\]'"]/g, '').trim()).filter(Boolean);
+
+                  if (avoidList.length === 0 && !ingredient.caution?.trim()) {
+                    return null;
+                  }
+
+                  return (
+                    <DescriptionCard
+                      title="Who should avoid?"
+                      variant="description"
+                    >
+                      {avoidList.map((item, index) => {
+                        const normKey = item.toLowerCase().trim();
+                        const matchedCaution =
+                          CAUTION_DESCRIPTIONS[normKey] ??
+                          Object.entries(CAUTION_DESCRIPTIONS).find(([k]) => normKey.includes(k) || k.includes(normKey))?.[1];
+
+                        return (
+                          <View key={`${item}-${index}`} className="mb-3">
+                            <View className="flex-row items-center gap-2.5">
+                              <View className="h-2 w-2 rounded-full bg-status-error shrink-0" />
+                              <Text className="flex-1 text-body-sm font-sans-bold text-text">
+                                {item}
+                              </Text>
+                            </View>
+                            {matchedCaution ? (
+                              <View className="mt-1.5 ml-4 rounded-button border border-note-warning-border bg-note-warning p-3">
+                                <Text className="text-caption font-sans-bold text-note-warning-title">
+                                  Caution
+                                </Text>
+                                <Text className="mt-0.5 text-body-sm font-sans text-text leading-5">
+                                  {matchedCaution}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        );
+                      })}
+
+                      {ingredient.caution?.trim() && !avoidList.some((item) => CAUTION_DESCRIPTIONS[item.toLowerCase().trim()]) ? (
+                        <View className="mt-2 rounded-button border border-note-warning-border bg-note-warning p-3">
+                          <Text className="text-caption font-sans-bold text-note-warning-title">
+                            Caution
+                          </Text>
+                          <Text className="mt-0.5 text-body-sm font-sans text-text leading-5">
+                            {ingredient.caution}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </DescriptionCard>
+                  );
+                })()}
+
+                {/* 7. Compatible Note */}
                 {compatibilityStatus === 'compatible' ? (
                   <CompatibleNote className="mt-1" />
                 ) : null}
@@ -345,9 +414,9 @@ export function IngredientDetailPage(props: IngredientDetailPageProps) {
         isTogglingFavorite={props.isTogglingFavorite ?? false}
         favoriteError={props.favoriteError ?? null}
         onClose={props.onClose}
-        onRetry={props.onRetry ?? (() => {})}
-        onRetryCompatibility={props.onRetryCompatibility ?? (() => {})}
-        onToggleFavorite={props.onToggleFavorite ?? (() => {})}
+        onRetry={props.onRetry ?? (() => { })}
+        onRetryCompatibility={props.onRetryCompatibility ?? (() => { })}
+        onToggleFavorite={props.onToggleFavorite ?? (() => { })}
       />
     );
   }

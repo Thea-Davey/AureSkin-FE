@@ -75,6 +75,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
     queryKey: ['library', 'ingredient', ingredientId],
     queryFn: () => fetchIngredientById(ingredientId),
     enabled: ingredientId.length > 0,
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const latestAnalysisQuery = useQuery({
@@ -83,6 +84,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
     },
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const compatibilityQuery = useQuery({
@@ -104,6 +106,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
       return compatibility;
     },
     enabled: Boolean(latestAnalysisQuery.data?.id),
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const favoritesQuery = useQuery({
@@ -140,6 +143,10 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
       setFavoriteError(error.message || 'Unable to save this favorite. Please try again.');
     },
     onSuccess: () => setFavoriteError(null),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: favoritesQueryKey });
+      await queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
   });
 
   const savedFavoriteIds = favoritesQuery.data ?? EMPTY_FAVORITES;

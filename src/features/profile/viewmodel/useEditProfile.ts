@@ -46,7 +46,6 @@ function getInitialDraft(
       displayName ? displayName.split(' ')[0] : (mockMode ? MOCK_USER_PROFILE.firstName : '')
     ) || (mockMode ? MOCK_USER_PROFILE.firstName : '');
   const lastName = getMetadataString(metadata, 'last_name', mockMode ? MOCK_USER_PROFILE.lastName : '') || '';
-  const username = getMetadataString(metadata, 'username', mockMode ? MOCK_USER_PROFILE.username : '') || '';
   const dateOfBirth = getMetadataString(metadata, 'date_of_birth', mockMode ? MOCK_USER_PROFILE.dateOfBirth : '') || '';
   const gender = getMetadataString(metadata, 'gender', mockMode ? MOCK_USER_PROFILE.gender : '') || '';
   const email = user?.email || (mockMode ? MOCK_USER_PROFILE.email : '');
@@ -62,7 +61,6 @@ function getInitialDraft(
   return {
     firstName,
     lastName,
-    username,
     dateOfBirth,
     gender,
     email,

@@ -48,7 +48,10 @@ export const S2ResultsTab: React.FC<S2ResultsTabProps> = ({
       }
     >
       {/* Container 1: Analyzed Face Photo Preview Card */}
-      <FacePhotoCard imageUri={imageUri || scanResult.image_url} />
+      <FacePhotoCard
+        imageUri={imageUri || scanResult.image_url}
+        fallbackUri={scanResult.image_url}
+      />
 
       {/* Container 2: Skin Health Score Metric Card */}
       <HealthScoreCard

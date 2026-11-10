@@ -117,38 +117,82 @@ function nullableString(record: Record<string, unknown>, key: string): string | 
   return value;
 }
 
+function parseStringList(val: unknown): string[] {
+  if (Array.isArray(val)) {
+    return val.map((s) => String(s).trim()).filter(Boolean);
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const cleaned = trimmed.replace(/'/g, '"');
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+          return parsed.map((s) => String(s).trim()).filter(Boolean);
+        }
+      } catch {
+        const matches = trimmed.match(/['"]([^'"]+)['"]/g);
+        if (matches) {
+          return matches.map((m) => m.replace(/['"]/g, '').trim()).filter(Boolean);
+        }
+      }
+    }
+    return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+export function cleanIngredientDescription(rawText: string | null | undefined): string | null {
+  if (!rawText || !rawText.trim()) return null;
+  const paragraphs = rawText
+    .split(/\n\s*\n|\r\n\s*\r\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Filter out category-level boilerplate paragraphs
+  const filtered = paragraphs.filter((p) => {
+    return !/\b(are a class of ingredients|is in a class of prebiotic|class of prebiotic ingredients|group of naturally occurring substances)\b/i.test(p);
+  });
+
+  if (filtered.length > 0) {
+    return filtered[0];
+  }
+  return paragraphs[0] ?? null;
+}
+
 function normalizeIngredient(value: unknown): Ingredient {
   if (!isRecord(value)) {
     throw new Error('Ingredient response contains an invalid item.');
   }
 
-  const skinTypes = value.skin_types;
-  const goodFor = value.good_for;
-  const avoid = value.avoid;
-  for (const [field, fieldValue] of [
-    ['skin_types', skinTypes],
-    ['good_for', goodFor],
-    ['avoid', avoid],
-  ] as const) {
-    if (fieldValue !== undefined && fieldValue !== null && (
-      !Array.isArray(fieldValue) || !fieldValue.every((item) => typeof item === 'string')
-    )) {
-      throw new Error(`Ingredient response has an invalid "${field}" field.`);
-    }
-  }
+  const skinTypes = parseStringList(value.skin_types);
+  const skinConditions = parseStringList(value.skin_conditions);
+  const rawAvoid = value.avoid ?? value.who_should_avoid;
+  const avoid = parseStringList(rawAvoid);
+  const goodFor = parseStringList(value.good_for ?? value.who_is_it_good_for);
+
+  const rawDescription = nullableString(value, 'description') ?? nullableString(value, 'short_description');
+  const cleanedDescription = cleanIngredientDescription(rawDescription);
 
   return {
     ...value,
     id: requiredString(value, 'id'),
     name: requiredString(value, 'name'),
     preview_description: nullableString(value, 'preview_description'),
-    description: nullableString(value, 'description'),
-    benefits: nullableString(value, 'benefits'),
-    skin_types: Array.isArray(skinTypes) ? skinTypes : [],
-    caution: nullableString(value, 'caution'),
+    description: cleanedDescription,
+    short_description: nullableString(value, 'short_description'),
     what_is_it: nullableString(value, 'what_is_it'),
-    good_for: Array.isArray(goodFor) ? goodFor : undefined,
-    avoid: Array.isArray(avoid) ? avoid : undefined,
+    what_does_it_do: nullableString(value, 'what_does_it_do'),
+    who_is_it_good_for: nullableString(value, 'who_is_it_good_for'),
+    who_should_avoid: nullableString(value, 'who_should_avoid'),
+    url: nullableString(value, 'url'),
+    benefits: nullableString(value, 'benefits') ?? nullableString(value, 'what_does_it_do'),
+    skin_types: skinTypes,
+    skin_conditions: skinConditions.length > 0 ? skinConditions : undefined,
+    caution: nullableString(value, 'caution'),
+    good_for: goodFor.length > 0 ? goodFor : undefined,
+    avoid: avoid.length > 0 ? avoid : undefined,
   };
 }
 
@@ -283,6 +327,17 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
       throw new Error('This ingredient could not be found.');
     }
     return ingredient;
+  }
+
+  // 1. Instant Cache-First Lookup: Use pre-downloaded catalog for 0ms response
+  try {
+    const cached = await getCachedIngredients();
+    const localItem = cached?.find((item) => item.id === id);
+    if (localItem && localItem.description) {
+      return localItem;
+    }
+  } catch {
+    // Continue to network fetch
   }
 
   try {
@@ -446,6 +501,17 @@ export async function fetchProductById(id: string): Promise<ProductDetail> {
       throw new Error('This product could not be found.');
     }
     return product;
+  }
+
+  // 1. Instant Cache-First Lookup: Use pre-downloaded catalog for 0ms response
+  try {
+    const cached = await getCachedProducts();
+    const localItem = cached?.find((item) => item.id === id);
+    if (localItem && (localItem as any).ingredients && (localItem as any).ingredients.length > 0) {
+      return localItem as ProductDetail;
+    }
+  } catch {
+    // Continue to network fetch
   }
 
   try {

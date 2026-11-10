@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ProductCategory,
@@ -15,6 +15,8 @@ import { S1IngredientsTab } from './containers/s1_IngredientsTab';
 import { S2ProductsTab } from './containers/s2_ProductsTab';
 import { IngredientDetailPage } from './components/IngredientDetailPage';
 import { ProductDetailPage } from './components/ProductDetailPage';
+import { LibraryUpdatedDialog } from './components/LibraryUpdatedDialog';
+import { useScanStore } from '../../scan/model/scanStore';
 
 type LibraryTab = 'ingredients' | 'products';
 
@@ -176,6 +178,8 @@ function ProductsTabContent({
           onDeleteProduct={handleDeleteProduct}
         />
       ) : null}
+
+
     </>
   );
 }
@@ -223,6 +227,22 @@ export function LibraryPage() {
     }
   }, [params.tab]);
   const [notice, setNotice] = useState<string | null>(null);
+  const hasNewScanForLibrary = useScanStore((state) => state.hasNewScanForLibrary);
+  const setHasNewScanForLibrary = useScanStore((state) => state.setHasNewScanForLibrary);
+  const [showLibraryDialog, setShowLibraryDialog] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (hasNewScanForLibrary) {
+        setShowLibraryDialog(true);
+      }
+    }, [hasNewScanForLibrary])
+  );
+
+  const handleDismissLibraryDialog = () => {
+    setShowLibraryDialog(false);
+    setHasNewScanForLibrary(false);
+  };
   const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isProductDetailVisible, setIsProductDetailVisible] = useState(false);
@@ -315,6 +335,7 @@ export function LibraryPage() {
       </View>
 
       <View className="flex-1 rounded-t-card bg-card">
+
         {activeTab === 'ingredients' ? (
           <S1IngredientsTab
             ingredients={ingredients.ingredients}
@@ -372,6 +393,11 @@ export function LibraryPage() {
           }}
         />
       ) : null}
+
+      <LibraryUpdatedDialog
+        visible={showLibraryDialog}
+        onDismiss={handleDismissLibraryDialog}
+      />
     </View>
   );
 }

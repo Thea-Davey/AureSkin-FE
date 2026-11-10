@@ -83,6 +83,7 @@ export async function hydrateQueryClientFromDisk(queryClient: QueryClient): Prom
         const pagesData = (cachedHistory as any)?.pages
           ? cachedHistory
           : { pages: [cachedHistory], pageParams: [0] };
+        queryClient.setQueryData(['history', 'list', userId], pagesData);
         queryClient.setQueryData(['history', 'list'], pagesData);
       }
     }
@@ -178,7 +179,7 @@ export async function downloadAndPersistFullCatalog(
     try {
       const [routine, history] = await Promise.all([
         fetchRoutine().catch(() => null),
-        fetchHistoryPage({ limit: 10, offset: 0 }).catch(() => null),
+        fetchHistoryPage({ limit: 20, offset: 0 }).catch(() => null),
       ]);
 
       if (routine !== undefined) {
@@ -187,10 +188,12 @@ export async function downloadAndPersistFullCatalog(
       }
       if (history) {
         await saveCachedHistory(userId, history);
-        queryClient.setQueryData(['history', 'list'], {
+        const pagesPayload = {
           pages: [history],
           pageParams: [0],
-        });
+        };
+        queryClient.setQueryData(['history', 'list', userId], pagesPayload);
+        queryClient.setQueryData(['history', 'list'], pagesPayload);
       }
     } catch (err) {
       console.warn('[CatalogSync] User data warmup warning:', err);

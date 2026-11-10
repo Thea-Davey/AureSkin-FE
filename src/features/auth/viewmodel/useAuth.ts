@@ -10,6 +10,8 @@ export function useAuth() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
   
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -72,6 +74,22 @@ export function useAuth() {
       Toast.show({ type: 'success', text1: 'Welcome back!' });
       router.replace('/(tabs)');
     } catch (error: any) {
+      // Fallback: If FastAPI backend is offline or network error, attempt direct login via hosted Supabase
+      try {
+        const { data: supaData, error: supaErr } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (!supaErr && supaData.session) {
+          setSession(supaData.session);
+          Toast.show({ type: 'success', text1: 'Welcome back!' });
+          router.replace('/(tabs)');
+          return;
+        }
+      } catch {
+        // Continue to show original error
+      }
+
       Toast.show({ 
         type: 'error', 
         text1: 'Login Failed', 
@@ -83,7 +101,7 @@ export function useAuth() {
   };
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!firstName.trim() || !lastName.trim() || !email || !password || !confirmPassword) {
       Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all fields' });
       return;
     }
@@ -103,7 +121,15 @@ export function useAuth() {
 
     try {
       setIsLoading(true);
-      const response = await authApi.register({ email, password });
+      const cleanFirstName = firstName.trim();
+      const cleanLastName = lastName.trim();
+
+      const response = await authApi.register({
+        email,
+        password,
+        first_name: cleanFirstName,
+        last_name: cleanLastName,
+      });
       
       const tokenData = (response.data as any)?.data ?? response.data;
       if (!tokenData?.access_token || !tokenData?.refresh_token) {
@@ -120,6 +146,34 @@ export function useAuth() {
       // Navigate to Terms screen instead of home
       router.push('/(auth)/terms');
     } catch (error: any) {
+      // Fallback: If FastAPI backend is offline or network error, attempt direct register via hosted Supabase
+      try {
+        const cleanFirstName = firstName.trim();
+        const cleanLastName = lastName.trim();
+        const displayName = `${cleanFirstName} ${cleanLastName}`.trim();
+
+        const { data: supaData, error: supaErr } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: cleanFirstName,
+              last_name: cleanLastName,
+              display_name: displayName,
+            },
+          },
+        });
+
+        if (!supaErr && supaData.session) {
+          await setSession(supaData.session);
+          Toast.show({ type: 'success', text1: 'Account created successfully!' });
+          router.push('/(auth)/terms');
+          return;
+        }
+      } catch {
+        // Continue to show original error
+      }
+
       Toast.show({ 
         type: 'error', 
         text1: 'Registration Failed', 
@@ -187,6 +241,10 @@ export function useAuth() {
   };
 
   return {
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
     email,
     setEmail,
     password,

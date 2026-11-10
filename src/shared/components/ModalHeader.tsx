@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '../theme';
+import { CloseButton } from './CloseButton';
 
 interface ModalHeaderProps {
   title: string;
@@ -29,16 +29,14 @@ export function ModalHeader({ title, onClose }: ModalHeaderProps) {
         <Text className="text-h2 font-sans-bold text-neutral-white flex-1 mr-3" numberOfLines={1}>
           {title}
         </Text>
-        <TouchableOpacity
+        <CloseButton
           onPress={handleClose}
-          hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-          activeOpacity={0.7}
-          className="w-10 h-10 rounded-full bg-white/10 items-center justify-center"
+          iconSize={24}
           accessibilityLabel="Close screen"
-        >
-          <X size={24} color={theme.colors.card} />
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
   );
 }
+
+export default ModalHeader;

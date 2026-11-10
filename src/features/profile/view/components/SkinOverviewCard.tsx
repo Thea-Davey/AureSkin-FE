@@ -47,6 +47,7 @@ export function SkinOverviewCard({
               {conditions.map((condition, idx) => (
                 <View
                   key={`${condition}-${idx}`}
+                  style={{ backgroundColor: theme.colors.concern }}
                   className="bg-concern px-3 py-1 rounded-badge self-start"
                 >
                   <Text className="text-caption font-sans-bold text-neutral-white">

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useAppStore } from '@/shared/store/appStore';
 import { useHistory } from '../viewmodel/useHistory';
 import { S1HistoryList } from './containers/s1_HistoryList';
 
@@ -38,7 +39,7 @@ export function HistoryPage() {
           onRefresh={history.actions.refresh}
           onLoadNextPage={history.actions.loadNextPage}
           onOpenEntry={(id) => router.push({ pathname: '/history/[id]', params: { id } })}
-          onStartScan={() => router.push('/(tabs)/scan')}
+          onStartScan={() => useAppStore.getState().openScanOverlay()}
         />
       </View>
     </View>

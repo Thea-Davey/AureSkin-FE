@@ -20,10 +20,10 @@ export const theme = {
     muted: "#8A8A8A",
     border: "#E8E0D8",
     error: "#E53935",
-    concern: "#fa8b89ff",
+    concern: "#FA8B89",
     white: "#FFFFFF",
     black: "#000000",
-    beige: "#f8f0e7ff",
+    beige: "#F8F0E7",
 
     // Status colors (matching tailwind.config.js)
     status: {

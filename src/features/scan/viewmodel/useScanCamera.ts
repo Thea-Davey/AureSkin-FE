@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Animated, Platform } from 'react-native';
+import { Animated, Platform, AppState, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCameraPermissions, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -11,12 +11,14 @@ import {
   getSkinGuidanceTips,
 } from '../model/scan_api';
 import { MOCK_CAMERA_PHOTO_URI } from '../model/scan_mock';
+import { useScanStore, normalizeFileUri } from '../model/scanStore';
 
 export interface UseScanCameraReturn {
   // Camera State
   facing: CameraFacing;
   isPermissionGranted: boolean;
   isPermissionPending: boolean;
+  canAskAgain: boolean;
   isCapturing: boolean;
   isCameraReady: boolean;
   flashAnim: Animated.Value;
@@ -47,7 +49,7 @@ export function useScanCamera(): UseScanCameraReturn {
   const router = useRouter();
 
   // Camera permissions via expo-camera
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraFacing>('front');
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
   const [isCameraReady, setIsCameraReady] = useState<boolean>(false);
@@ -60,6 +62,19 @@ export function useScanCamera(): UseScanCameraReturn {
   // Flash animation & Camera View reference
   const flashAnim = useRef(new Animated.Value(0)).current;
   const cameraRef = useRef<CameraView | null>(null);
+
+  // AppState listener: refresh permission when user returns from device Settings
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        getPermission();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [getPermission]);
 
   // Load initial gallery thumbnail & guidance tips
   useEffect(() => {
@@ -89,15 +104,25 @@ export function useScanCamera(): UseScanCameraReturn {
 
   const isPermissionPending = !permission;
   const isPermissionGranted = !!permission?.granted;
+  const canAskAgain = permission?.canAskAgain ?? true;
 
   const requestCameraPermission = useCallback(async (): Promise<boolean> => {
     try {
+      // If user has permanently denied permission (canAskAgain is false), open device settings directly
+      if (permission && !permission.granted && !permission.canAskAgain) {
+        await Linking.openSettings();
+        return false;
+      }
+
       const result = await requestPermission();
+      if (!result?.granted && !result?.canAskAgain) {
+        await Linking.openSettings();
+      }
       return !!result?.granted;
     } catch {
       return false;
     }
-  }, [requestPermission]);
+  }, [permission, requestPermission]);
 
   const toggleCameraFacing = useCallback(() => {
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));
@@ -124,7 +149,8 @@ export function useScanCamera(): UseScanCameraReturn {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const pickedUri = result.assets[0].uri;
+        const pickedUri = normalizeFileUri(result.assets[0].uri);
+        useScanStore.getState().setCapturedImageUri(pickedUri);
         router.push({
           pathname: '/scan/submit' as any,
           params: { imageUri: pickedUri },
@@ -173,9 +199,10 @@ export function useScanCamera(): UseScanCameraReturn {
         try {
           const photo = await cameraRef.current.takePictureAsync({
             quality: 0.85,
+            skipProcessing: false,
           });
           if (photo?.uri) {
-            photoUri = photo.uri;
+            photoUri = normalizeFileUri(photo.uri);
           }
         } catch (camErr) {
           console.warn('Real camera capture error:', camErr);
@@ -197,6 +224,9 @@ export function useScanCamera(): UseScanCameraReturn {
         }
       }
 
+      // Store in memory store so it never gets corrupted by URL encoding/decoding
+      useScanStore.getState().setCapturedImageUri(photoUri);
+
       // Navigate to Scan Submit with captured photo URI
       router.push({
         pathname: '/scan/submit' as any,
@@ -213,6 +243,7 @@ export function useScanCamera(): UseScanCameraReturn {
     facing,
     isPermissionGranted,
     isPermissionPending,
+    canAskAgain,
     isCapturing,
     isCameraReady,
     flashAnim,

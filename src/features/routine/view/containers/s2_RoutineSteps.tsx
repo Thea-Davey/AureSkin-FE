@@ -14,12 +14,18 @@ interface S2RoutineStepsProps {
   skinProfile: RoutineSkinProfile | null;
   activeTimeOfDay: 'morning' | 'evening';
   isEditing: boolean;
+  displayedSteps: RoutineStep[];
   onToggleTimeOfDay: (timeOfDay: 'morning' | 'evening') => void;
   onOpenMenu: () => void;
   onStartEditing: () => void;
   onCancelEditing: () => void;
-  onSaveEditing: (steps: RoutineStep[]) => void;
+  onSaveEditing: () => void;
   onOpenSwapProduct: (stepId: string, currentProductId: string | null, stepName?: string) => void;
+  onMoveUp: (index: number) => void;
+  onMoveDown: (index: number) => void;
+  onDeleteStep: (stepId: string) => void;
+  onAddStep: (categoryName?: string, categoryDesc?: string) => string;
+  onSelectCategory: (stepId: string, categoryName: string, categoryDesc: string) => void;
 }
 
 export function S2RoutineSteps({
@@ -27,19 +33,20 @@ export function S2RoutineSteps({
   skinProfile,
   activeTimeOfDay,
   isEditing,
+  displayedSteps,
   onToggleTimeOfDay,
   onOpenMenu,
   onStartEditing,
   onCancelEditing,
   onSaveEditing,
   onOpenSwapProduct,
+  onMoveUp,
+  onMoveDown,
+  onDeleteStep,
+  onAddStep,
+  onSelectCategory,
 }: S2RoutineStepsProps) {
   const isMorning = activeTimeOfDay === 'morning';
-
-  // Filter steps for the active regimen
-  const activeSteps = routine.steps.filter(
-    (step) => step.time_of_day === activeTimeOfDay || step.time_of_day === 'both'
-  );
 
   return (
     <View className="gap-3.5">
@@ -97,12 +104,17 @@ export function S2RoutineSteps({
       {/* 3. Unified Morning / Night Routine Card (No Outer Container Border) */}
       <RoutineTimeOfDayCard
         timeOfDay={activeTimeOfDay}
-        steps={activeSteps}
+        steps={displayedSteps}
         isEditing={isEditing}
         onStartEditing={onStartEditing}
         onCancelEditing={onCancelEditing}
         onSaveEditing={onSaveEditing}
         onOpenSwapProduct={onOpenSwapProduct}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onDeleteStep={onDeleteStep}
+        onAddStep={onAddStep}
+        onSelectCategory={onSelectCategory}
       />
 
       {/* 4. Why This Routine Note (Style 1 Two-Column Callout) */}

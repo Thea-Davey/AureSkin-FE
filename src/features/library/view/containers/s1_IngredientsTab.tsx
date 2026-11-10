@@ -69,7 +69,7 @@ export function S1IngredientsTab({
       </Pressable>
     </View>
   ) : (
-    <View className="mx-5 mt-10 items-center rounded-card bg-background px-5 py-8">
+    <View className="mx-5 mt-12 items-center py-6">
       <Search size={24} color={theme.colors.muted} />
       <Text className="mt-3 text-center text-body-sm font-sans-medium text-muted">
         {searchQuery.trim() ? 'No ingredients found' : 'No ingredients available'}

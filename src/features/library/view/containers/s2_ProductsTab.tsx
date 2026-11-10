@@ -121,7 +121,7 @@ export function S2ProductsTab({
       </Pressable>
     </View>
   ) : (
-    <View className="mx-5 mt-8 items-center rounded-card bg-card p-5">
+    <View className="mx-5 mt-12 items-center py-6">
       <Text className="text-center text-body font-sans-semibold text-text">
         No products found
       </Text>

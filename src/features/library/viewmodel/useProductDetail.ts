@@ -25,6 +25,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
     queryKey: ['library', 'product', productId],
     queryFn: () => fetchProductById(productId),
     enabled: productId.trim().length > 0,
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const latestAnalysisQuery = useQuery({
@@ -33,6 +34,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
     },
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const latestAnalysisId = latestAnalysisQuery.data?.id;
@@ -50,6 +52,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
       return compatibility;
     },
     enabled: Boolean(latestAnalysisId),
+    staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   const compatibilityStatus = useMemo<ProductCompatibilityStatus>(() => {

@@ -47,4 +47,5 @@ export type { IngredientCardProps } from './IngredientCard';
 export { ProductCard } from './ProductCard';
 export type { ProductCardProps } from './ProductCard';
 
-
+export { CloseButton } from './CloseButton';
+export type { CloseButtonProps } from './CloseButton';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Star } from 'lucide-react-native';
 import { theme } from '../theme';
 import { Card } from './Card';
@@ -37,20 +37,18 @@ export function IngredientCard({
     'Learn more about this ingredient in the detail view.';
 
   return (
-    <Animated.View
-      entering={FadeIn}
-      className="w-full"
-      style={{ width: '100%' }}
+    <Card
+      style={2}
+      className={`mx-5 mb-3 px-5 py-4 self-stretch items-stretch ${
+        isFirstInSection ? 'mt-3' : ''
+      } ${className}`}
     >
-      <Card
-        variant={2}
+      <Pressable
         accessibilityRole="button"
         accessibilityLabel={`View details for ${ingredient.name}`}
         accessibilityHint="Opens ingredient details"
         onPress={() => onPress(ingredient.id)}
-        className={`mx-5 mb-3 px-5 py-4 self-stretch items-stretch ${
-          isFirstInSection ? 'mt-3' : ''
-        } ${className}`}
+        className="w-full active:opacity-85"
       >
         {/* Row 1: [Col 1: Ingredient Name] [Col 2: Compact Compatibility Badge + Favorite Button (Top Aligned)] */}
         <View className="w-full flex-row items-start justify-between gap-3">
@@ -94,8 +92,8 @@ export function IngredientCard({
         >
           {previewText}
         </Text>
-      </Card>
-    </Animated.View>
+      </Pressable>
+    </Card>
   );
 }
 

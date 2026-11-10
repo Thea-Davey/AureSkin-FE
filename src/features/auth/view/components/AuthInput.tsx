@@ -19,11 +19,11 @@ export function AuthInput({ error, errorMessage, isPassword, secureTextEntry, ..
     <View className="mb-4 w-full">
       <View
         className={`
-          flex-row items-center w-full bg-neutral-white border-2 rounded-input px-4
-          ${error 
-            ? 'border-status-error' 
-            : isFocused 
-              ? 'border-primary' 
+          flex-row items-center w-full bg-neutral-white border rounded-input px-4
+          ${error
+            ? 'border-status-error'
+            : isFocused
+              ? 'border-primary'
               : 'border-neutral-border'
           }
         `}
@@ -44,9 +44,9 @@ export function AuthInput({ error, errorMessage, isPassword, secureTextEntry, ..
             className="p-1"
           >
             {showPassword ? (
-              <EyeOff size={20} color={theme.colors.muted} />
-            ) : (
               <Eye size={20} color={theme.colors.muted} />
+            ) : (
+              <EyeOff size={20} color={theme.colors.muted} />
             )}
           </TouchableOpacity>
         )}

@@ -32,7 +32,7 @@ export type FeatureKey =
 // Set to `true` to force all features to MOCK fixtures.
 // Set to `null` to let each feature use its own local toggle.
 // ============================================================================
-export const MASTER_OVERRIDE: boolean | null = true;
+export const MASTER_OVERRIDE: boolean | null = false;
 
 // ============================================================================
 // 2. PER-FEATURE OVERRIDES

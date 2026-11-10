@@ -30,8 +30,13 @@ interface RoutineTimeOfDayCardProps {
   isEditing: boolean;
   onStartEditing: () => void;
   onCancelEditing: () => void;
-  onSaveEditing: (updatedSteps: RoutineStep[]) => void;
+  onSaveEditing: () => void;
   onOpenSwapProduct: (stepId: string, currentProductId: string | null, stepName?: string) => void;
+  onMoveUp?: (index: number) => void;
+  onMoveDown?: (index: number) => void;
+  onDeleteStep?: (stepId: string) => void;
+  onAddStep?: (categoryName?: string, categoryDesc?: string) => string;
+  onSelectCategory?: (stepId: string, categoryName: string, categoryDesc: string) => void;
 }
 
 export function RoutineTimeOfDayCard({
@@ -42,92 +47,55 @@ export function RoutineTimeOfDayCard({
   onCancelEditing,
   onSaveEditing,
   onOpenSwapProduct,
+  onMoveUp,
+  onMoveDown,
+  onDeleteStep,
+  onAddStep,
+  onSelectCategory,
 }: RoutineTimeOfDayCardProps) {
   const isMorning = timeOfDay === 'morning';
-  const [localSteps, setLocalSteps] = useState<RoutineStep[]>(steps);
   const [categoryPickerStepId, setCategoryPickerStepId] = useState<string | null>(null);
   const [viewingProductId, setViewingProductId] = useState<string | null>(null);
 
-  // Sync local steps when steps prop changes and not currently editing
-  React.useEffect(() => {
-    setLocalSteps(steps);
-  }, [steps]);
-
   // Reorder step: move up
   const handleMoveUp = (index: number) => {
-    if (index === 0) return;
-    const reordered = [...localSteps];
-    const temp = reordered[index - 1];
-    reordered[index - 1] = reordered[index];
-    reordered[index] = temp;
-    const updated = reordered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
-    setLocalSteps(updated);
+    onMoveUp?.(index);
   };
 
   // Reorder step: move down
   const handleMoveDown = (index: number) => {
-    if (index === localSteps.length - 1) return;
-    const reordered = [...localSteps];
-    const temp = reordered[index + 1];
-    reordered[index + 1] = reordered[index];
-    reordered[index] = temp;
-    const updated = reordered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
-    setLocalSteps(updated);
+    onMoveDown?.(index);
   };
 
   // Delete step
   const handleDeleteStep = (stepId: string) => {
-    const filtered = localSteps.filter((s) => s.id !== stepId);
-    const updated = filtered.map((step, idx) => ({ ...step, step_number: idx + 1 }));
-    setLocalSteps(updated);
+    onDeleteStep?.(stepId);
   };
 
   // Add step: initial title "Select Skincare"
   const handleAddStep = () => {
-    const newStepNumber = localSteps.length + 1;
-    const newId = `custom-step-${Date.now()}`;
-    const newStep: RoutineStep = {
-      id: newId,
-      step_number: newStepNumber,
-      step_name: 'Select Skincare',
-      description: 'Tap to choose category and product.',
-      time_of_day: timeOfDay,
-      product_id: null,
-      product: null,
-    };
-    setLocalSteps([...localSteps, newStep]);
-    setCategoryPickerStepId(newId);
+    if (onAddStep) {
+      const newId = onAddStep('Select Skincare', 'Tap to choose category and product.');
+      setCategoryPickerStepId(newId);
+    }
   };
 
   // Update category of a step
   const handleSelectCategory = (categoryName: string, categoryDesc: string) => {
     if (!categoryPickerStepId) return;
-    setLocalSteps((prev) =>
-      prev.map((step) =>
-        step.id === categoryPickerStepId
-          ? {
-            ...step,
-            step_name: categoryName,
-            description: categoryDesc,
-            product_id: null,
-            product: null,
-          }
-          : step
-      )
-    );
+    onSelectCategory?.(categoryPickerStepId, categoryName, categoryDesc);
     setCategoryPickerStepId(null);
   };
 
   const handleSave = () => {
-    onSaveEditing(localSteps);
+    onSaveEditing();
   };
 
   const handleCancel = () => {
-    setLocalSteps(steps);
     onCancelEditing();
   };
 
-  const displayedSteps = isEditing ? localSteps : steps;
+  const displayedSteps = steps;
 
   return (
     // Outer Container without container border

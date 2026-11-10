@@ -1,5 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useAuthStore } from '../../../shared/store/authStore';
+import { saveCachedHistory } from '../../../shared/storage/catalogStorage';
 import { deleteHistoryEntry, fetchHistoryPage } from '../model/history_api';
 import { HistoryEntry, HistoryFilters } from '../model/history_types';
 
@@ -25,17 +28,39 @@ function formatDateForSearch(date: string): string {
 
 export function useHistory() {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<HistoryFilters>(EMPTY_FILTERS);
   const [isFilterSheetVisible, setFilterSheetVisible] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
   const historyQuery = useInfiniteQuery({
-    queryKey: ['history', 'list'],
+    queryKey: ['history', 'list', userId],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => fetchHistoryPage({ limit: PAGE_SIZE, offset: pageParam }),
+    queryFn: async ({ pageParam }) => {
+      const page = await fetchHistoryPage({ limit: PAGE_SIZE, offset: pageParam });
+      if (pageParam === 0 && userId && Array.isArray(page?.items)) {
+        void saveCachedHistory(userId, page);
+      }
+      return page;
+    },
     getNextPageParam: (lastPage) => lastPage?.nextOffset ?? undefined,
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 2, // 2 minutes stale time during active navigation
+    refetchOnMount: 'always', // Always revalidate & fetch latest past scans on initial screen load / reload
   });
+
+  // Always refresh past scans when the History tab comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        void queryClient.refetchQueries({
+          queryKey: ['history', 'list', userId],
+          type: 'active',
+        });
+      }
+    }, [userId, queryClient])
+  );
 
   const deleteMutation = useMutation({
     mutationFn: deleteHistoryEntry,

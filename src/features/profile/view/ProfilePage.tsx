@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { X } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CloseButton } from '../../../shared/components/CloseButton';
 import { PositiveNote } from '../../../shared/components/PositiveNote';
 import { theme } from '../../../shared/theme';
 import { useProfile } from '../viewmodel/useProfile';
@@ -24,16 +24,12 @@ export default function ProfilePage() {
         className="px-5 relative z-20"
       >
         {/* Top-Right Close Button with Safe Area Spacing */}
-        <TouchableOpacity
-          accessibilityRole="button"
+        <CloseButton
           accessibilityLabel="Close profile"
           onPress={actions.closeProfile}
-          activeOpacity={0.7}
           style={{ top: topInset + 4 }}
-          className="absolute right-5 w-10 h-10 items-center justify-center z-30"
-        >
-          <X size={24} color={theme.colors.card} />
-        </TouchableOpacity>
+          className="absolute right-5 z-30"
+        />
 
         {/* User Info Block: Avatar overlapping boundary + Greeting + Edit Profile Button */}
         <View className="flex-row items-center gap-4 mt-8">
@@ -45,7 +41,7 @@ export default function ProfilePage() {
             {profile.avatarUri ? (
               <Image
                 source={{ uri: profile.avatarUri }}
-                className="w-32 h-32 rounded-full border-4 border-offwhitebg bg-card"
+                className="w-32 h-32 rounded-full border-4 border-offwhitebg bg-offwhitebg"
               />
             ) : (
               <View className="w-32 h-32 rounded-full border-4 border-card bg-card items-center justify-center">
@@ -94,10 +90,10 @@ export default function ProfilePage() {
           borderTopLeftRadius: 26,
           borderTopRightRadius: 26,
           overflow: 'hidden',
-          backgroundColor: theme.colors.offwhitebg,
+          backgroundColor: theme.colors.background,
           marginTop: -20
         }}
-        className="flex-1 bg-offwhitebg rounded-t-[32px] z-10"
+        className="flex-1 bg-background rounded-t-[32px] z-10"
       >
         <ScrollView
           className="flex-1 px-4"

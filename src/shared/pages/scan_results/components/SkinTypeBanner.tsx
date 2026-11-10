@@ -98,9 +98,9 @@ export const SkinTypeBanner: React.FC<SkinTypeBannerProps> = ({
           {/* Aligned Right Confidence Circle - Exactly matching Container 2's size and positioning */}
           <View
             style={{ borderColor: theme.colors.secondary }}
-            className="w-16 h-16 rounded-full border-4 items-center justify-center bg-card shadow-xs"
+            className="w-12 h-12 rounded-full border-2 items-center justify-center bg-card shadow-xs"
           >
-            <Text className="text-body font-sans-bold text-secondary-dark">
+            <Text className="text-small font-sans-bold text-secondary-dark">
               {displayConfidence}
             </Text>
           </View>

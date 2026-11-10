@@ -157,16 +157,6 @@ export function useIngredients(): UseIngredientsResult {
     staleTime: 1000 * 60 * 30,
   });
 
-  const compatibleIngredientIds = useMemo<string[]>(() => {
-    if (compatibilityQuery.data?.compatible_ingredients?.length) {
-      return compatibilityQuery.data.compatible_ingredients.map((item) => item.id);
-    }
-    if (USE_SCAN_MOCK) {
-      return MOCK_COMPATIBILITY.compatible_ingredients.map((item) => item.id);
-    }
-    return [];
-  }, [compatibilityQuery.data]);
-
   const favoriteMutation = useMutation<
     void,
     Error,
@@ -193,6 +183,7 @@ export function useIngredients(): UseIngredientsResult {
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: favoritesQueryKey });
+      await queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
   });
 
@@ -233,6 +224,32 @@ export function useIngredients(): UseIngredientsResult {
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data]
   );
+
+  const compatibleIngredientIds = useMemo<string[]>(() => {
+    const list = compatibilityQuery.data?.compatible_ingredients ?? (
+      USE_SCAN_MOCK ? MOCK_COMPATIBILITY.compatible_ingredients : []
+    );
+    if (!list || list.length === 0) {
+      return [];
+    }
+
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    list.forEach((item: any) => {
+      const id = item.id || item.ingredient_id;
+      if (id) ids.add(String(id));
+      if (item.name) names.add(String(item.name).toLowerCase().trim());
+    });
+
+    // Cross-match loaded ingredients by name
+    ingredients.forEach((ing) => {
+      if (names.has(ing.name.toLowerCase().trim())) {
+        ids.add(ing.id);
+      }
+    });
+
+    return Array.from(ids);
+  }, [compatibilityQuery.data, ingredients]);
 
   const sections = useMemo<IngredientSection[]>(() => {
     if (!ingredients.length) return [];

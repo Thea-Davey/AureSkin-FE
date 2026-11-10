@@ -17,6 +17,7 @@ export interface S1CameraViewfinderProps {
   cameraRef: React.RefObject<CameraView | null>;
   isPermissionGranted: boolean;
   isPermissionPending: boolean;
+  canAskAgain?: boolean;
   flashAnim: Animated.Value;
   onCameraReady?: () => void;
   onRequestPermission: () => Promise<boolean>;
@@ -33,6 +34,7 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
   cameraRef,
   isPermissionGranted,
   isPermissionPending,
+  canAskAgain,
   flashAnim,
   onCameraReady,
   onRequestPermission,
@@ -67,7 +69,10 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
       </View>
 
       {/* 2. Camera Viewfinder Card */}
-      <View className="w-[92%] max-w-[360px] aspect-[4/5] rounded-card overflow-hidden bg-neutral-card/5 border border-neutral-white/15 items-center justify-center relative mt-2 shadow-2xl">
+      <View
+        className="w-[92%] max-w-[360px] aspect-[4/5] rounded-card overflow-hidden border border-neutral-white/20 items-center justify-center relative mt-2"
+        style={{ backgroundColor: '#141414' }}
+      >
         {isPermissionPending ? (
           <View className="items-center justify-center p-6">
             <ActivityIndicator size="large" color={theme.colors.card} />
@@ -76,24 +81,26 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
             </Text>
           </View>
         ) : !isPermissionGranted ? (
-          <View className="items-center justify-center p-6 text-center">
+          <View className="items-center justify-center p-6">
             <View className="w-14 h-14 rounded-full bg-neutral-white/10 items-center justify-center mb-3">
               <CameraOff size={28} color={theme.colors.card} />
             </View>
             <Text className="text-body-sm font-sans-bold text-neutral-white text-center mb-1">
               Camera Access Required
             </Text>
-            <Text className="text-caption font-sans text-neutral-white/70 text-center mb-4 leading-4">
-              AureSkin needs access to your camera to take a clear photo of your skin.
+            <Text className="text-caption font-sans text-neutral-white/70 text-center mb-4 leading-4 px-2">
+              {canAskAgain === false
+                ? 'Camera access is disabled in your phone settings. Please tap below to open Settings and allow camera access.'
+                : 'AureSkin needs access to your camera to take a clear photo of your skin.'}
             </Text>
             <Pressable
               onPress={onRequestPermission}
               accessibilityRole="button"
-              accessibilityLabel="Grant camera permission"
+              accessibilityLabel={canAskAgain === false ? 'Open device settings for camera' : 'Grant camera permission'}
               className="bg-primary rounded-button px-5 py-2.5 active:bg-primary/90"
             >
               <Text className="text-caption font-sans-bold text-neutral-white">
-                Grant Permission
+                {canAskAgain === false ? 'Open Device Settings' : 'Grant Permission'}
               </Text>
             </Pressable>
           </View>
@@ -103,7 +110,7 @@ export const S1CameraViewfinder: React.FC<S1CameraViewfinderProps> = ({
               ref={cameraRef}
               facing={facing}
               onCameraReady={onCameraReady}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { backgroundColor: '#000000' }]}
             />
 
             {/* Shutter Flash Animation Overlay */}

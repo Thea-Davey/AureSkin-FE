@@ -98,9 +98,8 @@ export function MenuOverlay() {
     user?.email?.split('@')[0] ||
     'User Name';
 
-  const avatarUrl =
-    user?.user_metadata?.avatar_url ||
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+  const avatarUrl = user?.user_metadata?.avatar_url || null;
+  const userInitial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
 
   return (
     <Modal
@@ -160,10 +159,18 @@ export function MenuOverlay() {
 
               {/* User Avatar & Name & View Profile */}
               <View className="flex-row items-center">
-                <Image
-                  source={{ uri: avatarUrl }}
-                  className="w-14 h-14 rounded-full border-2 border-white/70 mr-4 bg-neutral-border"
-                />
+                {avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    className="w-14 h-14 rounded-full border-2 border-white/70 mr-4 bg-neutral-border"
+                  />
+                ) : (
+                  <View className="w-14 h-14 rounded-full border-2 border-white/70 mr-4 bg-card items-center justify-center shadow-sm">
+                    <Text className="text-h3 font-sans-bold text-primary">
+                      {userInitial}
+                    </Text>
+                  </View>
+                )}
                 <View className="flex-1">
                   <Text
                     className="text-h3 font-sans-bold text-neutral-white"

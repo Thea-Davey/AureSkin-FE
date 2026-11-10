@@ -106,9 +106,13 @@ export async function fetchHistoryPage({ limit, offset }: HistoryPageParams): Pr
   }
 
   const items = (rawItems as HistoryResponseItem[]).map(normalizeEntry);
+  const total = response.data?.data?.total;
+  const hasMore =
+    typeof total === 'number' ? offset + items.length < total : items.length === limit;
+
   return {
     items,
-    nextOffset: items.length === limit ? offset + items.length : null,
+    nextOffset: hasMore ? offset + items.length : null,
   };
 }
 

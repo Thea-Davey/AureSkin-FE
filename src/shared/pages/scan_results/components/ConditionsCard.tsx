@@ -92,7 +92,10 @@ export const ConditionsCard: React.FC<ConditionsCardProps> = ({ conditions }) =>
               className={`w-full ${index > 0 ? 'border-t border-border/40' : ''}`}
             >
               {/* Condition Banner Strip */}
-              <View className="bg-concern border-y border-border/40 px-3.5 py-2.5 flex-row items-center justify-between">
+              <View
+                style={{ backgroundColor: theme.colors.concern }}
+                className="bg-concern border-y border-border/40 px-3.5 py-2.5 flex-row items-center justify-between"
+              >
                 {/* General Clinical Badge Icon */}
                 <View className="w-9 h-9 rounded-full bg-status-error items-center justify-center mr-2.5 shadow-xs shrink-0">
                   <ConditionIcon size={19} color={theme.colors.white} aria-hidden={true} strokeWidth={2.3} />

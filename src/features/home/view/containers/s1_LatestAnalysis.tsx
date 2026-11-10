@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { theme } from '@/shared/theme';
+import { useAppStore } from '@/shared/store/appStore';
 import { LatestAnalysis } from '../../model/home_types';
 import { AnalysisSummaryCard } from '../components/AnalysisSummaryCard';
 
@@ -37,7 +38,7 @@ export function S1LatestAnalysis({ latestAnalysis, isLoading }: S1LatestAnalysis
       <AnalysisSummaryCard
         latestAnalysis={latestAnalysis}
         isLoading={isLoading}
-        onScanPress={() => router.push('/(tabs)/scan')}
+        onScanPress={() => useAppStore.getState().openScanOverlay()}
       />
     </View>
   );

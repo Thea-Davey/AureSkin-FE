@@ -8,7 +8,7 @@ import {
 export const MOCK_SCAN_RESULT: ScanResult = {
   id: 'mock-scan-001',
   user_id: 'mock-user-001',
-  image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2',
+  image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=85',
   skin_type: 'oily',
   skin_type_confidence: 91.46,
   health_score: 85.0,

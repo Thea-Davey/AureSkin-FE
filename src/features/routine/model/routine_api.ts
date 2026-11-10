@@ -89,7 +89,8 @@ function normalizeStep(step: RoutineStepResponse, fallbackId: string, index: num
   if (typeof step.step_name !== 'string' || typeof step.description !== 'string') {
     throw new Error('A routine step was missing its name or description.');
   }
-  const product = normalizeProduct(step.product);
+  const rawProduct = (step as any).products || step.product;
+  const product = normalizeProduct(rawProduct);
   return {
     id: step.id ?? `${fallbackId}-step-${index + 1}`,
     step_number: step.step_number ?? index + 1,
@@ -149,31 +150,42 @@ export async function fetchLatestSkinProfile(): Promise<RoutineSkinProfile | nul
   const rawItems = Array.isArray(payload) ? payload : (Array.isArray(payload?.items) ? payload.items : []);
   if (rawItems.length === 0) return null;
 
-  const latest = rawItems[0] as AnalysisListItem;
-  const detailResponse = await api.get(`/history/${encodeURIComponent(latest.id)}`);
-  const detail = detailResponse.data?.data;
-  if (!detail || typeof detail !== 'object') {
-    throw new Error('The latest scan details were not in the expected format.');
+  const latest = rawItems[0] as any;
+  let concerns: string[] = [];
+  if (Array.isArray(latest.conditions) && latest.conditions.length > 0) {
+    concerns = latest.conditions.map(getConditionName).filter(Boolean);
+  } else if (Array.isArray(latest.analysis_conditions) && latest.analysis_conditions.length > 0) {
+    concerns = latest.analysis_conditions.map(getConditionName).filter(Boolean);
+  } else if (latest.id) {
+    try {
+      const detailResponse = await api.get(`/history/${encodeURIComponent(latest.id)}`);
+      const detail = detailResponse.data?.data;
+      const rawConditions = detail?.conditions?.length ? detail.conditions : detail?.analysis_conditions ?? [];
+      if (Array.isArray(rawConditions)) {
+        concerns = rawConditions.map(getConditionName).filter(Boolean);
+      }
+    } catch {
+      // Fallback gracefully
+    }
   }
 
-  const rawConditions = detail.conditions?.length ? detail.conditions : detail.analysis_conditions ?? [];
-  const concerns = Array.isArray(rawConditions)
-    ? rawConditions.map(getConditionName).filter(Boolean)
-    : [];
-  const healthScore = latest.health_score ?? detail.health_score ?? null;
-
-  const analysisDate = detail.created_at
-    ? new Date(detail.created_at).toLocaleDateString('en-US', {
+  const rawDate = latest.created_at;
+  const analysisDate = rawDate
+    ? new Date(rawDate).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     })
-    : 'May 1, 2026';
+    : null;
+
+  const healthScore = typeof latest.health_score === 'number' ? latest.health_score : null;
 
   return {
-    skin_type: latest.skin_type ?? detail.skin_type ?? null,
+    analysis_id: latest.id ?? null,
+    created_at: latest.created_at ?? null,
+    skin_type: latest.skin_type ?? null,
     concerns,
-    health_score: typeof healthScore === 'number' ? healthScore : null,
+    health_score: healthScore,
     overall_condition: healthScore === null ? null : 'Healthy',
     analysis_date: analysisDate,
   };
@@ -194,19 +206,24 @@ export async function generateRoutine(): Promise<SkincareRoutine> {
 }
 
 export async function fetchProductOptions({
+  category = '',
   query = '',
-  limit,
-  offset,
+  limit = 20,
+  offset = 0,
 }: {
+  category?: string;
   query?: string;
-  limit: number;
-  offset: number;
+  limit?: number;
+  offset?: number;
 }): Promise<RoutineProductPage> {
   if (isMockEnabled('routine')) {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    const filtered = MOCK_PRODUCT_OPTIONS.filter((product) =>
-      `${product.name} ${product.brand} ${product.category}`.toLocaleLowerCase().includes(normalizedQuery)
-    );
+    const normalizedCategory = category.trim().toLocaleLowerCase();
+    const filtered = MOCK_PRODUCT_OPTIONS.filter((product) => {
+      const matchesQuery = `${product.name} ${product.brand} ${product.category}`.toLocaleLowerCase().includes(normalizedQuery);
+      const matchesCategory = !normalizedCategory || product.category.toLocaleLowerCase() === normalizedCategory;
+      return matchesQuery && matchesCategory;
+    });
     const items = filtered.slice(offset, offset + limit);
     return {
       items,
@@ -214,18 +231,51 @@ export async function fetchProductOptions({
     };
   }
 
-  const response = await api.get('/products', {
-    params: { q: query || undefined, limit, offset },
-  });
-  const rawItems = response.data?.data?.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error('The product response was not in the expected format.');
+  // 1. Try swap-candidates endpoint if category is available
+  if (category) {
+    try {
+      const response = await api.get('/routine/swap-candidates', {
+        params: { category, q: query || undefined },
+      });
+      const rawPayload = response.data?.data;
+      const rawItems = Array.isArray(rawPayload) ? rawPayload : [];
+      if (rawItems.length > 0 || !query) {
+        const items = rawItems.map((item: any) => ({
+          id: String(item.id),
+          name: String(item.name),
+          brand: String(item.brand ?? 'Official'),
+          category: String(item.category ?? category),
+          image_url: item.image_url ?? null,
+          score: typeof item.score === 'number' ? item.score : undefined,
+          is_recommended: Boolean(item.is_recommended),
+        }));
+        return {
+          items,
+          nextOffset: null, // Swap candidates endpoint returns complete scored/ranked set
+        };
+      }
+    } catch {
+      // Fallback to /products endpoint below
+    }
   }
+
+  // 2. Standard /products search
+  const response = await api.get('/products', {
+    params: { q: query || undefined, category: category || undefined, limit, offset },
+  });
+  const rawPayload = response.data?.data;
+  const rawItems = Array.isArray(rawPayload)
+    ? rawPayload
+    : Array.isArray(rawPayload?.items)
+      ? rawPayload.items
+      : [];
+
   const items = (rawItems as RoutineProductListItem[]).map((item) => {
     const product = normalizeProduct(item);
     if (!product) throw new Error('A product result could not be normalized.');
     return product;
   });
+
   return {
     items,
     nextOffset: items.length === limit ? offset + items.length : null,
@@ -276,6 +326,21 @@ export async function saveRoutineSteps(steps: RoutineStep[]): Promise<RoutineSte
     return steps;
   }
 
+  const payload = steps.map((s, idx) => ({
+    id: s.id.startsWith('custom-') ? undefined : s.id,
+    step_number: s.step_number ?? idx + 1,
+    step_name: s.step_name,
+    description: s.description,
+    time_of_day: s.time_of_day,
+    product_id: s.product_id ?? s.product?.id ?? null,
+  }));
+
+  const response = await api.put('/routine/steps', { steps: payload });
+  const routineData = response.data?.data;
+  if (routineData && Array.isArray(routineData.steps)) {
+    const normalized = normalizeRoutine(routineData);
+    return normalized.steps;
+  }
   return steps;
 }
 
@@ -284,5 +349,5 @@ export async function deleteCurrentRoutine(): Promise<void> {
     mockCurrentRoutine = null;
     return;
   }
-  await api.delete('/routine/current');
+  await api.delete('/routine');
 }

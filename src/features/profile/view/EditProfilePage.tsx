@@ -23,6 +23,8 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarPickerModal } from '../../../shared/components/CalendarPickerModal';
+import { Card } from '../../../shared/components/Card';
+import { CloseButton } from '../../../shared/components/CloseButton';
 import { theme } from '../../../shared/theme';
 import { COMMON_ALLERGENS, GENDER_OPTIONS, GenderOption } from '../model/profile_types';
 import { useEditProfile } from '../viewmodel/useEditProfile';
@@ -36,6 +38,7 @@ export function EditProfilePage() {
   const profile = useEditProfile();
   const avatarUri = profile.draft.avatarUri;
   const [isAllergenDropdownOpen, setIsAllergenDropdownOpen] = useState(false);
+  const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, 24);
 
@@ -49,16 +52,12 @@ export function EditProfilePage() {
         className="px-5 relative items-center justify-center z-20"
       >
         {/* Top-Right Close Button */}
-        <TouchableOpacity
-          accessibilityRole="button"
+        <CloseButton
           accessibilityLabel="Back to profile"
           onPress={profile.actions.cancel}
-          activeOpacity={0.7}
           style={{ top: topInset + 4 }}
-          className="absolute right-5 w-10 h-10 items-center justify-center z-30"
-        >
-          <X size={24} color={theme.colors.card} />
-        </TouchableOpacity>
+          className="absolute right-5 z-30"
+        />
 
         {/* Centered Avatar Overlapping the Curved Outer Container */}
         <View
@@ -103,12 +102,12 @@ export function EditProfilePage() {
           borderTopLeftRadius: 32,
           borderTopRightRadius: 32,
           overflow: 'hidden',
-          backgroundColor: theme.colors.offwhitebg,
+          backgroundColor: theme.colors.background,
         }}
-        className="flex-1 bg-offwhitebg rounded-t-[32px] z-10"
+        className="flex-1 bg-background rounded-t-[32px] z-10"
       >
         {/* FIXED TITLE: Everything above Edit Profile and the title text itself is fixed */}
-        <View className="px-5 pt-10 pb-2 bg-offwhitebg z-20">
+        <View className="px-5 pt-10 pb-2 bg-background z-20">
           <Text className="text-h1 font-sans-bold text-text">
             Edit Profile
           </Text>
@@ -128,8 +127,8 @@ export function EditProfilePage() {
             {/* =========================================================================
                 CATEGORY 1: GENERAL INFORMATION
                ========================================================================= */}
-            <View className="mb-4">
-              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-2.5">
+            <Card variant={1} className="p-4 mb-4">
+              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-3">
                 GENERAL INFORMATION
               </Text>
 
@@ -159,19 +158,6 @@ export function EditProfilePage() {
                 />
               </ProfileFormField>
 
-              {/* Username */}
-              <ProfileFormField label="Username">
-                <TextInput
-                  accessibilityLabel="Username"
-                  value={profile.draft.username}
-                  onChangeText={(username) => profile.actions.updateDraft({ username })}
-                  placeholder="@username"
-                  placeholderTextColor={theme.colors.muted}
-                  autoCapitalize="none"
-                  className={inputStyle}
-                />
-              </ProfileFormField>
-
               {/* Date of Birth */}
               <ProfileFormField label="Date of Birth">
                 <Pressable
@@ -190,42 +176,70 @@ export function EditProfilePage() {
                 </Pressable>
               </ProfileFormField>
 
-              {/* Gender */}
+              {/* Gender Dropdown */}
               <ProfileFormField label="Gender" className="mb-1">
-                <View className="flex-row flex-wrap gap-2">
-                  {GENDER_OPTIONS.map((option: GenderOption) => {
-                    const isSelected = profile.draft.gender === option;
-                    return (
-                      <Pressable
-                        key={option}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: isSelected }}
-                        onPress={() => profile.actions.updateDraft({ gender: option })}
-                        className={`rounded-badge px-3.5 py-1.5 border ${isSelected
-                          ? 'bg-primary/15 border-primary'
-                          : 'bg-card border-border/60'
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Toggle gender picker"
+                  onPress={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+                  className={`${inputStyle} flex-row items-center justify-between`}
+                >
+                  <Text
+                    className={`text-body-sm font-sans ${
+                      profile.draft.gender ? 'text-text' : 'text-muted'
+                    }`}
+                  >
+                    {profile.draft.gender || 'Select Gender'}
+                  </Text>
+                  {isGenderDropdownOpen ? (
+                    <ChevronUp size={18} color={theme.colors.text} />
+                  ) : (
+                    <ChevronDown size={18} color={theme.colors.text} />
+                  )}
+                </Pressable>
+
+                {isGenderDropdownOpen ? (
+                  <View className="mt-2 rounded-card border border-border/80 bg-neutral-offwhite overflow-hidden shadow-xs">
+                    {GENDER_OPTIONS.map((option: GenderOption) => {
+                      const isSelected = profile.draft.gender === option;
+                      return (
+                        <Pressable
+                          key={option}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: isSelected }}
+                          onPress={() => {
+                            profile.actions.updateDraft({ gender: option });
+                            setIsGenderDropdownOpen(false);
+                          }}
+                          className={`flex-row items-center justify-between px-4 py-3 border-b border-border/40 active:bg-primary/10 ${
+                            isSelected ? 'bg-primary/15' : 'bg-card'
                           }`}
-                      >
-                        <Text
-                          className={`text-caption ${isSelected
-                            ? 'font-sans-semibold text-primary'
-                            : 'font-sans text-text'
-                            }`}
                         >
-                          {option}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                          <Text
+                            className={`text-body-sm ${
+                              isSelected
+                                ? 'font-sans-bold text-primary'
+                                : 'font-sans text-text'
+                            }`}
+                          >
+                            {option}
+                          </Text>
+                          {isSelected ? (
+                            <View className="h-2 w-2 rounded-full bg-primary" />
+                          ) : null}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
               </ProfileFormField>
-            </View>
+            </Card>
 
             {/* =========================================================================
                 CATEGORY 2: ACCOUNT & CONTACT
                ========================================================================= */}
-            <View className="mb-4">
-              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-2.5 mt-2">
+            <Card variant={1} className="p-4 mb-4">
+              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-3">
                 ACCOUNT & CONTACT
               </Text>
 
@@ -255,13 +269,13 @@ export function EditProfilePage() {
                   className={inputStyle}
                 />
               </ProfileFormField>
-            </View>
+            </Card>
 
             {/* =========================================================================
                 CATEGORY 3: SKIN & HEALTH PROFILE
                ========================================================================= */}
-            <View className="mb-4">
-              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-2.5 mt-2">
+            <Card variant={1} className="p-4 mb-4">
+              <Text className="text-caption font-sans-bold text-secondary uppercase tracking-wider mb-3">
                 SKIN & HEALTH PROFILE
               </Text>
 
@@ -371,7 +385,7 @@ export function EditProfilePage() {
                   </View>
                 ) : null}
               </ProfileFormField>
-            </View>
+            </Card>
 
             {/* Change Password Pill Button with Red Outline & Red Lock Icon */}
             <Pressable
@@ -397,7 +411,7 @@ export function EditProfilePage() {
         {/* FIXED FOOTER WITH CONTAINER AS BACKGROUND */}
         <View
           style={{ paddingBottom: Math.max(insets.bottom, 36) }}
-          className="bg-offwhitebg border-t border-border/40 px-5 pt-3 z-20"
+          className="bg-background border-t border-border/40 px-5 pt-3 z-20"
         >
           <View className="flex-row items-center gap-3">
             <Pressable

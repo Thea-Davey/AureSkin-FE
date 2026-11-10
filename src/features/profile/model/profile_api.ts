@@ -80,7 +80,7 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
   }
 
   try {
-    const displayName = `${draft.firstName} ${draft.lastName}`.trim() || draft.username || '';
+    const displayName = `${draft.firstName} ${draft.lastName}`.trim();
 
     // 1. Update Supabase Auth user metadata
     const { error: supaErr } = await supabase.auth.updateUser({
@@ -88,7 +88,6 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
         first_name: draft.firstName,
         last_name: draft.lastName,
         display_name: displayName,
-        username: draft.username,
         date_of_birth: draft.dateOfBirth,
         gender: draft.gender,
         phone_number: draft.phoneNumber,
@@ -104,7 +103,13 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
     // 2. Sync with backend PUT /profile
     try {
       await api.put('/profile', {
-        display_name: displayName,
+        first_name: draft.firstName || undefined,
+        last_name: draft.lastName || undefined,
+        display_name: displayName || undefined,
+        date_of_birth: draft.dateOfBirth || undefined,
+        gender: draft.gender || undefined,
+        phone_number: draft.phoneNumber || undefined,
+        allergens: draft.allergens,
         avatar_url: draft.avatarUri || undefined,
       });
     } catch (apiErr) {

@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useQuery } from '@tanstack/react-query';
 import { fetchGalleryPhotos } from '../model/scan_api';
 import { GalleryPhotoItem } from '../model/scan_types';
+import { useScanStore, normalizeFileUri } from '../model/scanStore';
 
 export interface UseScanUploadReturn {
   // Data & Filtering
@@ -58,9 +59,11 @@ export function useScanUpload(): UseScanUploadReturn {
   const selectPhoto = useCallback(
     (photoUri: string) => {
       try {
+        const cleanUri = normalizeFileUri(photoUri);
+        useScanStore.getState().setCapturedImageUri(cleanUri);
         router.push({
           pathname: '/scan/submit' as any,
-          params: { imageUri: photoUri },
+          params: { imageUri: cleanUri },
         });
       } catch (err) {
         console.warn('Navigation to /scan/submit failed:', err);
@@ -81,7 +84,8 @@ export function useScanUpload(): UseScanUploadReturn {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const pickedUri = result.assets[0].uri;
+        const pickedUri = normalizeFileUri(result.assets[0].uri);
+        useScanStore.getState().setCapturedImageUri(pickedUri);
         router.push({
           pathname: '/scan/submit' as any,
           params: { imageUri: pickedUri },

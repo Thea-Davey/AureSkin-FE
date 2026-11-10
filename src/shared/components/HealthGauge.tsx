@@ -116,7 +116,7 @@ export function HealthGauge({
         <Text
           style={[
             textColor ? { color: textColor } : isCompact ? undefined : { color },
-            isTiny ? { fontSize: 10.5, lineHeight: 13 } : undefined,
+            isTiny ? { fontSize: 8.5, lineHeight: 13 } : undefined,
           ]}
           className={
             textClassName ??

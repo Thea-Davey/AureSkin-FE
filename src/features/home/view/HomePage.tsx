@@ -47,7 +47,7 @@ export function HomePage() {
         }
       >
         {/* Upper Dashboard Cards (Primary Olive Background) */}
-        <View className="px-4 space-y-4 gap-0 pt-3.5 -mb-2">
+        <View className="px-4 space-y-4 gap-0 pt-3 -mb-2">
           {/* 1. Hero Card: "How is your skin today?" */}
           <HeroCard onScanPress={() => router.push('/scan/camera')} />
 

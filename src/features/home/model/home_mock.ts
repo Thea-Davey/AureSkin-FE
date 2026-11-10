@@ -4,17 +4,37 @@ export const MOCK_ROUTINE_STEPS: RoutineStep[] = [
   {
     step_number: 1,
     title: 'Cleanser',
+    category: 'Cleanser',
+    product_name: 'CeraVe Hydrating Facial Cleanser',
     description: 'Remove excess oil and impurities gently.',
   },
   {
     step_number: 2,
     title: 'Toner',
+    category: 'Toner',
+    product_name: 'Klairs Supple Preparation Facial Toner',
     description: 'Prep skin to better absorb serums and moisturizers.',
   },
   {
     step_number: 3,
-    title: 'Lightweight Serum',
+    title: 'Treatment / Serum',
+    category: 'Treatment / Serum',
+    product_name: 'The Ordinary Niacinamide 10% + Zinc 1%',
     description: 'Used to target troublesome skin problems',
+  },
+  {
+    step_number: 4,
+    title: 'Moisturizer',
+    category: 'Moisturizer',
+    product_name: 'Illiyoon Ceramide Ato Concentrate Cream',
+    description: 'Hydrate and seal in moisture.',
+  },
+  {
+    step_number: 5,
+    title: 'Sunscreen',
+    category: 'Sunscreen',
+    product_name: 'Beauty of Joseon Relief Sun Rice + Probiotics',
+    description: 'Protect against daily UV radiation.',
   },
 ];
 
@@ -72,7 +92,7 @@ export const MOCK_ARTICLES: Article[] = [
 export const MOCK_LATEST_ANALYSIS: LatestAnalysis = {
   id: 'mock-scan-001',
   skin_type: 'Combination',
-  conditions: ['Redness', "Inflammatory Acne", "Pores"],
+  conditions: ['Redness', "Acne", "Pores"],
   health_score: 89,
   created_at: '2026-05-01T08:00:00Z',
 };

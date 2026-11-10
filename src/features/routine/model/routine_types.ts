@@ -6,6 +6,8 @@ export interface RoutineProduct {
   brand: string;
   category: string;
   image_url: string | null;
+  score?: number;
+  is_recommended?: boolean;
 }
 
 export interface RoutineStep {
@@ -38,6 +40,8 @@ export interface RoutineProductPage {
 }
 
 export interface RoutineSkinProfile {
+  analysis_id?: string | null;
+  created_at?: string | null;
   skin_type: string | null;
   concerns: string[];
   health_score: number | null;

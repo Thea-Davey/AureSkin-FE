@@ -11,7 +11,7 @@ export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   },
   {
     id: 'mock-history-002',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=240&q=80',
     created_at: '2026-10-12T16:15:00.000Z',
     health_score: 76,
     skin_type: 'Oily',
@@ -27,7 +27,7 @@ export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   },
   {
     id: 'mock-history-004',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=240&q=80',
     created_at: '2026-09-29T11:20:00.000Z',
     health_score: 69,
     skin_type: 'Dry',
@@ -43,7 +43,7 @@ export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   },
   {
     id: 'mock-history-006',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80',
     created_at: '2026-09-12T10:10:00.000Z',
     health_score: 74,
     skin_type: 'Combination',
@@ -59,7 +59,7 @@ export const MOCK_HISTORY_ENTRIES: HistoryEntry[] = [
   },
   {
     id: 'mock-history-008',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&q=80',
     created_at: '2026-08-26T15:40:00.000Z',
     health_score: 67,
     skin_type: 'Dry',
@@ -95,7 +95,7 @@ export const MOCK_HISTORY_DETAILS: Record<string, HistoryDetail> = {
   },
   'mock-history-002': {
     id: 'mock-history-002',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=85',
     created_at: '2026-10-12T16:15:00.000Z',
     health_score: 76.18,
     skin_type: 'Oily',
@@ -139,7 +139,7 @@ export const MOCK_HISTORY_DETAILS: Record<string, HistoryDetail> = {
   },
   'mock-history-004': {
     id: 'mock-history-004',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=900&q=85',
     created_at: '2026-09-29T11:20:00.000Z',
     health_score: 69.35,
     skin_type: 'Dry',
@@ -189,7 +189,7 @@ export const MOCK_HISTORY_DETAILS: Record<string, HistoryDetail> = {
   },
   'mock-history-006': {
     id: 'mock-history-006',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=85',
     created_at: '2026-09-12T10:10:00.000Z',
     health_score: 74.61,
     skin_type: 'Combination',
@@ -232,7 +232,7 @@ export const MOCK_HISTORY_DETAILS: Record<string, HistoryDetail> = {
   },
   'mock-history-008': {
     id: 'mock-history-008',
-    image_url: null,
+    image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=85',
     created_at: '2026-08-26T15:40:00.000Z',
     health_score: 67.29,
     skin_type: 'Dry',

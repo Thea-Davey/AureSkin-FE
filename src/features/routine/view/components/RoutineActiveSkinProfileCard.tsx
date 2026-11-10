@@ -13,11 +13,13 @@ export function RoutineActiveSkinProfileCard({
   profile,
   onOpenMenu,
 }: RoutineActiveSkinProfileCardProps) {
-  const analysisDate = profile?.analysis_date ?? 'May 1, 2026';
-  const skinType = profile?.skin_type ?? 'Oily';
+  const analysisDate = profile?.analysis_date ?? 'Recent scan';
+  const skinType = profile?.skin_type
+    ? profile.skin_type.charAt(0).toUpperCase() + profile.skin_type.slice(1)
+    : 'Normal';
   const concerns = profile?.concerns && profile.concerns.length > 0
     ? profile.concerns
-    : ['Redness', 'Inflammatory Acne', 'Blackheads'];
+    : ['None detected'];
 
   return (
     <View className="rounded-card border border-neutral-border bg-card p-3.5 shadow-xs">

@@ -8,18 +8,22 @@ import { AuthButton } from './components/AuthButton';
 import { OAuthButton } from './components/OAuthButton';
 
 export function RegisterPage() {
-  const { 
-    email, 
-    setEmail, 
-    password, 
+  const {
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    email,
+    setEmail,
+    password,
     setPassword,
     confirmPassword,
     setConfirmPassword,
     isLoading,
     passwordMismatch,
-    handleRegister, 
-    handleGoogleAuth, 
-    handleFacebookAuth 
+    handleRegister,
+    handleGoogleAuth,
+    handleFacebookAuth
   } = useAuth();
 
   return (
@@ -29,6 +33,29 @@ export function RegisterPage() {
           Create your Account
         </Text>
 
+        {/* Row 1: First Name & Last Name (Side by Side) */}
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <AuthInput
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
+              editable={!isLoading}
+            />
+          </View>
+          <View className="flex-1">
+            <AuthInput
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              autoCapitalize="words"
+              editable={!isLoading}
+            />
+          </View>
+        </View>
+
+        {/* Row 2: Email */}
         <AuthInput
           placeholder="Email"
           value={email}
@@ -38,6 +65,7 @@ export function RegisterPage() {
           editable={!isLoading}
         />
 
+        {/* Row 5: Password */}
         <AuthInput
           placeholder="Password"
           value={password}
@@ -46,6 +74,7 @@ export function RegisterPage() {
           editable={!isLoading}
         />
 
+        {/* Row 6: Confirm Password */}
         <AuthInput
           placeholder="Confirm Password"
           value={confirmPassword}
@@ -56,13 +85,13 @@ export function RegisterPage() {
           errorMessage="Passwords do not match"
         />
 
-        <AuthButton 
-          title="Sign up" 
-          onPress={handleRegister} 
-          isLoading={isLoading} 
+        <AuthButton
+          title="Sign up"
+          onPress={handleRegister}
+          isLoading={isLoading}
         />
 
-        <View className="flex-row items-center my-6">
+        {/* <View className="flex-row items-center my-6">
           <View className="flex-1 h-[1px] bg-neutral-border" />
           <Text className="mx-4 text-body-sm text-neutral-muted font-sans-medium">
             – Or sign up with –
@@ -73,9 +102,9 @@ export function RegisterPage() {
         <View className="flex-row gap-4 mb-6">
           <OAuthButton provider="Google" onPress={handleGoogleAuth} isLoading={isLoading} />
           <OAuthButton provider="Facebook" onPress={handleFacebookAuth} isLoading={isLoading} />
-        </View>
+        </View> */}
 
-        <View className="flex-row justify-center">
+        <View className="flex-row justify-center mt-6">
           <Text className="text-body-sm text-neutral-text font-sans">
             Already have an account?{' '}
           </Text>

@@ -24,7 +24,7 @@ export interface UserProfile {
   id: string;
   firstName: string;
   lastName: string;
-  username: string;
+  username?: string;
   email: string;
   phoneNumber: string;
   gender: GenderOption | '';
@@ -40,7 +40,6 @@ export interface UserProfile {
 export interface EditProfileDraft {
   firstName: string;
   lastName: string;
-  username: string;
   dateOfBirth: string; // YYYY-MM-DD
   gender: string;
   email: string;

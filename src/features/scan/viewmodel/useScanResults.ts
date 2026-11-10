@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { fetchScanResult } from '../model/scan_api';
 import { MOCK_SCAN_RESULT } from '../model/scan_mock';
+import { useScanStore, normalizeFileUri } from '../model/scanStore';
 import {
   ScanResult,
   ScanResultsParams,
@@ -41,22 +43,53 @@ export function useScanResults(): UseScanResultsReturn {
   const [activeTab, setActiveTab] = useState<ScanResultsTab>('results');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const queryKey = ['scanResult', params.analysisId || 'latest'];
+  const rawIdParam = params.analysisId;
+  const analysisId = Array.isArray(rawIdParam) ? rawIdParam[0] : rawIdParam;
+
+  const storeResult = useScanStore((state) => state.latestScanResult);
+  const storeUri = useScanStore((state) => state.capturedImageUri);
+
+  const rawParam = params.imageUri;
+  const rawUri = Array.isArray(rawParam) ? rawParam[0] : rawParam;
+
+  // Prefer in-memory fresh scan result if it matches or if analysisId was omitted
+  const matchingStoreResult =
+    (analysisId && storeResult?.id === analysisId) || (!analysisId && storeResult)
+      ? storeResult
+      : null;
+
+  const targetId = analysisId || storeResult?.id;
+  const queryKey = ['scanResult', targetId || 'latest'];
 
   const {
-    data: scanResult = null,
-    isLoading,
+    data: fetchedResult = null,
+    isLoading: isQueryLoading,
     error: queryError,
     refetch,
   } = useQuery<ScanResult>({
     queryKey,
-    queryFn: () => fetchScanResult(params.analysisId),
+    queryFn: () => fetchScanResult(targetId),
+    initialData: matchingStoreResult || undefined,
+    staleTime: matchingStoreResult ? 1000 * 60 * 5 : 0,
   });
 
-  const displayImageUri =
-    params.imageUri ||
-    scanResult?.image_url ||
-    MOCK_SCAN_RESULT.image_url;
+  // Determine final scan result: live queried result > fresh in-memory result > mock fallback (only if mock is enabled!)
+  const activeScanResult: ScanResult | null =
+    fetchedResult || matchingStoreResult || (isMockEnabled('scan') ? MOCK_SCAN_RESULT : null);
+
+  // Determine display image URI:
+  // 1. Fresh in-memory capture if it matches current result
+  // 2. Explicit route param rawUri (normalized)
+  // 3. activeScanResult.image_url (from Supabase or mock)
+  // 4. storeUri fallback (if no specific analysisId was targeted)
+  const candidateUri =
+    (matchingStoreResult && storeUri) ||
+    (rawUri ? normalizeFileUri(rawUri) : '') ||
+    activeScanResult?.image_url ||
+    (!analysisId ? storeUri : '') ||
+    '';
+
+  const displayImageUri = (candidateUri || '').trim().replace(/\?$/, '');
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -89,10 +122,10 @@ export function useScanResults(): UseScanResultsReturn {
   const errorMessage = queryError instanceof Error ? queryError.message : null;
 
   return {
-    scanResult: scanResult || MOCK_SCAN_RESULT,
+    scanResult: activeScanResult,
     displayImageUri,
     activeTab,
-    isLoading,
+    isLoading: isQueryLoading && !activeScanResult,
     isRefreshing,
     error: errorMessage,
     setTab: setActiveTab,

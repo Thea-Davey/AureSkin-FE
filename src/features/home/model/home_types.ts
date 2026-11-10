@@ -10,6 +10,8 @@ export interface RoutineStep {
   id?: string;
   step_number: number;
   title: string;
+  category?: string;
+  product_name?: string | null;
   description: string;
 }
 

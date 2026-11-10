@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { isMockEnabled } from '@/shared/config/mockConfig';
 import { uploadScan } from '../model/scan_api';
 import { MOCK_CAMERA_PHOTO_URI } from '../model/scan_mock';
+import { useScanStore, normalizeFileUri } from '../model/scanStore';
 import {
   PIPELINE_STAGES,
   PipelineStageInfo,
@@ -32,8 +35,20 @@ export interface UseScanAnalyzingReturn {
  */
 export function useScanAnalyzing(): UseScanAnalyzingReturn {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ imageUri?: string }>();
-  const imageUri = params.imageUri || MOCK_CAMERA_PHOTO_URI;
+  const storeUri = useScanStore((state) => state.capturedImageUri);
+
+  const rawParam = params.imageUri;
+  const rawUri = Array.isArray(rawParam) ? rawParam[0] : rawParam;
+
+  const activeUri = storeUri || (rawUri ? normalizeFileUri(rawUri) : '');
+  const imageUri =
+    activeUri && typeof activeUri === 'string' && activeUri.trim().length > 0
+      ? activeUri.trim()
+      : isMockEnabled('scan')
+      ? MOCK_CAMERA_PHOTO_URI
+      : '';
 
   const [progress, setProgress] = useState<number>(0);
   const [currentStage, setCurrentStage] = useState<PipelineStageInfo>(PIPELINE_STAGES[0]);
@@ -100,6 +115,15 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
 
     try {
       const result: ScanResult = await uploadScan(imageUri, controller.signal);
+
+      // Cache the live scan result directly into global in-memory store
+      useScanStore.getState().setLatestScanResult(result);
+
+      // Invalidate queries so History, Home, Library, and Routine tabs immediately refresh with this new scan
+      void queryClient.invalidateQueries({ queryKey: ['history'] });
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+      void queryClient.invalidateQueries({ queryKey: ['routine'] });
 
       // If aborted during execution, do not proceed to success
       if (controller.signal.aborted) {
