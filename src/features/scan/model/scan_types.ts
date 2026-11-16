@@ -28,6 +28,15 @@ export interface CompatibleIngredient {
   reason: string;
 }
 
+export interface FilteredIngredient {
+  id?: string;
+  ingredient_id: string;
+  name: string;
+  filter_type: 'allergen' | 'pregnancy' | 'age' | string;
+  reason: string;
+  details?: string;
+}
+
 export interface IncompatiblePair {
   ingredient_a: string;
   ingredient_b: string;
@@ -48,6 +57,7 @@ export interface ScanResult {
   conditions: SkinConditionResult[];
   compatible_ingredients: CompatibleIngredient[];
   incompatible_pairs: IncompatiblePair[];
+  filtered_ingredients?: FilteredIngredient[];
   created_at: string;
 }
 
@@ -55,6 +65,7 @@ export interface CompatibilityResponse {
   analysis_id: string;
   compatible_ingredients: CompatibleIngredient[];
   incompatible_pairs: IncompatiblePair[];
+  filtered_ingredients?: FilteredIngredient[];
 }
 
 export type ScanOverlayOption = 'camera' | 'upload' | 'exit';

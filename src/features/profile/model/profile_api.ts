@@ -1,7 +1,7 @@
 import { api } from '../../../shared/services/api';
 import { supabase } from '../../../shared/services/supabase';
 import { isMockEnabled } from '@/shared/config/mockConfig';
-import { UserProfile, EditProfileDraft } from './profile_types';
+import { UserProfile, EditProfileDraft, CommonAllergy, COMMON_ALLERGENS } from './profile_types';
 import { MOCK_USER_PROFILE } from './profile_mock';
 
 // ============================================================================
@@ -92,6 +92,7 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
         gender: draft.gender,
         phone_number: draft.phoneNumber,
         allergens: draft.allergens,
+        is_pregnant: draft.isPregnant,
         avatar_url: draft.avatarUri,
       },
     });
@@ -110,6 +111,7 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
         gender: draft.gender || undefined,
         phone_number: draft.phoneNumber || undefined,
         allergens: draft.allergens,
+        is_pregnant: draft.isPregnant,
         avatar_url: draft.avatarUri || undefined,
       });
     } catch (apiErr) {
@@ -120,6 +122,40 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
   } catch (err) {
     console.warn('updateUserProfile failed:', err);
     return false;
+  }
+}
+
+/**
+ * Fetch common medical allergies from backend GET /profile/allergies
+ * (backed by Supabase common_allergies table).
+ */
+export async function fetchCommonAllergies(): Promise<CommonAllergy[]> {
+  if (isMockEnabled('profile')) {
+    return COMMON_ALLERGENS.map((name) => ({
+      code: name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      name,
+      category: 'General',
+    }));
+  }
+
+  try {
+    const res = await api.get('/profile/allergies');
+    const items = res.data?.data;
+    if (Array.isArray(items) && items.length > 0) {
+      return items;
+    }
+    return COMMON_ALLERGENS.map((name) => ({
+      code: name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      name,
+      category: 'General',
+    }));
+  } catch (err) {
+    console.warn('fetchCommonAllergies error, using fallback list:', err);
+    return COMMON_ALLERGENS.map((name) => ({
+      code: name.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+      name,
+      category: 'General',
+    }));
   }
 }
 

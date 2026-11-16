@@ -5,7 +5,7 @@ const baseURL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 export const api = axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 15000, // 15s standard baseline timeout for mobile networks (overridden per-request for heavy uploads like /scan or /routine/generate)
   headers: {
     'Content-Type': 'application/json',
   },

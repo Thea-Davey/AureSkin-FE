@@ -200,7 +200,10 @@ export function useIngredients(): UseIngredientsResult {
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await query.refetch();
+      await Promise.race([
+        query.refetch(),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ]);
     } finally {
       setIsRefreshing(false);
     }

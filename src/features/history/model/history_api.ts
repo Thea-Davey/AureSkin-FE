@@ -192,20 +192,28 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
 }
 
 export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
-  if (isMockEnabled('history')) {
+  // If mock mode is active, or if ID is a mock ID, resolve directly from mock store
+  if (isMockEnabled('history') || id.startsWith('mock-') || (MOCK_HISTORY_DETAILS as Record<string, any>)[id]) {
     if (deletedMockEntryIds.has(id)) {
       throw new Error('This scan is no longer available.');
     }
     const detail = MOCK_HISTORY_DETAILS[id];
-    if (!detail) throw new Error('Scan not found.');
-    return detail;
+    if (detail) return detail;
   }
 
-  const response = await api.get(`/history/${encodeURIComponent(id)}`);
-  const payload = response.data?.data;
-  if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') {
-    throw new Error('The history detail response was not in the expected format.');
-  }
+  try {
+    const response = await api.get(`/history/${encodeURIComponent(id)}`);
+    const payload = response.data?.data;
+    if (!payload || typeof payload !== 'object' || typeof payload.id !== 'string') {
+      throw new Error('The history detail response was not in the expected format.');
+    }
 
-  return normalizeDetail(payload as HistoryDetailResponse);
+    return normalizeDetail(payload as HistoryDetailResponse);
+  } catch (err: any) {
+    // Graceful fallback to mock details if backend returns 404 (e.g. legacy/cached mock ID)
+    if (MOCK_HISTORY_DETAILS[id]) {
+      return MOCK_HISTORY_DETAILS[id];
+    }
+    throw err;
+  }
 }

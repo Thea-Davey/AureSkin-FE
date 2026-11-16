@@ -197,7 +197,9 @@ export async function generateRoutine(): Promise<SkincareRoutine> {
     return mockCurrentRoutine;
   }
 
-  const response = await api.post('/routine/generate');
+  const response = await api.post('/routine/generate', undefined, {
+    timeout: 30000, // 30s dedicated budget for content-based routine generation
+  });
   const payload = response.data?.data?.routine ?? response.data?.data;
   if (!payload || typeof payload !== 'object') {
     throw new Error('The generated routine response was not in the expected format.');
@@ -248,6 +250,7 @@ export async function fetchProductOptions({
           image_url: item.image_url ?? null,
           score: typeof item.score === 'number' ? item.score : undefined,
           is_recommended: Boolean(item.is_recommended),
+          filter_reasons: Array.isArray(item.filter_reasons) ? item.filter_reasons : [],
         }));
         return {
           items,

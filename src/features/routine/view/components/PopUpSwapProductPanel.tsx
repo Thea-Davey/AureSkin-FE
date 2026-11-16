@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   Text,
@@ -8,7 +9,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Check, Sparkles } from 'lucide-react-native';
-import { PopUpPanel, SearchBar } from '@/shared/components';
+import { FilterSpecificBadge, PopUpPanel, SearchBar } from '@/shared/components';
 import { theme } from '@/shared/theme';
 import {
   formatCategory,
@@ -131,18 +132,44 @@ export function PopUpSwapProductPanel({
     ({ item: product }: { item: RoutineProduct }) => {
       const isSelected = product.id === activeProductId;
       const categoryImage = getProductCategoryImage(product.category);
+      const isFlagged = Boolean(product.filter_reasons && product.filter_reasons.length > 0);
+
+      const handlePress = () => {
+        if (isFlagged && product.filter_reasons) {
+          const reasonLabels = product.filter_reasons
+            .map((r) => (r === 'pregnant' ? 'pregnancy' : r))
+            .join(', ');
+          Alert.alert(
+            'Clinical Contraindication Warning',
+            `This product contains ingredients flagged for your clinical profile (${reasonLabels}). Are you sure you wish to select it for your routine?`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Select Anyway',
+                style: 'destructive',
+                onPress: () => {
+                  onSelectProduct(product);
+                  onClose();
+                },
+              },
+            ]
+          );
+        } else {
+          onSelectProduct(product);
+          onClose();
+        }
+      };
 
       return (
         <Pressable
-          onPress={() => {
-            onSelectProduct(product);
-            onClose();
-          }}
+          onPress={handlePress}
           accessibilityRole="button"
           accessibilityLabel={`Select ${product.name}`}
           className={`flex-row items-center justify-between rounded-button p-3 border active:opacity-75 ${
             isSelected
               ? 'border-primary bg-primary/10'
+              : isFlagged
+              ? 'border-concern/40 bg-neutral-offwhite/80'
               : 'border-border bg-neutral-offwhite/50'
           }`}
         >
@@ -164,6 +191,15 @@ export function PopUpSwapProductPanel({
             <Text className="text-caption font-sans text-muted" numberOfLines={1}>
               {[product.brand, formatCategory(product.category)].filter(Boolean).join(' • ')}
             </Text>
+
+            {/* Contraindication specific badges */}
+            {isFlagged && product.filter_reasons ? (
+              <View className="mt-1 flex-row flex-wrap items-center gap-1.5">
+                {product.filter_reasons.map((reason) => (
+                  <FilterSpecificBadge key={reason} type={reason} />
+                ))}
+              </View>
+            ) : null}
           </View>
 
           {/* Selected Status Checkmark */}

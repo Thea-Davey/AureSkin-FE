@@ -9,16 +9,29 @@ export const GENDER_OPTIONS: GenderOption[] = [
 
 export const COMMON_ALLERGENS: string[] = [
   'Fragrance',
-  'Sulfates (SLS/SLES)',
-  'Parabens',
   'Essential Oils',
-  'Denatured Alcohol',
-  'Retinoids',
-  'Salicylic Acid (BHA)',
-  'Benzoyl Peroxide',
-  'Lanolin',
+  'Tea Tree Oil',
+  'Lavender Oil',
+  'Citrus Oils / Extracts',
+  'Parabens',
+  'Formaldehyde Releasers',
+  'MI / MCI',
+  'Chemical Sunscreens / Oxybenzone',
+  'Lanolin & Derivatives',
+  'Propolis & Beeswax',
+  'Nut-Derived Oils (Almond / Macadamia)',
+  'Soy & Soy Isoflavones',
   'Propylene Glycol',
+  'Sulfates (SLS / SLES)',
+  'Benzoyl Peroxide',
 ];
+
+export interface CommonAllergy {
+  code: string;
+  name: string;
+  category: string;
+  description?: string;
+}
 
 export interface UserProfile {
   id: string;
@@ -30,11 +43,14 @@ export interface UserProfile {
   gender: GenderOption | '';
   dateOfBirth: string; // YYYY-MM-DD
   age: number | string;
+  ageGroup?: string;
+  ageGroupLabel?: string;
   avatarUri: string | null;
   skinType: string;
   healthScore: number;
   skinConditions: string[];
   allergens: string[];
+  isPregnant?: boolean;
 }
 
 export interface EditProfileDraft {
@@ -45,6 +61,7 @@ export interface EditProfileDraft {
   email: string;
   phoneNumber: string;
   allergens: string[];
+  isPregnant: boolean;
   avatarUri: string | null;
 }
 

@@ -8,6 +8,7 @@ export interface RoutineProduct {
   image_url: string | null;
   score?: number;
   is_recommended?: boolean;
+  filter_reasons?: string[];
 }
 
 export interface RoutineStep {

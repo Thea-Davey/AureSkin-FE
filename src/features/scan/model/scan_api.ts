@@ -5,6 +5,7 @@ import {
   SkinType,
   SkinConditionResult,
   CompatibleIngredient,
+  FilteredIngredient,
   IncompatiblePair,
   CompatibilityResponse,
   SkinGuidanceTip,
@@ -100,6 +101,21 @@ export function normalizeScanResult(raw: any): ScanResult {
     })
   );
 
+  // Normalize filtered ingredients (excluded by allergen, pregnancy, or age)
+  const rawFiltered = Array.isArray(raw.filtered_ingredients)
+    ? raw.filtered_ingredients
+    : [];
+  const filtered_ingredients: FilteredIngredient[] = rawFiltered.map(
+    (item: any, index: number) => ({
+      id: item.id || item.ingredient_id || `filtered-${index}`,
+      ingredient_id: item.ingredient_id || item.id || '',
+      name: item.name || item.ingredient?.name || 'Filtered Active',
+      filter_type: item.filter_type || 'allergen',
+      reason: item.reason || '',
+      details: item.details || undefined,
+    })
+  );
+
   // Normalize incompatible pairs
   const rawIncompatible = Array.isArray(raw.incompatible_pairs)
     ? raw.incompatible_pairs
@@ -126,6 +142,7 @@ export function normalizeScanResult(raw: any): ScanResult {
     conditions,
     compatible_ingredients,
     incompatible_pairs,
+    filtered_ingredients,
     created_at: raw.created_at || new Date().toISOString(),
   };
 }
@@ -204,10 +221,21 @@ export async function fetchCompatibility(analysisId: string): Promise<Compatibil
     reason: item.reason || '',
   }));
 
+  const rawFiltered = Array.isArray(data.filtered_ingredients) ? data.filtered_ingredients : [];
+  const filtered_ingredients = rawFiltered.map((item: any, index: number) => ({
+    id: item.id || item.ingredient_id || `filtered-${index}`,
+    ingredient_id: item.ingredient_id || item.id || '',
+    name: item.name || item.ingredient?.name || 'Filtered Active',
+    filter_type: item.filter_type || 'allergen',
+    reason: item.reason || '',
+    details: item.details || undefined,
+  }));
+
   return {
     analysis_id: analysisId,
     compatible_ingredients,
     incompatible_pairs: data.incompatible_pairs || [],
+    filtered_ingredients,
   };
 }
 
@@ -312,6 +340,9 @@ export async function fetchScanResult(analysisId?: string): Promise<ScanResult> 
       }
       if (comp?.incompatible_pairs?.length) {
         result.incompatible_pairs = comp.incompatible_pairs;
+      }
+      if (comp?.filtered_ingredients?.length) {
+        result.filtered_ingredients = comp.filtered_ingredients;
       }
     } catch {
       // Ignore secondary compatibility fetch error and return primary findings

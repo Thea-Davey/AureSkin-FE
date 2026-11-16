@@ -110,7 +110,9 @@ export default function ProfilePage() {
           {/* Card 2: Profile Information */}
           <ProfileInfoCard
             age={profile.age}
+            ageGroupLabel={profile.ageGroupLabel}
             allergens={profile.allergens}
+            isPregnant={profile.isPregnant}
             onEditPress={actions.openEditProfile}
           />
 

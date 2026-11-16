@@ -9,7 +9,7 @@ export function HeroCard({ onScanPress }: HeroCardProps) {
   return (
     <View className="bg-background rounded-card p-5 border border-border shadow-xs overflow-visible relative mb-4">
       {/* Row 1: Title */}
-      <Text className="text-h2 font-sans-bold text-text mb-2.5">
+      <Text className="text-h3 font-sans-bold text-text mb-2.5">
         How is your skin today?
       </Text>
 

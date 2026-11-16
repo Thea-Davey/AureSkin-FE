@@ -104,6 +104,32 @@ export const MOCK_SCAN_RESULT: ScanResult = {
         'Low pH active layering destabilizes Vitamin C efficacy and provokes irritation. Use Vitamin C in AM, AHAs/BHAs in PM.',
     },
   ],
+  filtered_ingredients: [
+    {
+      id: 'filtered-retinoids',
+      ingredient_id: 'ing-retinoids',
+      name: 'Retinoids / Retinol',
+      filter_type: 'pregnancy',
+      reason: 'Contraindicated during pregnancy due to fetal risk.',
+      details: 'Avoid oral and high-concentration topical vitamin A derivatives during pregnancy and lactation.',
+    },
+    {
+      id: 'filtered-fragrance',
+      ingredient_id: 'ing-fragrance',
+      name: 'Synthetic Fragrance',
+      filter_type: 'allergen',
+      reason: 'Matches your active allergy profile: Fragrance.',
+      details: 'Synthetic aroma chemicals can trigger contact dermatitis and barrier sensitization.',
+    },
+    {
+      id: 'filtered-salicylic',
+      ingredient_id: 'ing-salicylic',
+      name: 'High-Strength Salicylic Acid (>2%)',
+      filter_type: 'age',
+      reason: 'High-strength keratolytics are not recommended for adolescent barrier resilience.',
+      details: 'Adolescent skin benefits from gentle low-percentage BHAs rather than concentrated acid peels.',
+    },
+  ],
   created_at: new Date().toISOString(),
 };
 
@@ -111,6 +137,7 @@ export const MOCK_COMPATIBILITY: CompatibilityResponse = {
   analysis_id: MOCK_SCAN_RESULT.id,
   compatible_ingredients: MOCK_SCAN_RESULT.compatible_ingredients,
   incompatible_pairs: MOCK_SCAN_RESULT.incompatible_pairs,
+  filtered_ingredients: MOCK_SCAN_RESULT.filtered_ingredients,
 };
 
 export const MOCK_CAMERA_PHOTO_URI =

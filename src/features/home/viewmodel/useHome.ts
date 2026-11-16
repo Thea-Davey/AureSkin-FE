@@ -57,15 +57,21 @@ export function useHome() {
     staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
-  // Pull-to-refresh
+  // Pull-to-refresh with fail-safe spinner dismiss
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['history', 'latest'] }),
-      queryClient.invalidateQueries({ queryKey: ['routine', 'current'] }),
-      queryClient.invalidateQueries({ queryKey: ['articles'] }),
-    ]);
-    setIsRefreshing(false);
+    try {
+      await Promise.race([
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['history', 'latest'] }),
+          queryClient.invalidateQueries({ queryKey: ['routine', 'current'] }),
+          queryClient.invalidateQueries({ queryKey: ['articles'] }),
+        ]),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [queryClient]);
 
   return {

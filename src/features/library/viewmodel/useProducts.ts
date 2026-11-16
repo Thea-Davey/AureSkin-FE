@@ -340,7 +340,10 @@ export function useProducts(): UseProductsResult {
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await refetchProducts();
+      await Promise.race([
+        refetchProducts(),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ]);
     } finally {
       setIsRefreshing(false);
     }

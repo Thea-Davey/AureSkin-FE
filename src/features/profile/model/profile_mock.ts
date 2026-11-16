@@ -10,10 +10,13 @@ export const MOCK_USER_PROFILE: UserProfile = {
   gender: 'Female',
   dateOfBirth: '2004-05-15',
   age: 20,
+  ageGroup: 'young_adults',
+  ageGroupLabel: 'Young Adult',
   avatarUri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   skinType: 'Oily',
   healthScore: 89,
   skinConditions: ['Skin Condition'],
   allergens: [],
+  isPregnant: false,
 };
 

@@ -55,7 +55,7 @@ export const FacePhotoCard: React.FC<FacePhotoCardProps> = ({ imageUri, fallback
 
   return (
     <View className="mx-4 mt-4 rounded-card overflow-hidden border border-border bg-card shadow-xs">
-      <View className="aspect-[4/3] w-full items-center justify-center bg-background overflow-hidden relative">
+      <View className="aspect-square w-full items-center justify-center bg-background overflow-hidden relative">
         {activeUri && !imageFailed ? (
           !useRNImage ? (
             <Image

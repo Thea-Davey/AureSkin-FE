@@ -7,6 +7,23 @@ import { MOCK_USER_PROFILE } from '../model/profile_mock';
 import { UserProfile } from '../model/profile_types';
 import { fetchUserSkinOverview } from '../model/profile_api';
 
+export function computeAgeGroup(ageValue: number | string): { ageGroup: string; ageGroupLabel: string } {
+  const age = typeof ageValue === 'number' ? ageValue : parseInt(String(ageValue), 10);
+  if (isNaN(age) || age <= 0) {
+    return { ageGroup: 'adults', ageGroupLabel: 'Adult' };
+  }
+  if (age < 20) {
+    return { ageGroup: 'teens', ageGroupLabel: 'Teen' };
+  }
+  if (age <= 35) {
+    return { ageGroup: 'young_adults', ageGroupLabel: 'Young Adult' };
+  }
+  if (age <= 50) {
+    return { ageGroup: 'adults', ageGroupLabel: 'Adult' };
+  }
+  return { ageGroup: 'mature', ageGroupLabel: 'Mature' };
+}
+
 function calculateAge(dateOfBirthString?: string): number | string {
   if (!dateOfBirthString || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirthString)) {
     return '';
@@ -122,6 +139,11 @@ export function useProfile() {
       ? MOCK_USER_PROFILE.skinConditions
       : (skinOverview?.conditions || []);
 
+    const { ageGroup, ageGroupLabel } = computeAgeGroup(age);
+    const isPregnant = Boolean(
+      metadata.is_pregnant ?? (mockMode ? MOCK_USER_PROFILE.isPregnant : false)
+    );
+
     return {
       id: user?.id || (mockMode ? MOCK_USER_PROFILE.id : ''),
       firstName,
@@ -132,11 +154,14 @@ export function useProfile() {
       gender: (metadata.gender as any) || (mockMode ? MOCK_USER_PROFILE.gender : ''),
       dateOfBirth,
       age,
+      ageGroup: (metadata.age_group as string) || ageGroup,
+      ageGroupLabel: (metadata.age_group_label as string) || ageGroupLabel,
       avatarUri,
       skinType,
       healthScore,
       skinConditions,
       allergens,
+      isPregnant,
     };
   }, [user, metadata, mockMode, skinOverview]);
 

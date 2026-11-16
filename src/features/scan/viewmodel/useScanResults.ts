@@ -94,7 +94,10 @@ export function useScanResults(): UseScanResultsReturn {
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey });
+      await Promise.race([
+        queryClient.invalidateQueries({ queryKey }),
+        new Promise((resolve) => setTimeout(resolve, 2500)),
+      ]);
     } finally {
       setIsRefreshing(false);
     }

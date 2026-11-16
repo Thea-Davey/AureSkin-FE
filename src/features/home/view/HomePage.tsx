@@ -78,7 +78,7 @@ export function HomePage() {
 
           {/* 2. Interesting for you */}
           <View className="-mb-2">
-            <Text className="text-h3 font-sans-bold text-text mb-3">
+            <Text className="text-h3 font-sans-bold text-text mb-3 mt-1">
               Interesting for you
             </Text>
             <S4Articles

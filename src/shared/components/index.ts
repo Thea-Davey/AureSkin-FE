@@ -49,3 +49,9 @@ export type { ProductCardProps } from './ProductCard';
 
 export { CloseButton } from './CloseButton';
 export type { CloseButtonProps } from './CloseButton';
+
+export { FilterBadge } from './FilterBadge';
+export type { FilterBadgeProps } from './FilterBadge';
+
+export { FilterSpecificBadge } from './FilterSpecificBadge';
+export type { FilterSpecificBadgeProps, FilterSpecificType } from './FilterSpecificBadge';

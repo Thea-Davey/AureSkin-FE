@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,8 +7,8 @@ import { useAuthStore } from '../../../shared/store/authStore';
 import { supabase } from '../../../shared/services/supabase';
 import { isMockEnabled } from '@/shared/config/mockConfig';
 import { MOCK_USER_PROFILE } from '../model/profile_mock';
-import { EditProfileDraft } from '../model/profile_types';
-import { updateUserProfile } from '../model/profile_api';
+import { EditProfileDraft, CommonAllergy } from '../model/profile_types';
+import { updateUserProfile, fetchCommonAllergies } from '../model/profile_api';
 
 function getMetadataString(
   metadata: Record<string, unknown>,
@@ -56,6 +56,9 @@ function getInitialDraft(
       getMetadataString(metadata, 'phone', mockMode ? MOCK_USER_PROFILE.phoneNumber : '')
     ) || '';
   const allergens = getMetadataAllergens(metadata, mockMode ? MOCK_USER_PROFILE.allergens : []);
+  const isPregnant = Boolean(
+    metadata.is_pregnant ?? (mockMode ? MOCK_USER_PROFILE.isPregnant : false)
+  );
   const avatarUri = getMetadataString(metadata, 'avatar_url', mockMode ? MOCK_USER_PROFILE.avatarUri : null);
 
   return {
@@ -66,6 +69,7 @@ function getInitialDraft(
     email,
     phoneNumber,
     allergens,
+    isPregnant,
     avatarUri,
   };
 }
@@ -76,11 +80,49 @@ export function useEditProfile() {
   const [initialDraft] = useState(() => getInitialDraft(user));
   const [draft, setDraft] = useState<EditProfileDraft>(initialDraft);
   const [allergenInput, setAllergenInput] = useState('');
+  const [commonAllergies, setCommonAllergies] = useState<CommonAllergy[]>([]);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isGenderPickerOpen, setIsGenderPickerOpen] = useState(false);
   const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
   const [isPickingAvatar, setIsPickingAvatar] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+
+  // Fetch dynamic standard allergies from Supabase
+  useEffect(() => {
+    let isMounted = true;
+    fetchCommonAllergies().then((list) => {
+      if (isMounted && list && list.length > 0) {
+        setCommonAllergies(list);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Compute live Age & Life Stage feedback from date of birth
+  const { computedAge, computedLifeStage } = useMemo(() => {
+    const dob = draft.dateOfBirth;
+    if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      return { computedAge: null, computedLifeStage: null };
+    }
+    const [year, month, day] = dob.split('-').map(Number);
+    const birthDate = new Date(year, month - 1, day);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    const safeAge = Math.max(0, age);
+    let stage = 'Adult';
+    if (safeAge < 20) stage = 'Teen';
+    else if (safeAge <= 35) stage = 'Young Adult';
+    else if (safeAge <= 50) stage = 'Adult';
+    else stage = 'Mature';
+
+    return { computedAge: safeAge, computedLifeStage: stage };
+  }, [draft.dateOfBirth]);
 
   const isDirty = useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(initialDraft),
@@ -91,6 +133,13 @@ export function useEditProfile() {
     setDraft((current) => ({ ...current, ...updates }));
     setSaveNotice(null);
   }, []);
+
+  const setIsPregnant = useCallback(
+    (isPregnant: boolean) => {
+      updateDraft({ isPregnant });
+    },
+    [updateDraft]
+  );
 
   const openDatePicker = useCallback(() => {
     setIsDatePickerOpen(true);
@@ -238,6 +287,9 @@ export function useEditProfile() {
   return {
     draft,
     allergenInput,
+    commonAllergies,
+    computedAge,
+    computedLifeStage,
     isDirty,
     isPickingAvatar,
     saveNotice,
@@ -247,6 +299,7 @@ export function useEditProfile() {
     isDiscardVisible,
     actions: {
       updateDraft,
+      setIsPregnant,
       setAllergenInput,
       addAllergen,
       removeAllergen,

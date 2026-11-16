@@ -36,18 +36,18 @@ export function FavoriteCard({
     return (
       <Card style={2} className="mx-5 mb-3 overflow-hidden p-0 items-stretch">
         {/* Style 1 Integrated Header: INGREDIENT */}
-        <View className="w-full flex-row items-center justify-between px-4 py-2.5 bg-note-positive border-b border-note-positive-border rounded-t-card">
+        <View className="w-full flex-row items-center justify-between px-4 py-2.5 bg-note-positive border-b border-note-positive-border rounded-t-card -mb-1">
           <View className="flex-row items-center gap-2">
             <View className="w-2 h-2 rounded-full bg-note-positive-element" />
             <Text className="text-caption font-sans-bold text-note-positive-title uppercase tracking-wider">
               INGREDIENT
             </Text>
           </View>
-          {item.ingredient.skin_types?.[0] ? (
+          {/* {item.ingredient.skin_types?.[0] ? (
             <Text className="text-caption font-sans-medium text-muted">
               {item.ingredient.skin_types[0]}
             </Text>
-          ) : null}
+          ) : null} */}
         </View>
 
         {/* Card Body */}
@@ -113,18 +113,18 @@ export function FavoriteCard({
     return (
       <Card style={2} className="mx-5 mb-3 overflow-hidden p-0 items-stretch">
         {/* Style 2 Integrated Header: PRODUCT */}
-        <View className="w-full flex-row items-center justify-between px-4 py-2.5 bg-secondary/25 border-b border-border/40 rounded-t-card">
+        <View className="w-full flex-row items-center justify-between px-4 py-2.5 bg-secondary/25 border-b border-border/40 rounded-t-card -mb-1">
           <View className="flex-row items-center gap-2">
             <View className="w-2 h-2 rounded-full bg-secondary-dark" />
             <Text className="text-caption font-sans-bold text-secondary-dark uppercase tracking-wider">
               PRODUCT
             </Text>
           </View>
-          {product.brand ? (
+          {/* {product.brand ? (
             <Text className="text-caption font-sans-medium text-muted">
               {product.brand}
             </Text>
-          ) : null}
+          ) : null} */}
         </View>
 
         {/* Card Body */}

@@ -174,6 +174,18 @@ export function EditProfilePage() {
                   </Text>
                   <Calendar size={18} color={theme.colors.muted} />
                 </Pressable>
+                {profile.computedAge !== null ? (
+                  <View className="mt-1.5 flex-row items-center gap-1.5">
+                    <Text className="text-caption font-sans-medium text-muted">
+                      Age: {profile.computedAge} yrs •
+                    </Text>
+                    <View className="rounded-badge bg-primary/15 px-2 py-0.5">
+                      <Text className="text-caption font-sans-bold text-primary">
+                        {profile.computedLifeStage}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
               </ProfileFormField>
 
               {/* Gender Dropdown */}
@@ -279,6 +291,56 @@ export function EditProfilePage() {
                 SKIN & HEALTH PROFILE
               </Text>
 
+              {/* Pregnancy Status Selector (General Clinical Parameter - Option A) */}
+              <ProfileFormField label="Pregnancy Status" className="mb-4">
+                <Text className="mb-2 text-caption font-sans text-muted">
+                  Enable if currently pregnant or nursing to filter out contraindicated active ingredients (e.g. Retinoids).
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Not Pregnant"
+                    onPress={() => profile.actions.setIsPregnant(false)}
+                    className={`flex-1 flex-row items-center justify-center rounded-badge py-2.5 border ${
+                      !profile.draft.isPregnant
+                        ? 'border-primary bg-primary'
+                        : 'border-border/80 bg-neutral-offwhite'
+                    }`}
+                  >
+                    <Text
+                      className={`text-caption ${
+                        !profile.draft.isPregnant
+                          ? 'font-sans-bold text-neutral-white'
+                          : 'font-sans-medium text-text'
+                      }`}
+                    >
+                      No
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Pregnant"
+                    onPress={() => profile.actions.setIsPregnant(true)}
+                    className={`flex-1 flex-row items-center justify-center rounded-badge py-2.5 border ${
+                      profile.draft.isPregnant
+                        ? 'border-primary bg-primary'
+                        : 'border-border/80 bg-neutral-offwhite'
+                    }`}
+                  >
+                    <Text
+                      className={`text-caption ${
+                        profile.draft.isPregnant
+                          ? 'font-sans-bold text-neutral-white'
+                          : 'font-sans-medium text-text'
+                      }`}
+                    >
+                      Yes (Pregnant)
+                    </Text>
+                  </Pressable>
+                </View>
+              </ProfileFormField>
+
               {/* Allergen Field & Dropdown Accordion */}
               <ProfileFormField label="Allergen" className="mb-2">
                 {/* Dropdown Capsule matching target reference */}
@@ -334,7 +396,10 @@ export function EditProfilePage() {
                       Tap common allergens to select or unselect:
                     </Text>
                     <View className="flex-row flex-wrap gap-1.5 mb-3">
-                      {COMMON_ALLERGENS.map((item) => {
+                      {(profile.commonAllergies && profile.commonAllergies.length > 0
+                        ? profile.commonAllergies.map((a) => a.name)
+                        : COMMON_ALLERGENS
+                      ).map((item) => {
                         const isSelected = profile.draft.allergens.includes(item);
                         return (
                           <Pressable
