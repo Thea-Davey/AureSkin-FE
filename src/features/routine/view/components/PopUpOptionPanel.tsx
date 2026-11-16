@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Sparkles, Trash2 } from 'lucide-react-native';
-import { PopUpPanel } from '@/shared/components';
+import { PopUpPanel, Button } from '@/shared/components';
 import { theme } from '@/shared/theme';
 
 export interface PopUpOptionPanelProps {
@@ -82,14 +82,16 @@ export function PopUpOptionPanel({
       </View>
 
       {/* Cancel Button */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Cancel"
+      <Button
+        variant="outline"
+        size="lg"
+        fullWidth
+        title="Cancel"
         onPress={onClose}
-        className="mt-4 items-center justify-center rounded-button border border-border py-3.5 active:opacity-70"
-      >
-        <Text className="text-body-sm font-sans-semibold text-text">Cancel</Text>
-      </Pressable>
+        accessibilityLabel="Cancel"
+        className="mt-4 py-3.5"
+        textClassName="text-body-sm font-sans-semibold text-text"
+      />
     </PopUpPanel>
   );
 }

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text } from 'react-native';
 import { Activity, Trash2, CheckCircle2 } from 'lucide-react-native';
 import { DiagnosticItem } from '../../model/help_types';
 import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
 import { theme } from '@/shared/theme';
 
 interface DiagnosticCardProps {
@@ -61,25 +62,18 @@ export function DiagnosticCard({
           </Text>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
+        <Button
+          variant="outline"
+          size="sm"
+          title="Clear Cache"
           onPress={onClearCache}
           disabled={isClearing}
-          className="flex-row items-center rounded-button border border-border bg-neutral-card px-3.5 py-2"
-          accessibilityRole="button"
+          isLoading={isClearing}
           accessibilityLabel="Clear temporary cache"
-        >
-          {isClearing ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          ) : (
-            <>
-              <Trash2 size={15} color={theme.colors.text} />
-              <Text className="ml-1.5 text-caption font-sans-semibold text-text">
-                Clear Cache
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+          leftIcon={<Trash2 size={15} color={theme.colors.text} />}
+          className="px-3.5 py-2 border-border bg-neutral-card"
+          textClassName="ml-1.5 text-caption font-sans-semibold text-text"
+        />
       </View>
 
       {clearedStatus && (

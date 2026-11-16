@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 export interface ScanActionButtonProps {
   label: string;
@@ -11,7 +11,7 @@ export interface ScanActionButtonProps {
 
 /**
  * Reusable white pill button for Scan Overlay options ("Take a Photo", "Upload a Photo").
- * Strictly complies with AureSkin preset design tokens.
+ * Strictly complies with AureSkin preset design tokens and uses global Button component.
  */
 export const ScanActionButton: React.FC<ScanActionButtonProps> = ({
   label,
@@ -20,18 +20,19 @@ export const ScanActionButton: React.FC<ScanActionButtonProps> = ({
   accessibilityLabel,
 }) => {
   return (
-    <Pressable
+    <Button
+      variant="white"
+      shape="card"
+      size="lg"
+      fullWidth
+      title={label}
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className="w-full bg-neutral-white rounded-card py-4 px-6 flex-row items-center justify-center shadow-md active:opacity-80"
-    >
-      <View className="mr-3">
-        <Icon size={22} color={theme.colors.text} />
-      </View>
-      <Text className="text-body font-sans-bold text-neutral-text">
-        {label}
-      </Text>
-    </Pressable>
+      leftIcon={<Icon size={22} color={theme.colors.text} />}
+      className="py-4 px-6 shadow-md active:opacity-80"
+      textClassName="text-body font-sans-bold text-neutral-text"
+    />
   );
 };
+
+export default ScanActionButton;

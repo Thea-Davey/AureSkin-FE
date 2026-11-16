@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, Image } from 'react-native';
+import { Button } from '@/shared/components/Button';
 
 interface HeroCardProps {
   onScanPress: () => void;
@@ -23,15 +24,14 @@ export function HeroCard({ onScanPress }: HeroCardProps) {
           </Text>
 
           {/* Row 2 of Col 1: Button */}
-          <TouchableOpacity
+          <Button
             onPress={onScanPress}
-            activeOpacity={0.8}
-            className="bg-secondary py-3 px-5 rounded-button self-start shadow-sm flex-row items-center justify-center"
-          >
-            <Text className="text-card text-label font-sans-bold tracking-wider">
-              SCAN SKIN NOW!
-            </Text>
-          </TouchableOpacity>
+            variant="secondary"
+            size="md"
+            title="SCAN SKIN NOW!"
+            className="self-start py-3 px-5 shadow-sm"
+            textClassName="text-card text-label font-sans-bold tracking-wider"
+          />
         </View>
 
         {/* Col 2: The Image (hanging outside bottom edge) */}

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import React from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { ArrowRight, Check, FlaskConical, Star } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
+import { Button } from '@/shared/components/Button';
 
 const BENEFITS = [
   'Step-by-step AM & PM guide',
@@ -24,8 +25,6 @@ export function RoutineGenerationCard({
   onGenerate,
   onDismissError,
 }: RoutineGenerationCardProps) {
-  const [pressed, setPressed] = useState(false);
-
   return (
     <View className="items-center rounded-card border border-neutral-border bg-neutral-offwhite p-6 shadow-xs">
       {/* Centered Beaker / Flask Icon with Star Badge */}
@@ -76,29 +75,19 @@ export function RoutineGenerationCard({
       )}
 
       {/* Primary CTA Button: GENERATE SKINCARE ROUTINE (Secondary Color Token) */}
-      <Pressable
+      <Button
+        variant="secondary"
+        size="lg"
+        fullWidth
+        title="GENERATE SKINCARE ROUTINE"
         onPress={onGenerate}
-        onPressIn={() => setPressed(true)}
-        onPressOut={() => setPressed(false)}
-        disabled={!canGenerate || isGenerating}
-        accessibilityRole="button"
+        isLoading={isGenerating}
+        disabled={!canGenerate}
         accessibilityLabel="Generate personalized skincare routine"
-        accessibilityState={{ disabled: !canGenerate || isGenerating, busy: isGenerating }}
-        className={`w-full min-h-12 flex-row items-center justify-center rounded-button bg-secondary py-3.5 px-4 shadow-md ${
-          pressed ? 'opacity-80' : ''
-        } disabled:opacity-50`}
-      >
-        {isGenerating ? (
-          <ActivityIndicator color={theme.colors.white} />
-        ) : (
-          <>
-            <Text className="mr-2 text-label font-sans-bold text-neutral-white tracking-wide">
-              GENERATE SKINCARE ROUTINE
-            </Text>
-            <ArrowRight size={18} color={theme.colors.white} strokeWidth={2.2} />
-          </>
-        )}
-      </Pressable>
+        rightIcon={<ArrowRight size={18} color={theme.colors.white} strokeWidth={2.2} />}
+        className="min-h-12 py-3.5 px-4 shadow-md"
+        textClassName="mr-2 text-label font-sans-bold text-neutral-white tracking-wide"
+      />
 
       {!canGenerate && !isGenerating && (
         <Text className="mt-2 text-center text-caption font-sans text-muted">

@@ -21,6 +21,7 @@ import { DescriptionCard } from '../../features/library/view/components/Descript
 import { useIngredientDetail } from '../../features/library/viewmodel/useIngredientDetail';
 import { cleanIngredientDescription } from '../../features/library/model/library_api';
 import { CloseButton } from './CloseButton';
+import { Button } from './Button';
 
 const CAUTION_DESCRIPTIONS: Record<string, string> = {
   'related allergy': 'Individuals with known sensitivities or allergic reactions to this ingredient or related botanical/chemical compounds should avoid use.',
@@ -148,23 +149,21 @@ function IngredientDetailView({
                 {error ?? 'This ingredient could not be found.'}
               </Text>
               <View className="flex-row gap-3">
-                <Pressable
-                  accessibilityRole="button"
+                <Button
+                  variant="outline"
+                  size="md"
+                  title="Close"
                   onPress={onClose}
-                  className="rounded-button border border-border px-5 py-3 active:opacity-80"
-                >
-                  <Text className="text-label font-sans-semibold text-text">Close</Text>
-                </Pressable>
+                  textClassName="text-label"
+                />
                 {error ? (
-                  <Pressable
-                    accessibilityRole="button"
+                  <Button
+                    variant="primary"
+                    size="md"
+                    title="Retry"
                     onPress={onRetry}
-                    className="rounded-button bg-primary px-5 py-3 active:opacity-80"
-                  >
-                    <Text className="text-label font-sans-semibold text-neutral-white">
-                      Retry
-                    </Text>
-                  </Pressable>
+                    textClassName="text-label"
+                  />
                 ) : null}
               </View>
             </View>
@@ -222,15 +221,14 @@ function IngredientDetailView({
                     <Text className="mb-2 text-caption font-sans text-text">
                       Compatibility could not be checked. The status has not been assumed.
                     </Text>
-                    <Pressable
-                      accessibilityRole="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Retry compatibility"
                       onPress={onRetryCompatibility}
                       className="self-start rounded-button bg-card px-3 py-2 active:opacity-80"
-                    >
-                      <Text className="text-caption font-sans-semibold text-primary">
-                        Retry compatibility
-                      </Text>
-                    </Pressable>
+                      textClassName="text-caption font-sans-semibold text-primary"
+                    />
                   </View>
                 ) : null}
 

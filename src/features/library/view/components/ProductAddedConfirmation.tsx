@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { CheckCircle2 } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 export interface ProductAddedConfirmationProps {
   visible: boolean;
@@ -53,16 +54,14 @@ export function ProductAddedConfirmation({
           </Text>
 
           {/* CTA Button */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View Products"
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            title="View Products"
             onPress={onDismiss}
-            className="w-full items-center justify-center rounded-button bg-secondary py-3 active:opacity-80"
-          >
-            <Text className="text-body-sm font-sans-semibold text-neutral-white">
-              View Products
-            </Text>
-          </Pressable>
+            accessibilityLabel="View Products"
+          />
         </View>
       </View>
     </Modal>

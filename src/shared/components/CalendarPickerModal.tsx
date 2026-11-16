@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import { theme } from '../theme';
+import { Button } from './Button';
 
 export interface CalendarPickerModalProps {
   visible: boolean;
@@ -214,26 +215,28 @@ export function CalendarPickerModal({
 
           {/* Footer Actions: Today & Clear */}
           <View className="mt-4 flex-row items-center justify-between border-t border-border/40 pt-3">
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Clear"
+              textClassName="text-caption font-sans-medium text-error"
+              className="py-1 px-2"
               accessibilityLabel="Clear date selection"
               onPress={() => {
                 onSelectDate('');
                 onClose();
               }}
-              className="py-1 px-2"
-            >
-              <Text className="text-caption font-sans-medium text-error">Clear</Text>
-            </Pressable>
+            />
 
-            <Pressable
-              accessibilityRole="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Today"
+              textClassName="text-caption font-sans-bold text-primary"
+              className="py-1 px-2"
               accessibilityLabel="Select today"
               onPress={handleSelectToday}
-              className="py-1 px-2"
-            >
-              <Text className="text-caption font-sans-bold text-primary">Today</Text>
-            </Pressable>
+            />
           </View>
         </View>
       </View>

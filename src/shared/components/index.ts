@@ -50,6 +50,9 @@ export type { ProductCardProps } from './ProductCard';
 export { CloseButton } from './CloseButton';
 export type { CloseButtonProps } from './CloseButton';
 
+export { Button } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize, ButtonShape } from './Button';
+
 export { FilterBadge } from './FilterBadge';
 export type { FilterBadgeProps } from './FilterBadge';
 

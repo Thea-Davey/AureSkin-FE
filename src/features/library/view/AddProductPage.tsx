@@ -15,6 +15,7 @@ import { useAddProduct } from '../viewmodel/useAddProduct';
 import { EditCard } from './components/EditCard';
 import { DiscardProductDialog } from './components/DiscardProductDialog';
 import { ProductAddedConfirmation } from './components/ProductAddedConfirmation';
+import { Button } from '../../../shared/components/Button';
 
 export function AddProductPage() {
   const form = useAddProduct();
@@ -129,33 +130,26 @@ export function AddProductPage() {
                 </Text>
               ) : null}
 
-              <Pressable
-                accessibilityRole="button"
+              <Button
+                variant="secondary"
+                size="lg"
+                fullWidth
+                title={form.isSubmitting ? 'Adding product...' : 'Add Skincare Product'}
                 onPress={() => void form.actions.submit()}
                 disabled={form.isSubmitting}
-                accessibilityState={{ disabled: form.isSubmitting }}
-                className="items-center justify-center rounded-button bg-secondary py-3.5 active:opacity-80 disabled:opacity-60"
-              >
-                {form.isSubmitting ? (
-                  <Text className="text-body-sm font-sans-semibold text-neutral-white">
-                    Adding product...
-                  </Text>
-                ) : (
-                  <Text className="text-body-sm font-sans-semibold text-neutral-white">
-                    Add Skincare Product
-                  </Text>
-                )}
-              </Pressable>
+                className="py-3.5"
+                textClassName="text-body-sm font-sans-semibold text-neutral-white"
+              />
 
-              <Pressable
-                accessibilityRole="button"
+              <Button
+                variant="outline-secondary"
+                size="md"
+                fullWidth
+                title="Cancel"
                 onPress={form.actions.promptDiscard}
-                className="items-center justify-center rounded-button border border-secondary bg-card py-3 active:bg-secondary/10"
-              >
-                <Text className="text-body-sm font-sans-medium text-secondary">
-                  Cancel
-                </Text>
-              </Pressable>
+                className="py-3"
+                textClassName="text-body-sm font-sans-medium text-secondary"
+              />
             </View>
           </View>
         </KeyboardAvoidingView>

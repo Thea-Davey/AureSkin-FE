@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { X } from 'lucide-react-native';
 import { theme } from '../theme';
+import { Button } from './Button';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -274,29 +275,25 @@ export function PopUpPanel({
           {/* Style 1: Bottom Action Buttons ("Reset" and "Apply filters") */}
           {style === 1 ? (
             <View className="mt-4 flex-row gap-3 pt-2 border-t border-border/30">
-              <Pressable
+              <Button
+                variant="outline"
+                size="md"
+                title={resetLabel}
                 onPress={onReset}
-                accessibilityRole="button"
                 accessibilityLabel={resetLabel}
-                className="flex-1 items-center justify-center rounded-button border border-border py-3 active:opacity-75"
-              >
-                <Text className="text-label font-sans-semibold text-text">
-                  {resetLabel}
-                </Text>
-              </Pressable>
-              <Pressable
-                disabled={isApplyDisabled}
+                className="flex-1 py-3"
+                textClassName="text-label font-sans-semibold text-text"
+              />
+              <Button
+                variant="primary"
+                size="md"
+                title={applyLabel}
                 onPress={onApply}
-                accessibilityRole="button"
+                disabled={isApplyDisabled}
                 accessibilityLabel={applyLabel}
-                className={`flex-1 items-center justify-center rounded-button bg-primary py-3 active:opacity-80 ${
-                  isApplyDisabled ? 'opacity-50' : ''
-                }`}
-              >
-                <Text className="text-label font-sans-bold text-neutral-white">
-                  {applyLabel}
-                </Text>
-              </Pressable>
+                className="flex-1 py-3"
+                textClassName="text-label font-sans-bold text-neutral-white"
+              />
             </View>
           ) : null}
         </Animated.View>

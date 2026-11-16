@@ -1,5 +1,5 @@
-import { Pressable, Text, ActivityIndicator } from 'react-native';
-import { theme } from '@/shared/theme';
+import React from 'react';
+import { Button } from '@/shared/components/Button';
 
 interface AuthButtonProps {
   title: string;
@@ -10,21 +10,16 @@ interface AuthButtonProps {
 
 export function AuthButton({ title, onPress, isLoading, disabled }: AuthButtonProps) {
   return (
-    <Pressable
+    <Button
+      variant="secondary"
+      size="lg"
+      fullWidth
+      title={title}
       onPress={onPress}
-      disabled={isLoading || disabled}
-      className={`
-        w-full py-4 rounded-button items-center justify-center mt-2
-        ${disabled || isLoading ? 'bg-secondary-light opacity-70' : 'bg-secondary active:bg-secondary-dark'}
-      `}
-    >
-      {isLoading ? (
-        <ActivityIndicator color={theme.colors.card} />
-      ) : (
-        <Text className="text-neutral-white font-sans-semibold text-body">
-          {title}
-        </Text>
-      )}
-    </Pressable>
+      isLoading={isLoading}
+      disabled={disabled}
+      className="py-4 mt-2"
+      textClassName="text-neutral-white font-sans-semibold text-body"
+    />
   );
 }

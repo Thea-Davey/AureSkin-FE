@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseButton } from '../../../shared/components/CloseButton';
 import { PositiveNote } from '../../../shared/components/PositiveNote';
+import { Button } from '../../../shared/components/Button';
 import { theme } from '../../../shared/theme';
 import { useProfile } from '../viewmodel/useProfile';
 import { SkinOverviewCard } from './components/SkinOverviewCard';
@@ -60,25 +61,21 @@ export default function ProfilePage() {
 
             {/* Outer container wrapper for Edit Profile button */}
             <View className="flex-row items-center mt-1">
-              <View
+              <Button
+                variant="ghost"
+                shape="pill"
+                size="sm"
+                title="Edit Profile"
+                onPress={actions.openEditProfile}
+                accessibilityLabel="Edit Profile"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                className="bg-white/25 border border-white/30 px-4 py-1.5 active:opacity-70"
+                textClassName="text-caption font-sans-medium text-neutral-white"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.25)',
                   borderColor: 'rgba(255, 255, 255, 0.3)',
                 }}
-                className="rounded-full bg-white/25 border border-white/30 px-4 py-1.5 flex-row items-center justify-center"
-              >
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Edit Profile"
-                  onPress={actions.openEditProfile}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text className="text-caption font-sans-medium text-neutral-white">
-                    Edit Profile
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              />
             </View>
           </View>
         </View>

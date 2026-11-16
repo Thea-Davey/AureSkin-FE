@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { SecurityPrivacyCard } from '../../components/SecurityPrivacyCard';
+import { Button } from '@/shared/components';
 
 interface S3AnalyzingFooterProps {
   onCancel: () => void;
@@ -19,16 +20,15 @@ export const S3AnalyzingFooter: React.FC<S3AnalyzingFooterProps> = ({
       <SecurityPrivacyCard />
 
       {/* Cancel Analysis Secondary Action Button */}
-      <Pressable
+      <Button
+        variant="ghost"
+        size="md"
+        title="Cancel Analysis"
         onPress={onCancel}
-        accessibilityRole="button"
         accessibilityLabel="Cancel skin analysis and return"
         className="mt-4 py-3 px-6 active:opacity-60"
-      >
-        <Text className="text-neutral-muted font-sans-semibold text-body text-center">
-          Cancel Analysis
-        </Text>
-      </Pressable>
+        textClassName="text-neutral-muted font-sans-semibold text-body text-center"
+      />
     </View>
   );
 };

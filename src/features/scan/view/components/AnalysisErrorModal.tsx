@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Modal, Pressable } from 'react-native';
+import { View, Text, Modal } from 'react-native';
 import { AlertCircle } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 interface AnalysisErrorModalProps {
   visible: boolean;
@@ -50,27 +51,25 @@ export const AnalysisErrorModal: React.FC<AnalysisErrorModalProps> = ({
 
           {/* Action Triggers */}
           <View className="flex-row items-center justify-between w-full mt-6">
-            <Pressable
+            <Button
               onPress={onCancel}
-              accessibilityRole="button"
+              variant="outline"
+              size="md"
+              title="Cancel"
               accessibilityLabel="Cancel analysis and return"
-              className="flex-1 py-3 rounded-button border border-border items-center mr-2 active:opacity-70"
-            >
-              <Text className="text-muted font-sans-semibold text-body-sm">
-                Cancel
-              </Text>
-            </Pressable>
+              className="flex-1 mr-2"
+              textClassName="text-muted font-sans-semibold text-body-sm"
+            />
 
-            <Pressable
+            <Button
               onPress={onRetry}
-              accessibilityRole="button"
+              variant="primary"
+              size="md"
+              title="Retry"
               accessibilityLabel="Retry skin analysis"
-              className="flex-1 py-3 rounded-button bg-primary items-center ml-2 active:opacity-90"
-            >
-              <Text className="text-neutral-white font-sans-bold text-body-sm">
-                Retry
-              </Text>
-            </Pressable>
+              className="flex-1 ml-2"
+              textClassName="text-neutral-white font-sans-bold text-body-sm"
+            />
           </View>
         </View>
       </View>

@@ -27,6 +27,7 @@ import { useAuthStore } from '../store/authStore';
 import { IngredientDetailPage } from './IngredientDetailPage';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { CloseButton } from './CloseButton';
+import { Button } from './Button';
 
 export interface ProductDetailPageProps {
   visible: boolean;
@@ -143,23 +144,21 @@ function ProductDetailView({
               {error}
             </Text>
             <View className="mt-5 flex-row gap-3">
-              <Pressable
-                accessibilityRole="button"
+              <Button
+                variant="outline"
+                size="md"
+                title="Go Back"
                 onPress={onClose}
-                className="rounded-button border border-border px-5 py-3 active:opacity-80"
-              >
-                <Text className="text-label font-sans-semibold text-text">Go Back</Text>
-              </Pressable>
+                textClassName="text-label"
+              />
               {error ? (
-                <Pressable
-                  accessibilityRole="button"
+                <Button
+                  variant="primary"
+                  size="md"
+                  title="Retry"
                   onPress={onRetry}
-                  className="rounded-button bg-primary px-5 py-3 active:opacity-80"
-                >
-                  <Text className="text-label font-sans-semibold text-neutral-white">
-                    Retry
-                  </Text>
-                </Pressable>
+                  textClassName="text-label"
+                />
               ) : null}
             </View>
           </View>
@@ -249,14 +248,15 @@ function ProductDetailView({
                     {compatibilityError}
                   </Text>
                   {canRetryCompatibility ? (
-                    <Pressable
-                      accessibilityRole="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Retry"
                       accessibilityLabel="Retry product compatibility"
                       onPress={onRetryCompatibility}
-                      className="rounded-button px-2 py-1 active:opacity-70"
-                    >
-                      <Text className="text-label font-sans-semibold text-primary">Retry</Text>
-                    </Pressable>
+                      className="px-2 py-1"
+                      textClassName="text-label font-sans-semibold text-primary"
+                    />
                   ) : null}
                 </View>
               ) : null}
@@ -277,14 +277,15 @@ function ProductDetailView({
                   <Text className="min-w-0 flex-1 text-body-sm font-sans-medium text-status-error">
                     {favoriteLoadError}
                   </Text>
-                  <Pressable
-                    accessibilityRole="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Retry"
                     accessibilityLabel="Retry loading product favorites"
                     onPress={onRetryFavorites}
-                    className="rounded-button px-2 py-1 active:opacity-70"
-                  >
-                    <Text className="text-label font-sans-semibold text-primary">Retry</Text>
-                  </Pressable>
+                    className="px-2 py-1"
+                    textClassName="text-label font-sans-semibold text-primary"
+                  />
                 </View>
               ) : null}
 
@@ -337,16 +338,16 @@ function ProductDetailView({
               {/* Delete Product Button (User-added custom products only) */}
               {product.is_user_added ? (
                 <View className="mx-5 mt-6 mb-2">
-                  <Pressable
-                    accessibilityRole="button"
+                  <Button
+                    variant="outline-danger"
+                    size="lg"
+                    fullWidth
+                    title="Delete Product"
                     accessibilityLabel="Delete Product"
                     onPress={() => setIsDeleteDialogOpen(true)}
-                    className="items-center justify-center rounded-button border border-error bg-card py-3.5 active:bg-error/10"
-                  >
-                    <Text className="text-body-sm font-sans-semibold text-error">
-                      Delete Product
-                    </Text>
-                  </Pressable>
+                    className="py-3.5"
+                    textClassName="text-body-sm font-sans-semibold text-error"
+                  />
                 </View>
               ) : null}
             </ScrollView>

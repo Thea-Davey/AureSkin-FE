@@ -10,6 +10,7 @@ import {
 import { Sun, Sparkles, Smile, Glasses, X } from 'lucide-react-native';
 import { SkinGuidanceTip } from '../../model/scan_types';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 export interface SkinGuidanceModalProps {
   visible: boolean;
@@ -91,16 +92,16 @@ export const SkinGuidanceModal: React.FC<SkinGuidanceModalProps> = ({
           </ScrollView>
 
           {/* Primary Action Button */}
-          <Pressable
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            title="Got It"
             onPress={onClose}
-            accessibilityRole="button"
             accessibilityLabel="Confirm guidance and return to camera"
-            className="w-full bg-primary rounded-button py-3.5 items-center justify-center active:bg-primary/90 mt-2"
-          >
-            <Text className="text-label font-sans-bold text-neutral-white">
-              Got It
-            </Text>
-          </Pressable>
+            className="mt-2"
+            textClassName="font-sans-bold text-label"
+          />
         </View>
       </View>
     </Modal>

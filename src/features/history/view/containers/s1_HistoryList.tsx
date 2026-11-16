@@ -3,6 +3,7 @@ import { theme } from '@/shared/theme';
 import { Card } from '@/shared/components/Card';
 import { DeleteDialog } from '@/shared/components/DeleteDialog';
 import { SearchBar } from '@/shared/components/SearchBar';
+import { Button } from '@/shared/components/Button';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { HistoryEntry, HistoryFilters } from '../../model/history_types';
@@ -64,9 +65,14 @@ function ListEmptyState({
       </View>
       <Text className="mb-2 text-h3 font-sans-bold text-text">You have no scan history yet</Text>
       <Text className="mb-5 text-center text-body-sm font-sans text-muted">Your completed skin analyses will appear here.</Text>
-      <Pressable onPress={onStartScan} accessibilityRole="button" className="rounded-button bg-primary px-5 py-3 active:opacity-80">
-        <Text className="text-label font-sans-bold text-neutral-white">Start your first scan</Text>
-      </Pressable>
+      <Button
+        variant="primary"
+        size="md"
+        title="Start your first scan"
+        onPress={onStartScan}
+        className="px-5 py-3"
+        textClassName="text-label font-sans-bold"
+      />
     </View>
   );
 }
@@ -143,9 +149,14 @@ export function S1HistoryList(props: HistoryListProps) {
       ) : props.error && props.entries.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text accessibilityRole="alert" className="mb-3 text-center text-body-sm font-sans text-error">{props.error}</Text>
-          <Pressable onPress={props.onRetry} accessibilityRole="button" className="rounded-button bg-primary px-5 py-3 active:opacity-80">
-            <Text className="text-label font-sans-bold text-neutral-white">Retry</Text>
-          </Pressable>
+          <Button
+            variant="primary"
+            size="md"
+            title="Retry"
+            onPress={props.onRetry}
+            className="px-5 py-3"
+            textClassName="text-label font-sans-bold"
+          />
         </View>
       ) : (
         <FlatList

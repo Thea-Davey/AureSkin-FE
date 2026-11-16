@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Droplet } from 'lucide-react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { theme } from '@/shared/theme';
+import { Button } from '@/shared/components/Button';
 import { RoutineSkinProfile } from '../../model/routine_types';
 
 interface RoutineSkinProfileCardProps {
@@ -59,9 +60,14 @@ export function RoutineSkinProfileCard({
           <Text accessibilityRole="alert" className="mb-2 text-body-sm font-sans text-error">
             {error}
           </Text>
-          <Pressable onPress={onRetry} accessibilityRole="button" className="self-start py-1">
-            <Text className="text-label font-sans-semibold text-primary">Retry</Text>
-          </Pressable>
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Retry"
+            onPress={onRetry}
+            className="self-start py-1"
+            textClassName="text-label font-sans-semibold text-primary"
+          />
         </View>
       ) : profile ? (
         <View className="flex-row items-center justify-between">

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pressable } from 'react-native';
 import { X } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 export interface ScanExitButtonProps {
   onPress: () => void;
@@ -14,13 +14,14 @@ export interface ScanExitButtonProps {
  */
 export const ScanExitButton: React.FC<ScanExitButtonProps> = ({ onPress }) => {
   return (
-    <Pressable
+    <Button
+      variant="danger"
+      shape="pill"
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel="Exit scan overlay"
-      className="w-20 h-20 rounded-full bg-status-error items-center justify-center shadow-xl border-4 border-neutral-white active:opacity-80"
+      className="w-20 h-20 shadow-xl border-4 border-neutral-white active:opacity-80 p-0"
     >
       <X size={32} color={theme.colors.white} strokeWidth={2.8} />
-    </Pressable>
+    </Button>
   );
 };

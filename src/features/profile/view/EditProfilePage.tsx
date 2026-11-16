@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarPickerModal } from '../../../shared/components/CalendarPickerModal';
 import { Card } from '../../../shared/components/Card';
 import { CloseButton } from '../../../shared/components/CloseButton';
+import { Button } from '../../../shared/components/Button';
 import { theme } from '../../../shared/theme';
 import { COMMON_ALLERGENS, GENDER_OPTIONS, GenderOption } from '../model/profile_types';
 import { useEditProfile } from '../viewmodel/useEditProfile';
@@ -479,27 +480,25 @@ export function EditProfilePage() {
           className="bg-background border-t border-border/40 px-5 pt-3 z-20"
         >
           <View className="flex-row items-center gap-3">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
+            <Button
+              variant="outline"
+              size="lg"
+              title="Cancel"
               onPress={profile.actions.cancel}
-              className="flex-1 rounded-button border border-border bg-card py-3.5 items-center justify-center active:bg-neutral-offwhite"
-            >
-              <Text className="text-label font-sans-semibold text-text">
-                Cancel
-              </Text>
-            </Pressable>
+              accessibilityLabel="Cancel"
+              className="flex-1 py-3.5"
+              textClassName="text-label font-sans-semibold text-text"
+            />
 
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Save Changes"
+            <Button
+              variant="primary"
+              size="lg"
+              title="Save Changes"
               onPress={profile.actions.save}
-              className="flex-1 rounded-button bg-primary py-3.5 items-center justify-center active:opacity-90"
-            >
-              <Text className="text-label font-sans-semibold text-neutral-white">
-                Save Changes
-              </Text>
-            </Pressable>
+              accessibilityLabel="Save Changes"
+              className="flex-1 py-3.5"
+              textClassName="text-label font-sans-semibold text-neutral-white"
+            />
           </View>
         </View>
       </View>

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import { Mail, HelpCircle, ExternalLink } from 'lucide-react-native';
 import { SupportChannel } from '../../model/help_types';
 import { Card } from '@/shared/components/Card';
+import { Button } from '@/shared/components/Button';
 import { theme } from '@/shared/theme';
 
 interface SupportCardProps {
@@ -24,12 +25,12 @@ export function SupportCard({ support, onContactSupport }: SupportCardProps) {
         Reach out to our engineering and capstone research team directly:
       </Text>
 
-      <TouchableOpacity
-        activeOpacity={0.8}
+      <Button
+        variant="primary"
+        size="md"
         onPress={onContactSupport}
-        className="mt-3.5 flex-row items-center justify-center rounded-button bg-primary px-4 py-3"
-        accessibilityRole="button"
         accessibilityLabel="Email AureSkin support"
+        className="mt-3.5 px-4 py-3"
       >
         <Mail size={18} color={theme.colors.card} />
         <Text className="ml-2 text-body font-sans-bold text-neutral-white">
@@ -38,7 +39,7 @@ export function SupportCard({ support, onContactSupport }: SupportCardProps) {
         <View className="ml-1.5 opacity-80">
           <ExternalLink size={14} color={theme.colors.card} />
         </View>
-      </TouchableOpacity>
+      </Button>
 
       <Text className="mt-2.5 text-center text-caption font-sans text-muted">
         Average response time: {support.responseTime}

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { RotateCcw, ArrowRight } from 'lucide-react-native';
 import { theme } from '../../../../shared/theme';
+import { Button } from '../../../../shared/components/Button';
 
 export interface SubmitControlsProps {
   isSubmitting: boolean;
@@ -23,26 +24,27 @@ export const SubmitControls: React.FC<SubmitControlsProps> = ({
   return (
     <View className="w-full flex-row items-center px-6 pb-4 pt-2">
       {/* Left: Retake Button (shrink-0) */}
-      <Pressable
+      <Button
+        variant="ghost"
+        size="sm"
+        title="Retake"
         onPress={onRetake}
-        accessibilityRole="button"
         accessibilityLabel="Retake or reselect photo"
         hitSlop={10}
-        className="shrink-0 flex-row items-center active:opacity-70 py-2 px-1"
-      >
-        <RotateCcw size={22} color={theme.colors.card} />
-        <Text className="text-body-sm font-sans-semibold text-neutral-white ml-2">
-          Retake
-        </Text>
-      </Pressable>
+        leftIcon={<RotateCcw size={22} color={theme.colors.card} />}
+        className="shrink-0 py-2 px-1"
+        textClassName="text-body-sm font-sans-semibold text-neutral-white"
+      />
 
       {/* Right: Submit Photo Button (auto-expanding up to Retake button) */}
-      <Pressable
+      <Button
+        variant="white"
+        shape="pill"
+        size="md"
         onPress={onSubmit}
         disabled={isSubmitting}
-        accessibilityRole="button"
         accessibilityLabel="Submit photo for skin analysis"
-        className="flex-1 ml-5 flex-row items-center justify-between bg-neutral-white rounded-full pl-6 pr-3 py-3 shadow-sm active:opacity-90 active:scale-[0.98]"
+        className="flex-1 ml-5 justify-between pl-6 pr-3 py-3 shadow-sm active:opacity-90 active:scale-[0.98]"
       >
         <Text className="text-body-sm font-sans-bold font-bold text-neutral-text">
           Submit Photo
@@ -56,7 +58,7 @@ export const SubmitControls: React.FC<SubmitControlsProps> = ({
             <ArrowRight size={24} color={theme.colors.card} />
           )}
         </View>
-      </Pressable>
+      </Button>
     </View>
   );
 };

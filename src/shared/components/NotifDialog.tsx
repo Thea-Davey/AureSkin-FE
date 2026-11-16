@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { AlertCircle, X } from 'lucide-react-native';
 import { theme } from '../theme';
+import { Button } from './Button';
 
 export interface NotifDialogProps {
   visible: boolean;
@@ -118,27 +119,21 @@ export function NotifDialog({
 
             {/* Dual Action Buttons */}
             <View className="flex-row items-center gap-3">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={cancelLabel}
+              <Button
+                variant="outline"
+                size="md"
+                title={cancelLabel}
                 onPress={onCancel}
-                className="flex-1 items-center justify-center rounded-button border border-border bg-card py-3 active:opacity-70"
-              >
-                <Text className="text-body-sm font-sans-semibold text-text">
-                  {cancelLabel}
-                </Text>
-              </Pressable>
+                className="flex-1"
+              />
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={confirmLabel}
+              <Button
+                variant="primary"
+                size="md"
+                title={confirmLabel}
                 onPress={onConfirm}
-                className="flex-1 items-center justify-center rounded-button bg-primary py-3 active:opacity-80"
-              >
-                <Text className="text-body-sm font-sans-semibold text-neutral-white">
-                  {confirmLabel}
-                </Text>
-              </Pressable>
+                className="flex-1"
+              />
             </View>
           </View>
         </View>

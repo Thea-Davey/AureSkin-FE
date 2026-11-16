@@ -12,6 +12,7 @@ import { ModalHeader } from '@/shared/components/ModalHeader';
 import { Card } from '@/shared/components/Card';
 import { IngredientDetailPage } from '@/shared/components/IngredientDetailPage';
 import { ProductDetailPage } from '@/shared/components/ProductDetailPage';
+import { Button } from '@/shared/components/Button';
 import { theme } from '@/shared/theme';
 import { useFavorites } from '../viewmodel/useFavorites';
 import { FavoriteCard } from './components/FavoriteCard';
@@ -95,14 +96,14 @@ export function FavoritesPage() {
               <Text className="text-body-sm font-sans text-muted text-center mb-4">
                 {error}
               </Text>
-              <Pressable
+              <Button
+                variant="primary"
+                size="sm"
+                title="Retry"
                 onPress={() => void actions.refresh()}
-                className="bg-primary rounded-button px-5 py-2.5"
-              >
-                <Text className="text-label font-sans-semibold text-neutral-white">
-                  Retry
-                </Text>
-              </Pressable>
+                className="px-5 py-2.5"
+                textClassName="text-label font-sans-semibold text-neutral-white"
+              />
             </Card>
           </View>
         ) : items.length === 0 ? (
