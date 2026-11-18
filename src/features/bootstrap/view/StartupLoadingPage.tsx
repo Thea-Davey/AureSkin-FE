@@ -86,7 +86,7 @@ export function StartupLoadingPage() {
             accessibilityLabel="AureSkin White Logo"
           />
 
-          <Text className="font-heading text-display text-neutral-white tracking-wider">
+          <Text className="font-brand text-display text-neutral-white tracking-wider">
             AureSkin
           </Text>
         </View>

@@ -62,7 +62,7 @@ export function StartupSplashScreen({
           accessibilityLabel="AureSkin Logo"
         />
 
-        <Text className="font-heading text-display mt-5 tracking-wider">
+        <Text className="font-brand text-display mt-5 tracking-wider">
           <Text className="text-primary">Aure</Text>
           <Text className="text-secondary">Skin</Text>
         </Text>

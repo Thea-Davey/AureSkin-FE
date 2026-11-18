@@ -148,7 +148,7 @@ export function MenuOverlay() {
             <View className="px-6 pt-3 pb-6 bg-transparent">
               {/* Header Row: Title & Close Button */}
               <View className="flex-row items-center justify-between mb-5">
-                <Text className="text-h1 font-sans-bold text-neutral-white">
+                <Text className="text-h1 font-brand text-neutral-white">
                   AureSkin
                 </Text>
                 <TouchableOpacity

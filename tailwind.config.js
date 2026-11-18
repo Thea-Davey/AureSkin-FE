@@ -84,6 +84,8 @@ module.exports = {
         "sans-semibold": ["Inter_600SemiBold"],
         "sans-bold": ["Inter_700Bold"],
         heading: ["Outfit_700Bold"],
+        brand: ["BabyGirl", "212BabyGirl"],
+        "baby-girl": ["BabyGirl", "212BabyGirl"],
       },
 
       // ── FONT SIZE PRESETS ──────────────────────────────────

@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-rout
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { LogBox, Text, View } from 'react-native';
+import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import '../global.css';
 import { useAuthStore } from '../shared/store/authStore';
@@ -29,12 +30,17 @@ export default function RootLayout() {
   const router = useRouter();
   const navigationState = useRootNavigationState();
 
+  const [fontsLoaded] = useFonts({
+    'BabyGirl': require('../../assets/fonts/baby-girl.otf'),
+    '212BabyGirl': require('../../assets/fonts/baby-girl.otf'),
+  });
+
   useEffect(() => {
     initialize();
   }, []);
 
   useEffect(() => {
-    if (!navigationState?.key || isLoading) return;
+    if (!navigationState?.key || isLoading || !fontsLoaded) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const isTermsScreen = segments[1] === 'terms';
@@ -52,7 +58,7 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, isLoading, segments, navigationState?.key]);
 
-  if (isLoading) {
+  if (isLoading || !fontsLoaded) {
     return <View className="flex-1 bg-primary" />;
   }
 

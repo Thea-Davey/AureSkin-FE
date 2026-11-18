@@ -21,7 +21,7 @@ export function HeroBranding({
         resizeMode="contain"
         accessibilityLabel="AureSkin Logo"
       />
-      <Text className="text-display font-heading tracking-wider">
+      <Text className="text-display font-brand tracking-wider">
         <Text className="text-primary">Aure</Text>
         <Text className="text-secondary">Skin</Text>
       </Text>
