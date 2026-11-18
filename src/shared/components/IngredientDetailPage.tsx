@@ -7,16 +7,19 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Star, X } from 'lucide-react-native';
+import { AlertCircle, AlertTriangle, Star, X } from 'lucide-react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { theme } from '../theme';
 import {
+  ClinicalFilterWarning,
   Ingredient,
   IngredientCompatibilityStatus,
 } from '../../features/library/model/library_types';
 import { IngredientDetailSkeleton } from '../../features/library/view/components/IngredientDetailSkeleton';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { CompatibleNote } from '../../features/library/view/components/CompatibleNote';
+import { WarningNote } from './WarningNote';
+import { NegativeNote } from './NegativeNote';
 import { DescriptionCard } from '../../features/library/view/components/DescriptionCard';
 import { useIngredientDetail } from '../../features/library/viewmodel/useIngredientDetail';
 import { cleanIngredientDescription } from '../../features/library/model/library_api';
@@ -61,6 +64,7 @@ export interface IngredientDetailPageProps {
   isLoading?: boolean;
   error?: string | null;
   compatibilityStatus?: IngredientCompatibilityStatus;
+  clinicalFilterWarning?: ClinicalFilterWarning | null;
   compatibilityError?: string | null;
   isCompatibilityLoading?: boolean;
   isFavorite?: boolean;
@@ -78,6 +82,7 @@ interface InternalIngredientDetailViewProps {
   isLoading: boolean;
   error: string | null;
   compatibilityStatus: IngredientCompatibilityStatus;
+  clinicalFilterWarning: ClinicalFilterWarning | null;
   compatibilityError: string | null;
   isCompatibilityLoading: boolean;
   isFavorite: boolean;
@@ -96,6 +101,7 @@ function IngredientDetailView({
   isLoading,
   error,
   compatibilityStatus,
+  clinicalFilterWarning,
   compatibilityError,
   isCompatibilityLoading,
   isFavorite,
@@ -280,16 +286,31 @@ function IngredientDetailView({
                   />
                 ) : null}
 
-                {/* 6. Who should avoid? (Red bullet dot + Caution containers for matching triggers) */}
+                {/* 6. Who should avoid? (Red bullet dot + Caution containers for matching triggers; hidden when empty) */}
                 {(() => {
                   const rawAvoid = ingredient.avoid?.length
                     ? ingredient.avoid
                     : typeof ingredient.who_should_avoid === 'string'
                       ? ingredient.who_should_avoid.split(',').map((s) => s.trim()).filter(Boolean)
                       : [];
-                  const avoidList = rawAvoid.map((item) => item.replace(/[\[\]'"]/g, '').trim()).filter(Boolean);
+                  const avoidList = rawAvoid
+                    .map((item) => item.replace(/[\[\]'"]/g, '').trim())
+                    .filter((item) => {
+                      const lower = item.toLowerCase();
+                      return Boolean(item) && lower !== 'none' && lower !== 'n/a' && lower !== 'null';
+                    });
 
-                  if (avoidList.length === 0 && !ingredient.caution?.trim()) {
+                  const rawCaution = (ingredient.caution ?? '').trim();
+                  const cautionStripped = rawCaution.replace(/[\[\]'",\s]/g, '');
+                  const isRawArrayLiteral = rawCaution.startsWith('[') && rawCaution.endsWith(']');
+                  const cleanedCaution =
+                    cautionStripped &&
+                    !isRawArrayLiteral &&
+                    !['none', 'n/a', 'null'].includes(rawCaution.toLowerCase())
+                      ? rawCaution
+                      : '';
+
+                  if (avoidList.length === 0 && !cleanedCaution) {
                     return null;
                   }
 
@@ -326,13 +347,13 @@ function IngredientDetailView({
                         );
                       })}
 
-                      {ingredient.caution?.trim() && !avoidList.some((item) => CAUTION_DESCRIPTIONS[item.toLowerCase().trim()]) ? (
+                      {cleanedCaution && !avoidList.some((item) => CAUTION_DESCRIPTIONS[item.toLowerCase().trim()]) ? (
                         <View className="mt-2 rounded-button border border-note-warning-border bg-note-warning p-3">
                           <Text className="text-caption font-sans-bold text-note-warning-title">
                             Caution
                           </Text>
                           <Text className="mt-0.5 text-body-sm font-sans text-text leading-5">
-                            {ingredient.caution}
+                            {cleanedCaution}
                           </Text>
                         </View>
                       ) : null}
@@ -340,8 +361,35 @@ function IngredientDetailView({
                   );
                 })()}
 
-                {/* 7. Compatible Note */}
-                {compatibilityStatus === 'compatible' ? (
+                {/* 7. Clinical Profile Filter Warning Notice (Allergen / Pregnancy / Age) */}
+                {clinicalFilterWarning ? (() => {
+                  const type = (clinicalFilterWarning.filterType || '').toLowerCase();
+                  const isNegative = type === 'allergen' || type === 'pregnancy';
+                  const warningTitle =
+                    type === 'allergen'
+                      ? 'Flagged for Allergen'
+                      : type === 'pregnancy'
+                        ? 'Flagged for Pregnancy'
+                        : 'Flagged for Age';
+                  return isNegative ? (
+                    <NegativeNote
+                      style={2}
+                      title={warningTitle}
+                      description={clinicalFilterWarning.reason}
+                      className="mt-2 mb-4"
+                    />
+                  ) : (
+                    <WarningNote
+                      style={2}
+                      title={warningTitle}
+                      description={clinicalFilterWarning.reason}
+                      className="mt-2 mb-4"
+                    />
+                  );
+                })() : null}
+
+                {/* 8. Compatible Note */}
+                {compatibilityStatus === 'compatible' && !clinicalFilterWarning ? (
                   <CompatibleNote className="mt-1" />
                 ) : null}
 
@@ -382,6 +430,7 @@ function IngredientDetailSelfFetching({
       isLoading={detail.isLoading}
       error={detail.error}
       compatibilityStatus={detail.compatibilityStatus}
+      clinicalFilterWarning={detail.clinicalFilterWarning}
       compatibilityError={detail.compatibilityError}
       isCompatibilityLoading={detail.isCompatibilityLoading}
       isFavorite={detail.isFavorite}
@@ -405,6 +454,7 @@ export function IngredientDetailPage(props: IngredientDetailPageProps) {
         isLoading={props.isLoading ?? false}
         error={props.error ?? null}
         compatibilityStatus={props.compatibilityStatus ?? 'unavailable'}
+        clinicalFilterWarning={props.clinicalFilterWarning ?? null}
         compatibilityError={props.compatibilityError ?? null}
         isCompatibilityLoading={props.isCompatibilityLoading ?? false}
         isFavorite={props.isFavorite ?? false}

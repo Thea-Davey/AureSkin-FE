@@ -21,6 +21,18 @@ export function S2TodayRoutine({
   const router = useRouter();
   const isMorning = routineLabel.toLowerCase().includes('morning');
 
+  const handleSeeRoutine = () => {
+    try {
+      router.navigate('/(tabs)/routine');
+    } catch {
+      try {
+        router.navigate('/routine');
+      } catch {
+        router.replace('/(tabs)/routine');
+      }
+    }
+  };
+
   return (
     <View className="mb-5">
       {/* Section Header */}
@@ -29,7 +41,7 @@ export function S2TodayRoutine({
           Today's Skincare Routine
         </Text>
         <TouchableOpacity
-          onPress={() => router.push('/(tabs)/routine')}
+          onPress={handleSeeRoutine}
           activeOpacity={0.7}
           className="flex-row items-center"
         >
@@ -52,7 +64,7 @@ export function S2TodayRoutine({
         <TodaysRoutineCard
           styleType={isMorning ? 'morning' : 'night'}
           steps={steps}
-          onPressCard={() => router.push('/(tabs)/routine')}
+          onPressCard={handleSeeRoutine}
         />
       )}
     </View>

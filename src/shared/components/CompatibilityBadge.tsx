@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { BadgeCheck } from 'lucide-react-native';
+import { AlertTriangle, BadgeCheck } from 'lucide-react-native';
 import { theme } from '../theme';
 
 export type CompatibilityStatus =
@@ -84,7 +84,36 @@ export function CompatibilityBadge({
     );
   }
 
-  if (showScanNeeded && (status === 'scan_needed' || status === 'review' || status === 'not_listed')) {
+  if (status === 'review') {
+    if (compact) {
+      return (
+        <View
+          accessibilityRole="text"
+          accessibilityLabel="Flagged for review by your profile filters"
+          className={`h-6 w-6 items-center justify-center rounded-full border border-note-warning-border bg-note-warning ${className}`}
+        >
+          <AlertTriangle size={13} color={theme.colors.note.warning.icon} strokeWidth={2.2} />
+        </View>
+      );
+    }
+
+    return (
+      <View
+        accessibilityRole="text"
+        accessibilityLabel="Flagged for review"
+        className={`flex-row items-center gap-1 rounded-badge border border-note-warning-border bg-note-warning px-2.5 py-1.5 ${className}`}
+      >
+        {showIcon ? (
+          <AlertTriangle size={14} color={theme.colors.note.warning.icon} strokeWidth={2.2} />
+        ) : null}
+        <Text className="text-caption font-sans-semibold text-note-warning-title">
+          Review
+        </Text>
+      </View>
+    );
+  }
+
+  if (showScanNeeded && (status === 'scan_needed' || status === 'not_listed')) {
     const unverifiedLabel = status === 'scan_needed' ? 'Scan needed' : 'Not verified';
     return (
       <View

@@ -1,9 +1,9 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Droplet } from 'lucide-react-native';
-import Svg, { Circle, G } from 'react-native-svg';
 import { theme } from '@/shared/theme';
 import { Button } from '@/shared/components/Button';
+import { HealthGauge } from '@/shared/components';
 import { RoutineSkinProfile } from '../../model/routine_types';
 
 interface RoutineSkinProfileCardProps {
@@ -29,13 +29,6 @@ export function RoutineSkinProfileCard({
   const healthScore = typeof profile?.health_score === 'number'
     ? Math.round(profile.health_score)
     : 89;
-
-  // SVG Gauge calculations matching Home HealthGauge (size 92, strokeWidth 8)
-  const gaugeSize = 92;
-  const strokeWidth = 8;
-  const radius = (gaugeSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * healthScore) / 100;
 
   return (
     <View className="rounded-card border border-neutral-border bg-card p-3.5 shadow-xs">
@@ -101,47 +94,8 @@ export function RoutineSkinProfileCard({
             </View>
           </View>
 
-          {/* Right Column: Health Gauge matching Home (Transparent inner background, thick stroke, text inside circle) */}
-          <View
-            style={{ width: gaugeSize, height: gaugeSize }}
-            className="items-center justify-center relative"
-          >
-            <Svg width={gaugeSize} height={gaugeSize}>
-              <G rotation="-90" origin={`${gaugeSize / 2}, ${gaugeSize / 2}`}>
-                {/* Background Ring (Thick stroke, transparent fill) */}
-                <Circle
-                  cx={gaugeSize / 2}
-                  cy={gaugeSize / 2}
-                  r={radius}
-                  stroke={theme.colors.border}
-                  strokeWidth={strokeWidth}
-                  fill="transparent"
-                />
-                {/* Progress Ring (Accent green, transparent fill) */}
-                <Circle
-                  cx={gaugeSize / 2}
-                  cy={gaugeSize / 2}
-                  r={radius}
-                  stroke={theme.colors.accent}
-                  strokeWidth={strokeWidth}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  fill="transparent"
-                />
-              </G>
-            </Svg>
-
-            {/* Center Label inside the circle */}
-            <View className="absolute items-center justify-center">
-              <Text className="text-h3 font-sans-bold text-accent tracking-tight">
-                {healthScore}%
-              </Text>
-              <Text className="text-caption font-sans-bold text-accent tracking-wider">
-                HEALTHY
-              </Text>
-            </View>
-          </View>
+          {/* Right Column: Shared Health Gauge matching Home & Scan Result */}
+          <HealthGauge percentage={healthScore} size={92} strokeWidth={8} />
         </View>
       ) : (
         <View className="items-center rounded-button bg-neutral-card px-4 py-4 border border-border">

@@ -2,7 +2,7 @@ import React, { ComponentProps } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, BookOpen, Scan, Clock, User } from 'lucide-react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { theme } from '../theme';
 import { useAppStore } from '../store/appStore';
 
@@ -27,9 +27,9 @@ export function BottomNavBar({
 }: BottomNavBarProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const insets = propInsets ?? safeAreaInsets;
+  const router = useRouter();
 
   const isScanOverlayOpen = useAppStore((state) => state.isScanOverlayOpen);
-  const toggleScanOverlay = useAppStore((state) => state.toggleScanOverlay);
   const closeScanOverlay = useAppStore((state) => state.closeScanOverlay);
 
   const renderTabIcon = (routeName: string, isFocused: boolean) => {
@@ -80,7 +80,7 @@ export function BottomNavBar({
 
   const handleTabPress = (route: (typeof state.routes)[number], isFocused: boolean) => {
     if (route.name === 'scan') {
-      toggleScanOverlay();
+      router.push('/scan/setup');
       return;
     }
 
@@ -117,18 +117,14 @@ export function BottomNavBar({
         if (route.name === 'scan') {
           return (
             <View key={route.key} className="flex-1 items-center justify-center">
-              {!isScanOverlayOpen ? (
-                <Pressable
-                  onPress={toggleScanOverlay}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open scan options"
-                  className="h-20 w-20 -mt-12 items-center justify-center rounded-full bg-primary border-4 border-neutral-white shadow-xl active:opacity-80"
-                >
-                  <Scan color={theme.colors.card} size={24} strokeWidth={2.4} />
-                </Pressable>
-              ) : (
-                <View className="h-20 w-20 -mt-12" />
-              )}
+              <Pressable
+                onPress={() => router.push('/scan/setup')}
+                accessibilityRole="button"
+                accessibilityLabel="Set up your skin analysis"
+                className="h-20 w-20 -mt-12 items-center justify-center rounded-full bg-primary border-4 border-neutral-white shadow-xl active:opacity-80"
+              >
+                <Scan color={theme.colors.card} size={24} strokeWidth={2.4} />
+              </Pressable>
             </View>
           );
         }

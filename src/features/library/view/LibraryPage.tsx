@@ -74,6 +74,7 @@ function ProductDetailSheet({
       isLoading={detail.isLoading}
       error={detail.error}
       compatibilityStatus={detail.compatibilityStatus}
+      clinicalFilterWarnings={detail.clinicalFilterWarnings}
       compatibilityError={detail.compatibilityError}
       isCompatibilityLoading={detail.isCompatibilityLoading}
       canRetryCompatibility={detail.canRetryCompatibility}
@@ -200,6 +201,7 @@ function IngredientDetailSheet({
       isLoading={detail.isLoading}
       error={detail.error}
       compatibilityStatus={detail.compatibilityStatus}
+      clinicalFilterWarning={detail.clinicalFilterWarning}
       compatibilityError={detail.compatibilityError}
       isCompatibilityLoading={detail.isCompatibilityLoading}
       isFavorite={detail.isFavorite}
@@ -284,7 +286,7 @@ export function LibraryPage() {
   useEffect(() => () => clearProductDismissFallback(), []);
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-transparent">
       <View className="flex-row items-center justify-center gap-16 px-5 pb-2 pt-1">
         <Pressable
           accessibilityRole="tab"
@@ -342,6 +344,7 @@ export function LibraryPage() {
             sections={ingredients.sections}
             favoriteIds={ingredients.favoriteIds}
             compatibleIngredientIds={ingredients.compatibleIngredientIds}
+            filteredIngredientIds={ingredients.filteredIngredientIds}
             searchQuery={ingredients.searchQuery}
             isLoading={ingredients.isLoading}
             isRefreshing={ingredients.isRefreshing}

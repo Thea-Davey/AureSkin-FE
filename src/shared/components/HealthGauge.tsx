@@ -3,6 +3,7 @@ import { View, Text, Animated } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { useFocusEffect } from 'expo-router';
 import { theme } from '../theme';
+import { getHealthScoreColor } from './HealthScoreBadge';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -22,15 +23,16 @@ export interface HealthGaugeProps {
  * HealthGauge
  * Shared animated circular SVG health gauge.
  * Features a background track, animated progress ring fill, and animated counting percentage.
+ * Dynamically maps score to consistent status tier colors (Green 80-100, Yellow 60-79, Orange 40-59, Red 0-39).
  * Usable across Home (hero summary), Scan (skin health score card), and History list items.
  */
 export function HealthGauge({
   percentage = 0,
   size = 110,
   strokeWidth = 10,
-  color = theme.colors.accent,
-  showSublabel,
-  sublabel = 'HEALTHY',
+  color,
+  showSublabel = false,
+  sublabel,
   textColor,
   duration,
   textClassName,
@@ -39,13 +41,14 @@ export function HealthGauge({
   const [displayNumber, setDisplayNumber] = useState(0);
 
   const validPercentage = Math.max(0, Math.min(100, isNaN(percentage) ? 0 : percentage));
+  const resolvedColor = color ?? getHealthScoreColor(validPercentage);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
   const isTiny = size <= 36;
   const isMini = size <= 52;
   const isCompact = size < 80;
-  const shouldShowSublabel = showSublabel !== undefined ? showSublabel : !isCompact;
+  const shouldShowSublabel = Boolean(showSublabel && sublabel);
   const animDuration = duration ?? (isMini ? 500 : 1100);
 
   // Listen to animated value to count up the center percentage number
@@ -101,7 +104,7 @@ export function HealthGauge({
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={color}
+            stroke={resolvedColor}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
@@ -115,7 +118,7 @@ export function HealthGauge({
       <View className="absolute items-center justify-center">
         <Text
           style={[
-            textColor ? { color: textColor } : isCompact ? undefined : { color },
+            textColor ? { color: textColor } : { color: resolvedColor },
             isTiny ? { fontSize: 8.5, lineHeight: 13 } : undefined,
           ]}
           className={
@@ -131,7 +134,7 @@ export function HealthGauge({
         </Text>
         {shouldShowSublabel ? (
           <Text
-            style={{ color }}
+            style={{ color: resolvedColor }}
             className="text-caption font-sans-bold tracking-wider"
           >
             {sublabel}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { theme } from '@/shared/theme';
 import { Card } from '@/shared/components/Card';
 import { HealthGauge } from '@/shared/components/HealthGauge';
+import { getHealthScoreColor } from '@/shared/components/HealthScoreBadge';
 import { Image } from 'expo-image';
 import { CalendarDays, MoreHorizontal, UserRound } from 'lucide-react-native';
 import { Pressable, Text, View, Image as RNImage } from 'react-native';
@@ -18,12 +19,6 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime())
     ? 'Date unavailable'
     : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function getScoreColor(val: number): string {
-  if (val >= 80) return theme.colors.accent;
-  if (val >= 60) return theme.colors.status.warning;
-  return theme.colors.status.error;
 }
 
 export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItemProps) {
@@ -109,7 +104,7 @@ export function HistoryListItem({ entry, onPress, onMorePress }: HistoryListItem
               percentage={healthScore}
               size={22}
               strokeWidth={2}
-              color={getScoreColor(healthScore)}
+              color={getHealthScoreColor(healthScore)}
               showSublabel={false}
               duration={0}
             />

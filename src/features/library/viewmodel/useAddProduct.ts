@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { addMockProduct } from '../model/library_api';
-import { MOCK_INGREDIENTS } from '../model/library_mock';
+import { createProduct } from '../model/library_api';
+import { getCachedIngredients } from '../../../shared/storage/catalogStorage';
 import { ProductCategory } from '../../../shared/utils/productCategory';
 
 export interface AddProductDraft {
@@ -14,30 +14,33 @@ export interface AddProductDraft {
   skinConditions: string[];
 }
 
-const INITIAL_INGREDIENTS = [
-  'Salicylic acid',
-  'Niacinamide',
-  'Clay',
-  'Hyaluronic acid',
-  'Retinol',
-  'Dioic acid',
-  'Omega fatty acids',
+const COMMON_INGREDIENT_SUGGESTIONS = [
   'Aloe Vera',
+  'Centella Asiatica',
+  'Ceramides',
+  'Glycolic Acid',
+  'Hyaluronic Acid',
+  'Lactic Acid',
+  'Niacinamide',
+  'Panthenol',
+  'Peptides',
+  'Retinol',
+  'Salicylic Acid',
+  'Squalane',
+  'Vitamin C',
+  'Zinc Oxide',
 ];
 
-// Master list of available database ingredients for auto-suggest & validation
-export const MASTER_DATABASE_INGREDIENTS = Array.from(
-  new Set([
-    ...MOCK_INGREDIENTS.map((i) => i.name),
-    ...INITIAL_INGREDIENTS,
-  ])
-).sort((a, b) => a.localeCompare(b));
+// Initial ingredient suggestions for auto-suggest before cache hydration
+export const MASTER_DATABASE_INGREDIENTS = [...COMMON_INGREDIENT_SUGGESTIONS].sort((a, b) =>
+  a.localeCompare(b)
+);
 
 const EMPTY_DRAFT: AddProductDraft = {
   name: '',
   description: '',
   category: 'other',
-  ingredients: INITIAL_INGREDIENTS,
+  ingredients: [],
   skinTypes: [],
   skinConditions: [],
 };
@@ -55,6 +58,29 @@ export function useAddProduct() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessVisible, setIsSuccessVisible] = useState(false);
   const [isDiscardVisible, setIsDiscardVisible] = useState(false);
+  const [availableIngredients, setAvailableIngredients] = useState<string[]>(
+    MASTER_DATABASE_INGREDIENTS
+  );
+
+  // Hydrate autocomplete suggestions with the live cached ingredients catalog
+  useEffect(() => {
+    let mounted = true;
+    getCachedIngredients()
+      .then((cached) => {
+        if (!mounted || !cached || cached.length === 0) return;
+        const merged = Array.from(
+          new Set([
+            ...MASTER_DATABASE_INGREDIENTS,
+            ...cached.map((item) => item.name).filter(Boolean),
+          ])
+        ).sort((a, b) => a.localeCompare(b));
+        setAvailableIngredients(merged);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const updateDraft = useCallback((updates: Partial<AddProductDraft>) => {
     setDraft((current) => ({ ...current, ...updates }));
@@ -66,14 +92,12 @@ export function useAddProduct() {
     if (!trimmed) {
       return;
     }
-    // Check if ingredient exists in master database
-    const matched = MASTER_DATABASE_INGREDIENTS.find(
-      (item) => item.toLowerCase() === trimmed.toLowerCase()
-    );
-    if (!matched) {
-      setError('Only ingredients from the AureSkin library database can be added.');
-      return;
-    }
+    // Prefer canonical casing if matched in known ingredients catalog; allow custom names too
+    const matched =
+      availableIngredients.find(
+        (item) => item.toLowerCase() === trimmed.toLowerCase()
+      ) ?? trimmed;
+
     // Prevent duplicates
     if (draft.ingredients.some((item) => item.toLowerCase() === matched.toLowerCase())) {
       setError('That ingredient has already been added.');
@@ -82,7 +106,7 @@ export function useAddProduct() {
 
     updateDraft({ ingredients: [...draft.ingredients, matched] });
     setError(null);
-  }, [draft.ingredients, updateDraft]);
+  }, [availableIngredients, draft.ingredients, updateDraft]);
 
   const removeIngredient = useCallback((ingredient: string) => {
     updateDraft({ ingredients: draft.ingredients.filter((item) => item !== ingredient) });
@@ -156,7 +180,7 @@ export function useAddProduct() {
     setIsSubmitting(true);
     setError(null);
     try {
-      addMockProduct({
+      await createProduct({
         name: draft.name,
         description: draft.description,
         category: draft.category,
@@ -169,8 +193,8 @@ export function useAddProduct() {
     } catch (submitError) {
       setError(
         submitError instanceof Error
-          ? `Could not add this demo product: ${submitError.message}`
-          : 'Could not add this demo product. Please try again.'
+          ? submitError.message
+          : 'Could not add this product. Please try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -188,7 +212,7 @@ export function useAddProduct() {
     isSubmitting,
     isSuccessVisible,
     isDiscardVisible,
-    availableIngredients: MASTER_DATABASE_INGREDIENTS,
+    availableIngredients,
     actions: {
       updateDraft,
       setCategory,

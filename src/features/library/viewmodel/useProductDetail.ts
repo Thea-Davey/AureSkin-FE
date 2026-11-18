@@ -1,16 +1,36 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '../../../shared/store/authStore';
 import { fetchHistoryPage } from '../../history/model/history_api';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
 import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
-import { ProductCompatibilityStatus, ProductDetail } from '../model/library_types';
+import { fetchUserClinicalFilters } from '../../profile/model/profile_api';
+import {
+  ClinicalFilterWarning,
+  ProductCompatibilityStatus,
+  ProductDetail,
+} from '../model/library_types';
 import { fetchProductById } from '../model/library_api';
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function rawIngredientsContains(rawIngs: string, ingredientName: string): boolean {
+  const target = ingredientName.toLowerCase().trim();
+  if (!rawIngs || !target) return false;
+  if (target.length <= 3) {
+    return new RegExp(`(^|[,;/()\\s])${escapeRegex(target)}($|[,;/()\\s])`, 'i').test(rawIngs);
+  }
+  return rawIngs.includes(target);
+}
 
 interface UseProductDetailResult {
   product: ProductDetail | undefined;
   isLoading: boolean;
   error: string | null;
   compatibilityStatus: ProductCompatibilityStatus;
+  clinicalFilterWarnings: ClinicalFilterWarning[];
   compatibilityError: string | null;
   isCompatibilityLoading: boolean;
   canRetryCompatibility: boolean;
@@ -21,6 +41,8 @@ interface UseProductDetailResult {
 }
 
 export function useProductDetail(productId: string): UseProductDetailResult {
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+
   const productQuery = useQuery({
     queryKey: ['library', 'product', productId],
     queryFn: () => fetchProductById(productId),
@@ -29,7 +51,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
   });
 
   const latestAnalysisQuery = useQuery({
-    queryKey: ['library', 'product-detail', 'latest-analysis'],
+    queryKey: ['library', 'product-detail', 'latest-analysis', userId ?? 'anonymous'],
     queryFn: async () => {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
@@ -39,7 +61,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
 
   const latestAnalysisId = latestAnalysisQuery.data?.id;
   const compatibilityQuery = useQuery({
-    queryKey: ['library', 'product-compatibility', latestAnalysisId],
+    queryKey: ['library', 'product-compatibility', userId ?? 'anonymous', latestAnalysisId],
     queryFn: async () => {
       if (!latestAnalysisId) {
         throw new Error('A skin analysis is required to review product compatibility.');
@@ -55,12 +77,79 @@ export function useProductDetail(productId: string): UseProductDetailResult {
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
+  const clinicalFiltersQuery = useQuery({
+    queryKey: ['profile', 'clinical-filters', userId ?? 'anonymous'],
+    queryFn: fetchUserClinicalFilters,
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 15,
+  });
+
+  const clinicalFilterWarnings = useMemo<ClinicalFilterWarning[]>(() => {
+    const product = productQuery.data;
+    if (!product) return [];
+
+    const combined = [
+      ...(clinicalFiltersQuery.data ?? []),
+      ...(compatibilityQuery.data?.filtered_ingredients ?? []),
+    ];
+    if (combined.length === 0) return [];
+
+    const productIngIds = new Set(
+      (product.ingredients ?? []).map((i) => String(i.id || '').trim()).filter(Boolean)
+    );
+    const productIngNames = (product.ingredients ?? [])
+      .map((i) => i.name.toLowerCase().trim())
+      .filter(Boolean);
+    const rawIngs = (product.raw_ingredients ?? '').toLowerCase();
+
+    const warnings: ClinicalFilterWarning[] = [];
+    const seen = new Set<string>();
+
+    for (const item of combined) {
+      const fid = String(item.ingredient_id || ('id' in item && item.id ? item.id : '')).trim();
+      const fname = String(item.name || '').trim();
+      const fnameLower = fname.toLowerCase();
+      if (!fname && !fid) continue;
+
+      const matchesById = Boolean(fid && productIngIds.has(fid));
+      const matchesByIngredientList = Boolean(
+        fnameLower &&
+        productIngNames.some((n) => n === fnameLower || (fnameLower.length > 3 && n.includes(fnameLower)))
+      );
+      const matchesByRaw = Boolean(fnameLower && rawIngredientsContains(rawIngs, fnameLower));
+
+      if (matchesById || matchesByIngredientList || matchesByRaw) {
+        const dedupeKey = `${fnameLower || fid}|${String(item.filter_type || '').toLowerCase()}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+        warnings.push({
+          ingredientId: fid,
+          ingredientName: fname || 'Ingredient',
+          filterType: item.filter_type || 'allergen',
+          reason: item.reason || 'Flagged by your profile clinical filters.',
+          details: item.details,
+        });
+      }
+    }
+
+    return warnings;
+  }, [
+    productQuery.data,
+    clinicalFiltersQuery.data,
+    compatibilityQuery.data?.filtered_ingredients,
+  ]);
+
   const compatibilityStatus = useMemo<ProductCompatibilityStatus>(() => {
     if (productQuery.isLoading || latestAnalysisQuery.isLoading || compatibilityQuery.isLoading) {
       return 'unavailable';
     }
     if (productQuery.isError) {
       return 'unavailable';
+    }
+
+    // Clinical filters (allergen, pregnancy, age) always take precedence over scan compatibility
+    if (clinicalFilterWarnings.length > 0) {
+      return 'review';
     }
 
     // In mock mode fallback or with loaded data:
@@ -101,7 +190,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
 
     // Check 3: Check if product contains any compatible ingredients
     const compatibleIngredientIds = new Set(
-      (compatibility.compatible_ingredients ?? []).map((item) => item.id)
+      (compatibility.compatible_ingredients ?? []).map((item) => item.id || item.ingredient_id)
     );
     const hasCompatibleIngredient = (product.ingredients ?? []).some((i) =>
       compatibleIngredientIds.has(i.id)
@@ -113,6 +202,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
 
     return 'review';
   }, [
+    clinicalFilterWarnings.length,
     productQuery.isLoading,
     productQuery.isError,
     productQuery.data,
@@ -146,6 +236,7 @@ export function useProductDetail(productId: string): UseProductDetailResult {
       ? productQuery.error.message
       : null,
     compatibilityStatus,
+    clinicalFilterWarnings,
     compatibilityError: latestAnalysisQuery.error instanceof Error
       ? latestAnalysisQuery.error.message
       : compatibilityQuery.error instanceof Error

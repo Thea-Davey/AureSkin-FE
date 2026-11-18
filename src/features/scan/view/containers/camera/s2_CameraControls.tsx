@@ -7,6 +7,7 @@ import { CameraFlipButton } from '../../components/CameraFlipButton';
 export interface S2CameraControlsProps {
   recentThumbnail?: string | null;
   isCapturing: boolean;
+  promptText?: string;
   onCapture: () => void;
   onFlip: () => void;
   onNavigateToUpload: () => void;
@@ -19,6 +20,7 @@ export interface S2CameraControlsProps {
 export const S2CameraControls: React.FC<S2CameraControlsProps> = ({
   recentThumbnail,
   isCapturing,
+  promptText,
   onCapture,
   onFlip,
   onNavigateToUpload,
@@ -28,7 +30,7 @@ export const S2CameraControls: React.FC<S2CameraControlsProps> = ({
       {/* 1. "Take photo" Prompt Badge */}
       <View className="bg-neutral-white rounded-button px-5 py-1.5 shadow-sm mb-6">
         <Text className="text-caption font-sans-bold text-neutral-text">
-          Take photo
+          {promptText || 'Take photo'}
         </Text>
       </View>
 

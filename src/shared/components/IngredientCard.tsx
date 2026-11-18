@@ -11,6 +11,7 @@ export interface IngredientCardProps {
   ingredient: Ingredient;
   isFavorite: boolean;
   isCompatible?: boolean;
+  hasClinicalWarning?: boolean;
   isFirstInSection?: boolean;
   onPress: (id: string) => void;
   onFavoritePress: (id: string) => void;
@@ -26,6 +27,7 @@ export function IngredientCard({
   ingredient,
   isFavorite,
   isCompatible = false,
+  hasClinicalWarning = false,
   isFirstInSection = false,
   onPress,
   onFavoritePress,
@@ -58,7 +60,9 @@ export function IngredientCard({
 
           {/* Right Action Container: Top-aligned Compact Compatibility Badge + Favorite Star */}
           <View className="flex-row items-center gap-2 shrink-0 self-start pt-0.5">
-            {isCompatible ? (
+            {hasClinicalWarning ? (
+              <CompatibilityBadge status="review" compact />
+            ) : isCompatible ? (
               <CompatibilityBadge status="compatible" compact />
             ) : null}
 

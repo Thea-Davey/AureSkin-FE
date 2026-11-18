@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Animated, Platform, AppState, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useCameraPermissions, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
@@ -10,7 +10,7 @@ import {
   getRecentGalleryThumbnail,
   getSkinGuidanceTips,
 } from '../model/scan_api';
-import { MOCK_CAMERA_PHOTO_URI } from '../model/scan_mock';
+import { MOCK_CAMERA_PHOTO_URI, MOCK_SETUP_PHOTOS } from '../model/scan_mock';
 import { useScanStore, normalizeFileUri } from '../model/scanStore';
 
 export interface UseScanCameraReturn {
@@ -24,6 +24,7 @@ export interface UseScanCameraReturn {
   flashAnim: Animated.Value;
   cameraRef: React.RefObject<CameraView | null>;
   recentThumbnail: string | null;
+  promptText: string;
 
   // Guidance Modal State
   isGuidanceVisible: boolean;
@@ -47,6 +48,11 @@ export interface UseScanCameraReturn {
  */
 export function useScanCamera(): UseScanCameraReturn {
   const router = useRouter();
+  const params = useLocalSearchParams<{
+    returnTo?: string;
+    targetSide?: 'left' | 'front' | 'right';
+    mode?: 'single' | 'consecutive';
+  }>();
 
   // Camera permissions via expo-camera
   const [permission, requestPermission, getPermission] = useCameraPermissions();
@@ -54,6 +60,25 @@ export function useScanCamera(): UseScanCameraReturn {
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
   const [isCameraReady, setIsCameraReady] = useState<boolean>(false);
   const [recentThumbnail, setRecentThumbnail] = useState<string | null>(null);
+
+  // Consecutive capture flow tracking (Triple Shot: front -> left -> right)
+  const isConsecutive = params.returnTo === 'setup' && params.mode === 'consecutive';
+  const [consecutiveStep, setConsecutiveStep] = useState<'front' | 'left' | 'right'>(
+    (params.targetSide as 'front' | 'left' | 'right') || 'front'
+  );
+
+  // Dynamic viewfinder prompt based on target side & consecutive step
+  const promptText = useMemo(() => {
+    if (isConsecutive) {
+      if (consecutiveStep === 'front') return 'Take frontal photo (1 of 3)';
+      if (consecutiveStep === 'left') return 'Take left profile photo (2 of 3)';
+      if (consecutiveStep === 'right') return 'Take right profile photo (3 of 3)';
+    }
+    if (params.targetSide === 'left') return 'Take left profile photo';
+    if (params.targetSide === 'right') return 'Take right profile photo';
+    if (params.targetSide === 'front') return 'Take frontal photo';
+    return 'Take photo';
+  }, [isConsecutive, consecutiveStep, params.targetSide]);
 
   // Guidance modal state
   const [isGuidanceVisible, setIsGuidanceVisible] = useState<boolean>(false);
@@ -151,6 +176,30 @@ export function useScanCamera(): UseScanCameraReturn {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const pickedUri = normalizeFileUri(result.assets[0].uri);
         useScanStore.getState().setCapturedImageUri(pickedUri);
+
+        if (params.returnTo === 'setup') {
+          const side = isConsecutive
+            ? consecutiveStep
+            : params.targetSide || (useScanStore.getState().shotType === 'triple' ? 'left' : 'front');
+          useScanStore.getState().setPhoto(side, pickedUri);
+
+          if (isConsecutive) {
+            if (side === 'front') {
+              setConsecutiveStep('left');
+              return;
+            } else if (side === 'left') {
+              setConsecutiveStep('right');
+              return;
+            } else {
+              router.push('/scan/setup' as any);
+              return;
+            }
+          }
+
+          router.push('/scan/setup' as any);
+          return;
+        }
+
         router.push({
           pathname: '/scan/submit' as any,
           params: { imageUri: pickedUri },
@@ -160,10 +209,14 @@ export function useScanCamera(): UseScanCameraReturn {
       // Fallback to upload view if system picker throws
       router.push('/scan/upload' as any);
     }
-  }, [router]);
+  }, [isConsecutive, consecutiveStep, params.returnTo, params.targetSide, router]);
 
   const handleClose = useCallback(() => {
     try {
+      if (params.returnTo === 'setup') {
+        router.push('/scan/setup' as any);
+        return;
+      }
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -172,11 +225,16 @@ export function useScanCamera(): UseScanCameraReturn {
     } catch {
       router.replace('/(tabs)');
     }
-  }, [router]);
+  }, [params.returnTo, router]);
 
   const capturePhoto = useCallback(async () => {
     if (isCapturing) return;
     setIsCapturing(true);
+
+    // Active photo side being captured
+    const activeSide: 'front' | 'left' | 'right' = isConsecutive
+      ? consecutiveStep
+      : (params.targetSide as 'front' | 'left' | 'right') || 'front';
 
     // Trigger visual shutter flash feedback
     Animated.sequence([
@@ -212,7 +270,13 @@ export function useScanCamera(): UseScanCameraReturn {
       if (!photoUri) {
         if (isMockEnabled('scan')) {
           await new Promise((resolve) => setTimeout(resolve, 350));
-          photoUri = MOCK_CAMERA_PHOTO_URI;
+          if (activeSide === 'left') {
+            photoUri = MOCK_SETUP_PHOTOS.left || MOCK_CAMERA_PHOTO_URI;
+          } else if (activeSide === 'right') {
+            photoUri = MOCK_SETUP_PHOTOS.right || MOCK_CAMERA_PHOTO_URI;
+          } else {
+            photoUri = MOCK_SETUP_PHOTOS.front || MOCK_CAMERA_PHOTO_URI;
+          }
         } else {
           Toast.show({
             type: 'error',
@@ -227,7 +291,50 @@ export function useScanCamera(): UseScanCameraReturn {
       // Store in memory store so it never gets corrupted by URL encoding/decoding
       useScanStore.getState().setCapturedImageUri(photoUri);
 
-      // Navigate to Scan Submit with captured photo URI
+      // Return or advance in setup mode
+      if (params.returnTo === 'setup') {
+        useScanStore.getState().setPhoto(activeSide, photoUri);
+
+        if (isConsecutive) {
+          if (activeSide === 'front') {
+            Toast.show({
+              type: 'info',
+              text1: 'Frontal photo captured (1 of 3)',
+              text2: 'Now position your left profile photo (2 of 3)',
+              position: 'top',
+              visibilityTime: 2000,
+            });
+            setConsecutiveStep('left');
+            return;
+          } else if (activeSide === 'left') {
+            Toast.show({
+              type: 'info',
+              text1: 'Left profile captured (2 of 3)',
+              text2: 'Now position your right profile photo (3 of 3)',
+              position: 'top',
+              visibilityTime: 2000,
+            });
+            setConsecutiveStep('right');
+            return;
+          } else {
+            // Completed all 3 photos (front -> left -> right)!
+            Toast.show({
+              type: 'success',
+              text1: 'All 3 photos captured!',
+              position: 'top',
+              visibilityTime: 1500,
+            });
+            router.push('/scan/setup' as any);
+            return;
+          }
+        }
+
+        // Single shot or individual profile retake -> return directly to setup
+        router.push('/scan/setup' as any);
+        return;
+      }
+
+      // Default: Navigate to Scan Submit with captured photo URI
       router.push({
         pathname: '/scan/submit' as any,
         params: { imageUri: photoUri },
@@ -237,7 +344,15 @@ export function useScanCamera(): UseScanCameraReturn {
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing, flashAnim, router]);
+  }, [
+    isCapturing,
+    isConsecutive,
+    consecutiveStep,
+    params.returnTo,
+    params.targetSide,
+    flashAnim,
+    router,
+  ]);
 
   return {
     facing,
@@ -249,6 +364,7 @@ export function useScanCamera(): UseScanCameraReturn {
     flashAnim,
     cameraRef,
     recentThumbnail,
+    promptText,
     isGuidanceVisible,
     guidanceTips,
     onCameraReady,

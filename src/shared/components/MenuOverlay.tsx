@@ -17,6 +17,7 @@ import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../services/supabase';
 import { theme } from '../theme';
+import { FixedBackgroundPattern } from './FixedBackgroundPattern';
 
 export function MenuOverlay() {
   const router = useRouter();
@@ -141,8 +142,10 @@ export function MenuOverlay() {
           <SafeAreaView
             edges={['top']}
             style={{ backgroundColor: theme.colors.primary }}
+            className="relative overflow-hidden"
           >
-            <View className="px-6 pt-3 pb-6 bg-primary">
+            <FixedBackgroundPattern />
+            <View className="px-6 pt-3 pb-6 bg-transparent">
               {/* Header Row: Title & Close Button */}
               <View className="flex-row items-center justify-between mb-5">
                 <Text className="text-h1 font-sans-bold text-neutral-white">

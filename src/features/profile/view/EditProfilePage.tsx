@@ -8,7 +8,6 @@ import {
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import {
@@ -17,6 +16,7 @@ import {
   ChevronUp,
   Lock,
   Pencil,
+  Plus,
   UserRound,
   X,
 } from 'lucide-react-native';
@@ -38,10 +38,16 @@ const inputStyle =
 export function EditProfilePage() {
   const profile = useEditProfile();
   const avatarUri = profile.draft.avatarUri;
-  const [isAllergenDropdownOpen, setIsAllergenDropdownOpen] = useState(false);
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, 24);
+  const availableAllergens =
+    profile.commonAllergies && profile.commonAllergies.length > 0
+      ? profile.commonAllergies.map((a) => a.name)
+      : COMMON_ALLERGENS;
+  const unselectedAllergens = availableAllergens.filter(
+    (item) => !profile.draft.allergens.some((sel) => sel.toLowerCase() === item.toLowerCase())
+  );
 
   return (
     <View className="flex-1 bg-primary">
@@ -55,6 +61,7 @@ export function EditProfilePage() {
         {/* Top-Right Close Button */}
         <CloseButton
           accessibilityLabel="Back to profile"
+          disabled={profile.isSaving}
           onPress={profile.actions.cancel}
           style={{ top: topInset + 4 }}
           className="absolute right-5 z-30"
@@ -99,13 +106,7 @@ export function EditProfilePage() {
 
       {/* OUTER BACKGROUND CONTAINER WITH CURVED TOP CORNERS */}
       <View
-        style={{
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          overflow: 'hidden',
-          backgroundColor: theme.colors.background,
-        }}
-        className="flex-1 bg-background rounded-t-[32px] z-10"
+        className="flex-1 overflow-hidden bg-background rounded-t-card z-10"
       >
         {/* FIXED TITLE: Everything above Edit Profile and the title text itself is fixed */}
         <View className="px-5 pt-10 pb-2 bg-background z-20">
@@ -342,123 +343,67 @@ export function EditProfilePage() {
                 </View>
               </ProfileFormField>
 
-              {/* Allergen Field & Dropdown Accordion */}
-              <ProfileFormField label="Allergen" className="mb-2">
-                {/* Dropdown Capsule matching target reference */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle allergens picker"
-                  onPress={() => setIsAllergenDropdownOpen(!isAllergenDropdownOpen)}
-                  className={`${inputStyle} flex-row items-center justify-between`}
-                >
-                  <Text
-                    className={`text-body-sm font-sans ${profile.draft.allergens.length > 0 ? 'text-text' : 'text-muted'
-                      }`}
-                  >
-                    {profile.draft.allergens.length > 0
-                      ? `${profile.draft.allergens.length} allergen(s) selected`
-                      : 'Allergen'}
-                  </Text>
-                  {isAllergenDropdownOpen ? (
-                    <ChevronUp size={18} color={theme.colors.text} />
-                  ) : (
-                    <ChevronDown size={18} color={theme.colors.text} />
-                  )}
-                </Pressable>
-
-                {/* Active Selected Allergens Tag Chips */}
-                {profile.draft.allergens.length > 0 ? (
-                  <View className="flex-row flex-wrap gap-2 mt-2.5">
-                    {profile.draft.allergens.map((allergen, index) => (
-                      <View
-                        key={`${allergen}-${index}`}
-                        className="flex-row items-center gap-1.5 rounded-badge bg-primary/10 border border-primary/20 px-3 py-1.5"
-                      >
-                        <Text className="text-caption font-sans-semibold text-primary">
-                          {allergen}
-                        </Text>
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Remove ${allergen}`}
-                          onPress={() => profile.actions.removeAllergen(allergen)}
-                          hitSlop={8}
+              {/* Allergen Selection (matching Add Product Compatible Skin Types layout) */}
+              <ProfileFormField label="Allergen" className="mb-1">
+                <View className="rounded-card border border-border bg-card p-3.5 gap-2.5">
+                  {/* Selected Allergen Chips */}
+                  {profile.draft.allergens.length > 0 ? (
+                    <View className="flex-row flex-wrap">
+                      {profile.draft.allergens.map((allergen, index) => (
+                        <View
+                          key={`${allergen}-${index}`}
+                          className="mb-1.5 mr-2 flex-row items-center rounded-badge bg-secondary/15 border border-secondary/30 px-3 py-1"
                         >
-                          <X size={13} color={theme.colors.primary} />
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
+                          <Text className="text-caption font-sans-semibold text-secondary mr-1.5">
+                            {allergen}
+                          </Text>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Remove ${allergen}`}
+                            onPress={() => profile.actions.removeAllergen(allergen)}
+                            hitSlop={6}
+                          >
+                            <X size={12} color={theme.colors.secondary} />
+                          </Pressable>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
 
-                {/* Expanded Allergen Presets & Custom Input */}
-                {isAllergenDropdownOpen ? (
-                  <View className="mt-2.5 p-3 rounded-card border border-border/80 bg-card">
-                    <Text className="text-caption font-sans-medium text-muted mb-2">
-                      Tap common allergens to select or unselect:
-                    </Text>
-                    <View className="flex-row flex-wrap gap-1.5 mb-3">
-                      {(profile.commonAllergies && profile.commonAllergies.length > 0
-                        ? profile.commonAllergies.map((a) => a.name)
-                        : COMMON_ALLERGENS
-                      ).map((item) => {
-                        const isSelected = profile.draft.allergens.includes(item);
-                        return (
+                  {/* Available Unselected Preset Allergens */}
+                  {unselectedAllergens.length > 0 ? (
+                    <View className={profile.draft.allergens.length > 0 ? 'pt-2 border-t border-border/50' : ''}>
+                      <Text className="mb-2 text-caption font-sans text-muted">
+                        Tap to add allergens:
+                      </Text>
+                      <View className="flex-row flex-wrap">
+                        {unselectedAllergens.map((item) => (
                           <Pressable
                             key={item}
                             accessibilityRole="button"
+                            accessibilityLabel={`Add ${item}`}
                             onPress={() => profile.actions.toggleAllergen(item)}
-                            className={`rounded-badge px-2.5 py-1 border ${isSelected
-                              ? 'bg-primary border-primary'
-                              : 'bg-neutral-offwhite border-border/60'
-                              }`}
+                            className="mb-1.5 mr-2 flex-row items-center rounded-badge border border-border bg-background px-3 py-1 active:bg-secondary/10"
                           >
-                            <Text
-                              className={`text-caption ${isSelected
-                                ? 'font-sans-semibold text-neutral-white'
-                                : 'font-sans text-text'
-                                }`}
-                            >
+                            <Plus size={12} color={theme.colors.muted} />
+                            <Text className="ml-1 text-caption font-sans text-text">
                               {item}
                             </Text>
                           </Pressable>
-                        );
-                      })}
+                        ))}
+                      </View>
                     </View>
-
-                    {/* Custom Allergen Input */}
-                    <View className="flex-row items-center gap-2">
-                      <TextInput
-                        accessibilityLabel="Add custom allergen"
-                        value={profile.allergenInput}
-                        onChangeText={profile.actions.setAllergenInput}
-                        onSubmitEditing={() => profile.actions.addAllergen()}
-                        placeholder="Add other allergen..."
-                        placeholderTextColor={theme.colors.muted}
-                        returnKeyType="done"
-                        className="flex-1 rounded-input bg-neutral-offwhite border border-border/60 px-3 py-2 text-body-sm font-sans text-text"
-                      />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Add allergen"
-                        onPress={() => profile.actions.addAllergen()}
-                        className="rounded-button bg-primary px-3.5 py-2 active:opacity-80"
-                      >
-                        <Text className="text-label font-sans-semibold text-neutral-white">
-                          Add
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ) : null}
+                  ) : null}
+                </View>
               </ProfileFormField>
             </Card>
 
-            {/* Change Password Pill Button with Red Outline & Red Lock Icon */}
+            {/* Change Password Pill Button (Unfilled Red Outline & Red Lock Icon) */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Change password"
               onPress={profile.actions.showPasswordUnavailable}
-              className="w-full rounded-full border border-status-error bg-card py-3.5 my-4 -mb-2 flex-row items-center justify-center gap-2 active:opacity-80"
+              className="w-full rounded-full border border-status-error bg-transparent py-3.5 my-4 -mb-2 flex-row items-center justify-center gap-2 active:opacity-80"
             >
               <Lock size={18} color={theme.colors.status.error} />
               <Text className="text-label font-sans-semibold text-status-error">
@@ -484,6 +429,7 @@ export function EditProfilePage() {
               variant="outline"
               size="lg"
               title="Cancel"
+              disabled={profile.isSaving}
               onPress={profile.actions.cancel}
               accessibilityLabel="Cancel"
               className="flex-1 py-3.5"
@@ -493,7 +439,9 @@ export function EditProfilePage() {
             <Button
               variant="primary"
               size="lg"
-              title="Save Changes"
+              title={profile.isSaving ? 'Saving...' : 'Save Changes'}
+              isLoading={profile.isSaving}
+              disabled={profile.isSaving || !profile.isDirty}
               onPress={profile.actions.save}
               accessibilityLabel="Save Changes"
               className="flex-1 py-3.5"

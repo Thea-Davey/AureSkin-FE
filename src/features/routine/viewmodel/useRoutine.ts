@@ -109,7 +109,17 @@ export function useRoutine() {
   const hasNewScanForRoutine = useScanStore((state) => state.hasNewScanForRoutine);
   const dismissedAnalysisIdRef = useRef<string | null>(null);
 
+  const hasExistingRoutine = Boolean(
+    routineQuery.data && (routineQuery.data.steps?.length ?? 0) > 0
+  );
+
   const checkNewAnalysisOnFocus = useCallback(() => {
+    // Do not prompt about a new skin analysis when no existing routine has been generated
+    if (!hasExistingRoutine) {
+      setShowNewAnalysisDialog(false);
+      return;
+    }
+
     const latestAnalysisId = profileQuery.data?.analysis_id;
     const currentRoutineAnalysisId = routineQuery.data?.based_on_analysis_id;
 
@@ -123,7 +133,12 @@ export function useRoutine() {
     ) {
       setShowNewAnalysisDialog(true);
     }
-  }, [hasNewScanForRoutine, profileQuery.data?.analysis_id, routineQuery.data?.based_on_analysis_id]);
+  }, [
+    hasExistingRoutine,
+    hasNewScanForRoutine,
+    profileQuery.data?.analysis_id,
+    routineQuery.data?.based_on_analysis_id,
+  ]);
 
   // Mutations
   const generationMutation = useMutation({

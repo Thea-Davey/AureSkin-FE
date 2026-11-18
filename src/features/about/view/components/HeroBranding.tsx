@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
-import { theme } from '../../../../shared/theme';
+import { View, Text, Image } from 'react-native';
+
+const AURESKIN_LOGO = require('@/assets/images/aureskin-logo.png');
 
 interface HeroBrandingProps {
   version?: string;
@@ -14,11 +14,16 @@ export function HeroBranding({
 }: HeroBrandingProps) {
   return (
     <View className="mb-6 items-center pt-2">
-      <View className="mb-3 h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-        <Sparkles size={36} color={theme.colors.primary} />
-      </View>
-      <Text className="text-display font-heading text-primary">
-        AureSkin
+      <Image
+        source={AURESKIN_LOGO}
+        style={{ width: 90, height: 90 }}
+        className="mb-3"
+        resizeMode="contain"
+        accessibilityLabel="AureSkin Logo"
+      />
+      <Text className="text-display font-heading tracking-wider">
+        <Text className="text-primary">Aure</Text>
+        <Text className="text-secondary">Skin</Text>
       </Text>
       <Text className="mt-1 text-center text-body font-sans-medium text-text">
         Your Personal Skin Health Companion
@@ -32,3 +37,4 @@ export function HeroBranding({
   );
 }
 
+export default HeroBranding;

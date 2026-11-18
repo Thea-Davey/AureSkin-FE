@@ -163,7 +163,7 @@ export function S1HistoryList(props: HistoryListProps) {
           data={props.filteredEntries}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerClassName="grow px-4 pb-12 pt-1"
+          contentContainerClassName="grow px-4 pb-28 pt-1"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={

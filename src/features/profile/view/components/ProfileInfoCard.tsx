@@ -19,12 +19,10 @@ export function ProfileInfoCard({
   isPregnant = false,
   onEditPress,
 }: ProfileInfoCardProps) {
-  const allergenDisplay =
-    allergens.length > 0 ? allergens.join(', ') : 'None';
-
-  const ageDisplay = age
-    ? `${age} yrs • ${ageGroupLabel || 'Adult'}`
-    : 'Not set';
+  const hasAge = Boolean(age !== undefined && age !== null && String(age).trim().length > 0);
+  const ageYearsDisplay = hasAge ? `${age} yrs` : 'Not set';
+  const lifeStageDisplay = hasAge ? (ageGroupLabel || 'Adult') : '';
+  const allergenCount = allergens.length;
 
   const pregnancyDisplay = isPregnant ? 'Pregnant' : 'Not Pregnant';
 
@@ -44,10 +42,10 @@ export function ProfileInfoCard({
         activeOpacity={0.7}
         onPress={onEditPress}
         accessibilityRole="button"
-        accessibilityLabel={`Age: ${ageDisplay}`}
+        accessibilityLabel={hasAge ? `Age and Life Stage: ${ageYearsDisplay}, ${lifeStageDisplay}` : 'Age and Life Stage: Not set'}
         className="rounded-card border border-border bg-card p-3.5 mb-3 flex-row items-center justify-between"
       >
-        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3">
+        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3 shrink-0">
           <CalendarDays size={20} color={theme.colors.card} />
         </View>
         <View className="flex-1 mr-2">
@@ -56,9 +54,16 @@ export function ProfileInfoCard({
             Helps tailor skin analysis and product recommendations.
           </Text>
         </View>
-        <Text className="text-body-sm font-sans-bold text-text mr-1">
-          {ageDisplay}
-        </Text>
+        <View className="items-end mr-1 shrink-0">
+          <Text className="text-body-sm font-sans-bold text-text">
+            {ageYearsDisplay}
+          </Text>
+          {lifeStageDisplay ? (
+            <Text className="text-caption font-sans-medium text-muted mt-0.5">
+              {lifeStageDisplay}
+            </Text>
+          ) : null}
+        </View>
         <ChevronRight size={18} color={theme.colors.muted} />
       </TouchableOpacity>
 
@@ -72,7 +77,7 @@ export function ProfileInfoCard({
         accessibilityLabel={`Pregnancy Status: ${pregnancyDisplay}`}
         className="rounded-card border border-border bg-card p-3.5 mb-3 flex-row items-center justify-between"
       >
-        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3">
+        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3 shrink-0">
           <Baby size={20} color={theme.colors.card} />
         </View>
         <View className="flex-1 mr-2">
@@ -81,7 +86,7 @@ export function ProfileInfoCard({
             Filters pregnancy-contraindicated active ingredients.
           </Text>
         </View>
-        <Text className="text-body-sm font-sans-bold text-text mr-1">
+        <Text className="text-body-sm font-sans-bold text-text mr-1 shrink-0">
           {pregnancyDisplay}
         </Text>
         <ChevronRight size={18} color={theme.colors.muted} />
@@ -94,10 +99,10 @@ export function ProfileInfoCard({
         activeOpacity={0.7}
         onPress={onEditPress}
         accessibilityRole="button"
-        accessibilityLabel={`Allergens: ${allergenDisplay}`}
+        accessibilityLabel={`Allergens: ${allergenCount} listed`}
         className="rounded-card border border-border bg-card p-3.5 flex-row items-center justify-between"
       >
-        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3">
+        <View className="w-11 h-11 rounded-full bg-primary items-center justify-center mr-3 shrink-0">
           <Wheat size={20} color={theme.colors.card} />
         </View>
         <View className="flex-1 mr-2">
@@ -106,9 +111,11 @@ export function ProfileInfoCard({
             List any ingredients you are allergic or sensitive to.
           </Text>
         </View>
-        <Text className="text-body-sm font-sans-bold text-text mr-1">
-          {allergenDisplay}
-        </Text>
+        <View className="rounded-badge bg-primary/15 px-2.5 py-0.5 mr-1 shrink-0">
+          <Text className="text-body-sm font-sans-bold text-primary">
+            {allergenCount}
+          </Text>
+        </View>
         <ChevronRight size={18} color={theme.colors.muted} />
       </TouchableOpacity>
     </Card>

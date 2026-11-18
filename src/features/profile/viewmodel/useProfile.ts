@@ -61,11 +61,13 @@ export function useProfile() {
       ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)
       : 'User';
 
+    const displayNameParts = displayName.trim().split(/\s+/).filter(Boolean);
+
     const firstName =
       typeof metadata.first_name === 'string' && metadata.first_name.trim()
         ? metadata.first_name.trim()
-        : displayName
-        ? displayName.split(' ')[0]
+        : displayNameParts.length > 0
+        ? displayNameParts[0]
         : mockMode
         ? MOCK_USER_PROFILE.firstName
         : fallbackName;
@@ -73,6 +75,8 @@ export function useProfile() {
     const lastName =
       typeof metadata.last_name === 'string' && metadata.last_name.trim()
         ? metadata.last_name.trim()
+        : displayNameParts.length > 1
+        ? displayNameParts.slice(1).join(' ')
         : mockMode
         ? MOCK_USER_PROFILE.lastName
         : '';

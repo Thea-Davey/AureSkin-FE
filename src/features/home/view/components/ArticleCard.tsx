@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { ChevronRight } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
@@ -11,12 +11,24 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   const handleOpenArticle = async () => {
-    if (!article.url) return;
+    if (!article.url || !article.url.trim()) return;
+
+    let targetUrl = article.url.trim();
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = `https://${targetUrl}`;
+    }
+
     try {
-      await WebBrowser.openBrowserAsync(article.url);
+      await WebBrowser.openBrowserAsync(targetUrl);
     } catch {
-      // Graceful fallback if in-app browser fails
+      try {
+        await Linking.openURL(targetUrl);
+      } catch (err) {
+        console.warn('[ArticleCard] Failed to open article URL:', err);
+      }
     }
   };
 
@@ -28,7 +40,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
       className="p-4 mb-4"
     >
       {/* Top Row: Title + "See Article" Link */}
-      <View className="flex-row items-center justify-between mb-2.5">
+      <View className="flex-row items-center justify-between mb-2">
         <Text
           numberOfLines={2}
           className="text-body-sm font-sans-bold text-text flex-1 pr-3"
@@ -43,19 +55,35 @@ export function ArticleCard({ article }: ArticleCardProps) {
         </View>
       </View>
 
+      {/* Summary Snippet if available */}
+      {article.summary ? (
+        <Text
+          numberOfLines={2}
+          className="text-caption font-sans text-muted mb-2.5 leading-4"
+        >
+          {article.summary}
+        </Text>
+      ) : null}
+
       {/* Wide Banner Image Below */}
       <View className="w-full h-[140px] rounded-button overflow-hidden bg-background">
-        {article.image_url ? (
+        {article.image_url && !imageError ? (
           <Image
             source={{ uri: article.image_url }}
             className="w-full h-full"
             resizeMode="cover"
+            onError={() => setImageError(true)}
           />
         ) : (
-          <View className="w-full h-full items-center justify-center bg-background">
-            <Text className="text-caption font-sans-medium text-primary">
-              Skincare Insights
+          <View className="w-full h-full items-center justify-center bg-secondary/15 px-4">
+            <Text className="text-body-sm font-sans-bold text-primary text-center">
+              {article.category || 'Skincare Insights'}
             </Text>
+            {article.source ? (
+              <Text className="text-caption font-sans text-muted mt-1 text-center">
+                {article.source}
+              </Text>
+            ) : null}
           </View>
         )}
       </View>

@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseButton } from '../../../shared/components/CloseButton';
 import { PositiveNote } from '../../../shared/components/PositiveNote';
 import { Button } from '../../../shared/components/Button';
-import { theme } from '../../../shared/theme';
 import { useProfile } from '../viewmodel/useProfile';
 import { SkinOverviewCard } from './components/SkinOverviewCard';
 import { ProfileInfoCard } from './components/ProfileInfoCard';
@@ -14,6 +13,7 @@ export default function ProfilePage() {
   const { profile, actions } = useProfile();
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, 24);
+  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim() || 'User';
 
   return (
     <View className="flex-1 bg-primary">
@@ -56,7 +56,7 @@ export default function ProfilePage() {
           {/* Greeting & Edit Profile Outer Container Wrapper */}
           <View className="flex-1 pb-1">
             <Text className="text-h1 font-sans-bold text-neutral-white">
-              {profile.firstName || 'User'}
+              {fullName}
             </Text>
 
             {/* Outer container wrapper for Edit Profile button */}
@@ -69,12 +69,8 @@ export default function ProfilePage() {
                 onPress={actions.openEditProfile}
                 accessibilityLabel="Edit Profile"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                className="bg-white/25 border border-white/30 px-4 py-1.5 active:opacity-70"
-                textClassName="text-caption font-sans-medium text-neutral-white"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                  borderColor: 'rgba(255, 255, 255, 0.3)',
-                }}
+                className="bg-neutral-white/25 border border-neutral-white/30 px-4 py-1.5 active:opacity-70"
+                textClassName="text-caption font-sans-medium text-white"
               />
             </View>
           </View>
@@ -83,14 +79,8 @@ export default function ProfilePage() {
 
       {/* OUTER BACKGROUND CONTAINER WITH CURVED TOP CORNERS */}
       <View
-        style={{
-          borderTopLeftRadius: 26,
-          borderTopRightRadius: 26,
-          overflow: 'hidden',
-          backgroundColor: theme.colors.background,
-          marginTop: -20
-        }}
-        className="flex-1 bg-background rounded-t-[32px] z-10"
+        style={{ marginTop: -20 }}
+        className="flex-1 overflow-hidden bg-background rounded-t-card z-10"
       >
         <ScrollView
           className="flex-1 px-4"

@@ -72,18 +72,20 @@ export async function fetchUserSkinOverview(): Promise<UserSkinOverview> {
 }
 
 /**
- * Update authenticated user's profile metadata in Supabase and backend.
+ * Update authenticated user's profile metadata in Supabase and backend concurrently.
  */
-export async function updateUserProfile(draft: EditProfileDraft): Promise<boolean> {
+export async function updateUserProfile(
+  draft: EditProfileDraft
+): Promise<{ success: boolean; updatedUser?: any }> {
   if (isMockEnabled('profile')) {
-    return true;
+    return { success: true };
   }
 
   try {
     const displayName = `${draft.firstName} ${draft.lastName}`.trim();
 
-    // 1. Update Supabase Auth user metadata
-    const { error: supaErr } = await supabase.auth.updateUser({
+    // 1. Run Supabase Auth update and Backend API update concurrently in parallel
+    const authPromise = supabase.auth.updateUser({
       data: {
         first_name: draft.firstName,
         last_name: draft.lastName,
@@ -97,31 +99,43 @@ export async function updateUserProfile(draft: EditProfileDraft): Promise<boolea
       },
     });
 
-    if (supaErr) {
-      console.warn('Supabase updateUser error:', supaErr);
+    const apiPromise = api.put('/profile', {
+      first_name: draft.firstName || undefined,
+      last_name: draft.lastName || undefined,
+      display_name: displayName || undefined,
+      date_of_birth: draft.dateOfBirth || undefined,
+      gender: draft.gender || undefined,
+      phone_number: draft.phoneNumber || undefined,
+      allergens: draft.allergens,
+      is_pregnant: draft.isPregnant,
+      avatar_url: draft.avatarUri || undefined,
+    });
+
+    const [supaRes, apiRes] = await Promise.allSettled([authPromise, apiPromise]);
+
+    let updatedUser: any = null;
+    if (supaRes.status === 'fulfilled') {
+      if (supaRes.value.error) {
+        console.warn('Supabase updateUser error:', supaRes.value.error);
+      } else {
+        updatedUser = supaRes.value.data.user;
+      }
+    } else {
+      console.warn('Supabase updateUser rejected:', supaRes.reason);
     }
 
-    // 2. Sync with backend PUT /profile
-    try {
-      await api.put('/profile', {
-        first_name: draft.firstName || undefined,
-        last_name: draft.lastName || undefined,
-        display_name: displayName || undefined,
-        date_of_birth: draft.dateOfBirth || undefined,
-        gender: draft.gender || undefined,
-        phone_number: draft.phoneNumber || undefined,
-        allergens: draft.allergens,
-        is_pregnant: draft.isPregnant,
-        avatar_url: draft.avatarUri || undefined,
-      });
-    } catch (apiErr) {
-      console.warn('Backend PUT /profile error:', apiErr);
+    if (apiRes.status === 'rejected') {
+      console.warn('Backend PUT /profile rejected:', apiRes.reason);
     }
 
-    return true;
+    const success =
+      (supaRes.status === 'fulfilled' && !supaRes.value.error) ||
+      apiRes.status === 'fulfilled';
+
+    return { success, updatedUser };
   } catch (err) {
     console.warn('updateUserProfile failed:', err);
-    return false;
+    return { success: false };
   }
 }
 
@@ -156,6 +170,42 @@ export async function fetchCommonAllergies(): Promise<CommonAllergy[]> {
       name,
       category: 'General',
     }));
+  }
+}
+
+export interface ClinicalFilterItem {
+  ingredient_id: string;
+  name: string;
+  filter_type: 'allergen' | 'pregnancy' | 'age' | string;
+  reason: string;
+  details?: string;
+}
+
+/**
+ * Fetch all catalog ingredients filtered by the authenticated user's clinical profile
+ * (allergens, pregnancy status, and age group) from GET /profile/clinical-filters.
+ */
+export async function fetchUserClinicalFilters(): Promise<ClinicalFilterItem[]> {
+  if (isMockEnabled('profile')) {
+    return [];
+  }
+
+  try {
+    const res = await api.get('/profile/clinical-filters');
+    const items = res.data?.data?.filtered_ingredients;
+    if (Array.isArray(items)) {
+      return items.map((item: Record<string, unknown>) => ({
+        ingredient_id: String(item.ingredient_id ?? item.id ?? ''),
+        name: String(item.name ?? ''),
+        filter_type: String(item.filter_type ?? 'allergen'),
+        reason: String(item.reason ?? ''),
+        details: typeof item.details === 'string' ? item.details : undefined,
+      })).filter((item) => Boolean(item.ingredient_id || item.name));
+    }
+    return [];
+  } catch (err) {
+    console.warn('fetchUserClinicalFilters error:', err);
+    return [];
   }
 }
 

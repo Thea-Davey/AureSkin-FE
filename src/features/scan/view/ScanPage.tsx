@@ -1,12 +1,12 @@
 import React from 'react';
-import { ScanOverlay } from './ScanOverlay';
+import { ScanSetupPage } from './ScanSetupPage';
 
 /**
  * ScanPage layout shell component.
- * Re-exports the ScanOverlay component for modular routing.
+ * Mounts the Set Up Your Skin Analysis flow directly.
  */
 export const ScanPage: React.FC = () => {
-  return <ScanOverlay />;
+  return <ScanSetupPage />;
 };
 
 export default ScanPage;

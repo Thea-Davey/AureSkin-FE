@@ -12,15 +12,44 @@ export interface CatalogMetadata {
 }
 
 const STORAGE_KEYS = {
-  CATALOG_INGREDIENTS: '@aureskin/catalog/ingredients_v1',
-  CATALOG_PRODUCTS: '@aureskin/catalog/products_v1',
-  CATALOG_ARTICLES: '@aureskin/catalog/articles_v1',
-  CATALOG_METADATA: '@aureskin/catalog/metadata_v1',
-  USER_ROUTINE: (userId: string) => `@aureskin/user/${userId}/routine_v1`,
-  USER_HISTORY: (userId: string) => `@aureskin/user/${userId}/history_v1`,
+  CATALOG_INGREDIENTS: '@aureskin/catalog/ingredients_v2',
+  CATALOG_PRODUCTS: '@aureskin/catalog/products_v2',
+  CATALOG_ARTICLES: '@aureskin/catalog/articles_v2',
+  CATALOG_METADATA: '@aureskin/catalog/metadata_v2',
+  USER_ROUTINE: (userId: string) => `@aureskin/user/${userId}/routine_v2`,
+  USER_HISTORY: (userId: string) => `@aureskin/user/${userId}/history_v2`,
 } as const;
 
-export const CURRENT_CATALOG_VERSION = 1;
+const LEGACY_V1_KEYS = [
+  '@aureskin/catalog/ingredients_v1',
+  '@aureskin/catalog/products_v1',
+  '@aureskin/catalog/articles_v1',
+  '@aureskin/catalog/metadata_v1',
+];
+
+export const CURRENT_CATALOG_VERSION = 2;
+
+const LEGACY_MOCK_ARTICLE_IDS = new Set([
+  '5f90dc32-2a19-4bfb-996f-b1108215a8',
+  '6ea71df2-90e5-4dba-88fa-fce37f76cc',
+  'a44c464e-81f4-4008-b20c-7f97fe632',
+  'f83fcc09-b01d-4552-ba8c-5ebca7a65',
+]);
+
+/**
+ * Checks if an item ID corresponds to legacy mock fixtures
+ * (e.g. 'ingredient-alanine', 'product-glycolic-toning-solution', 'mock-*', legacy mock articles).
+ */
+export function isMockCatalogItemId(id?: string | null): boolean {
+  if (!id) return false;
+  const lower = id.toLowerCase();
+  return (
+    lower.startsWith('ingredient-') ||
+    lower.startsWith('product-') ||
+    lower.startsWith('mock-') ||
+    LEGACY_MOCK_ARTICLE_IDS.has(lower)
+  );
+}
 
 /**
  * Safely parse JSON from AsyncStorage with a fallback.
@@ -44,7 +73,13 @@ export async function getCachedIngredients(): Promise<Ingredient[] | null> {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.CATALOG_INGREDIENTS);
     if (!raw) return null;
     const parsed = safeJsonParse<Ingredient[] | null>(raw, null);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    // Discard immediately if legacy mock data was stored
+    if (parsed.some((item) => isMockCatalogItemId(item?.id))) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.CATALOG_INGREDIENTS).catch(() => {});
+      return null;
+    }
+    return parsed;
   } catch (err) {
     console.warn('[CatalogStorage] Error reading cached ingredients:', err);
     return null;
@@ -53,7 +88,9 @@ export async function getCachedIngredients(): Promise<Ingredient[] | null> {
 
 export async function saveCachedIngredients(items: Ingredient[]): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEYS.CATALOG_INGREDIENTS, JSON.stringify(items));
+    // Only persist authentic database items, never mock items
+    const cleanItems = items.filter((item) => !isMockCatalogItemId(item?.id));
+    await AsyncStorage.setItem(STORAGE_KEYS.CATALOG_INGREDIENTS, JSON.stringify(cleanItems));
   } catch (err) {
     console.warn('[CatalogStorage] Error writing ingredients to disk:', err);
   }
@@ -68,7 +105,13 @@ export async function getCachedProducts(): Promise<Product[] | null> {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.CATALOG_PRODUCTS);
     if (!raw) return null;
     const parsed = safeJsonParse<Product[] | null>(raw, null);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    // Discard immediately if legacy mock data was stored
+    if (parsed.some((item) => isMockCatalogItemId(item?.id))) {
+      await AsyncStorage.removeItem(STORAGE_KEYS.CATALOG_PRODUCTS).catch(() => {});
+      return null;
+    }
+    return parsed;
   } catch (err) {
     console.warn('[CatalogStorage] Error reading cached products:', err);
     return null;
@@ -77,7 +120,9 @@ export async function getCachedProducts(): Promise<Product[] | null> {
 
 export async function saveCachedProducts(items: Product[]): Promise<void> {
   try {
-    await AsyncStorage.setItem(STORAGE_KEYS.CATALOG_PRODUCTS, JSON.stringify(items));
+    // Only persist authentic database items, never mock items
+    const cleanItems = items.filter((item) => !isMockCatalogItemId(item?.id));
+    await AsyncStorage.setItem(STORAGE_KEYS.CATALOG_PRODUCTS, JSON.stringify(cleanItems));
   } catch (err) {
     console.warn('[CatalogStorage] Error writing products to disk:', err);
   }
@@ -92,7 +137,9 @@ export async function getCachedArticles(): Promise<Article[] | null> {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.CATALOG_ARTICLES);
     if (!raw) return null;
     const parsed = safeJsonParse<Article[] | null>(raw, null);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    const cleaned = parsed.filter((item) => !isMockCatalogItemId(item?.id));
+    return cleaned.length > 0 ? cleaned : null;
   } catch (err) {
     console.warn('[CatalogStorage] Error reading cached articles:', err);
     return null;
@@ -144,7 +191,19 @@ export async function hasValidLocalCatalog(): Promise<boolean> {
       getCachedIngredients(),
       getCachedProducts(),
     ]);
-    return !!(ingredients && ingredients.length > 0 && products && products.length > 0);
+    if (!ingredients || ingredients.length === 0 || !products || products.length === 0) {
+      return false;
+    }
+    // Guard against mock data pollution in persistent cache
+    const hasMock =
+      ingredients.some((item) => isMockCatalogItemId(item?.id)) ||
+      products.some((item) => isMockCatalogItemId(item?.id));
+    if (hasMock) {
+      console.warn('[CatalogStorage] Detected legacy mock items in local cache. Invalidating cache.');
+      await clearAllCatalogCache();
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -211,7 +270,7 @@ export async function saveCachedHistory<T = unknown>(
 }
 
 /**
- * Clears all cached catalog data (used for debugging or explicit cache invalidation).
+ * Clears all cached catalog data (scrubs both v2 and legacy v1 keys).
  */
 export async function clearAllCatalogCache(): Promise<void> {
   try {
@@ -220,6 +279,7 @@ export async function clearAllCatalogCache(): Promise<void> {
       STORAGE_KEYS.CATALOG_PRODUCTS,
       STORAGE_KEYS.CATALOG_ARTICLES,
       STORAGE_KEYS.CATALOG_METADATA,
+      ...LEGACY_V1_KEYS,
     ]);
   } catch (err) {
     console.warn('[CatalogStorage] Error clearing catalog cache:', err);

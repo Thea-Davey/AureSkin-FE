@@ -16,8 +16,14 @@ export interface DiagnosticItem {
   statusText: string;
 }
 
+export interface SupportContact {
+  name: string;
+  email: string;
+}
+
 export interface SupportChannel {
   email: string;
+  contacts?: SupportContact[];
   responseTime: string;
   faqHint: string;
 }

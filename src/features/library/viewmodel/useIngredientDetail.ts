@@ -5,7 +5,9 @@ import { useAuthStore } from '../../../shared/store/authStore';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
 import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
 import { fetchHistoryPage } from '../../history/model/history_api';
+import { fetchUserClinicalFilters } from '../../profile/model/profile_api';
 import {
+  ClinicalFilterWarning,
   Ingredient,
   IngredientCompatibilityStatus,
 } from '../model/library_types';
@@ -18,6 +20,7 @@ interface UseIngredientDetailResult {
   isLoading: boolean;
   error: string | null;
   compatibilityStatus: IngredientCompatibilityStatus;
+  clinicalFilterWarning: ClinicalFilterWarning | null;
   compatibilityError: string | null;
   isCompatibilityLoading: boolean;
   isFavorite: boolean;
@@ -79,7 +82,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
   });
 
   const latestAnalysisQuery = useQuery({
-    queryKey: ['library', 'ingredient-detail', 'latest-analysis'],
+    queryKey: ['library', 'ingredient-detail', 'latest-analysis', userId ?? 'anonymous'],
     queryFn: async () => {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
@@ -91,6 +94,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
     queryKey: [
       'library',
       'ingredient-compatibility',
+      userId ?? 'anonymous',
       latestAnalysisQuery.data?.id,
     ],
     queryFn: async () => {
@@ -107,6 +111,13 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
     },
     enabled: Boolean(latestAnalysisQuery.data?.id),
     staleTime: 1000 * 60 * 30, // 30 minutes
+  });
+
+  const clinicalFiltersQuery = useQuery({
+    queryKey: ['profile', 'clinical-filters', userId ?? 'anonymous'],
+    queryFn: fetchUserClinicalFilters,
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 15,
   });
 
   const favoritesQuery = useQuery({
@@ -149,9 +160,47 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
     },
   });
 
+  const clinicalFilterWarning = useMemo<ClinicalFilterWarning | null>(() => {
+    const ingredient = ingredientQuery.data;
+    const targetId = (ingredient?.id ?? ingredientId).trim();
+    const targetName = (ingredient?.name ?? '').toLowerCase().trim();
+    const combined = [
+      ...(clinicalFiltersQuery.data ?? []),
+      ...(compatibilityQuery.data?.filtered_ingredients ?? []),
+    ];
+
+    for (const item of combined) {
+      const fid = String(item.ingredient_id || ('id' in item && item.id ? item.id : '')).trim();
+      const fname = String(item.name || '').toLowerCase().trim();
+      const matchesId = Boolean(fid && targetId && fid === targetId);
+      const matchesName = Boolean(fname && targetName && fname === targetName);
+      if (matchesId || matchesName) {
+        return {
+          ingredientId: fid || targetId,
+          ingredientName: item.name || ingredient?.name || 'This ingredient',
+          filterType: item.filter_type || 'allergen',
+          reason: item.reason || 'Flagged by your profile clinical filters.',
+          details: item.details,
+        };
+      }
+    }
+
+    return null;
+  }, [
+    clinicalFiltersQuery.data,
+    compatibilityQuery.data?.filtered_ingredients,
+    ingredientId,
+    ingredientQuery.data,
+  ]);
+
   const savedFavoriteIds = favoritesQuery.data ?? EMPTY_FAVORITES;
-  const isFavorite = savedFavoriteIds.includes(ingredientId);
+  const isFavorite = savedFavoriteIds.includes(ingredientQuery.data?.id ?? ingredientId);
   const compatibilityStatus = useMemo<IngredientCompatibilityStatus>(() => {
+    // Clinical filters (allergen, pregnancy, age) always take precedence
+    if (clinicalFilterWarning) {
+      return 'review';
+    }
+
     const ingredient = ingredientQuery.data;
 
     // Check against loaded compatibility data
@@ -160,9 +209,11 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
     );
 
     if (compatibleList) {
+      const resolvedId = ingredient?.id ?? ingredientId;
       const isMatch = compatibleList.some(
         (item) =>
-          item.id === ingredientId ||
+          item.id === resolvedId ||
+          item.ingredient_id === resolvedId ||
           (ingredient?.name && item.name.toLowerCase() === ingredient.name.toLowerCase())
       );
       if (isMatch) return 'compatible';
@@ -180,6 +231,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
 
     return 'not_listed';
   }, [
+    clinicalFilterWarning,
     compatibilityQuery.data,
     compatibilityQuery.isError,
     compatibilityQuery.isLoading,
@@ -222,6 +274,7 @@ export function useIngredientDetail(ingredientId: string): UseIngredientDetailRe
       ? ingredientQuery.error.message
       : null,
     compatibilityStatus,
+    clinicalFilterWarning,
     compatibilityError: latestAnalysisQuery.error instanceof Error
       ? latestAnalysisQuery.error.message
       : compatibilityQuery.error instanceof Error

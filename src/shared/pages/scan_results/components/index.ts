@@ -5,4 +5,5 @@ export { SkinTypeBanner } from './SkinTypeBanner';
 export { ConditionDetailCard } from './ConditionDetailCard';
 export { ConditionsCard } from './ConditionsCard';
 export { HistorySavedBanner } from './HistorySavedBanner';
+export { SaveFooter } from './SaveFooter';
 

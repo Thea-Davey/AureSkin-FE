@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../../shared/store/authStore';
@@ -76,6 +77,7 @@ function getInitialDraft(
 
 export function useEditProfile() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [initialDraft] = useState(() => getInitialDraft(user));
   const [draft, setDraft] = useState<EditProfileDraft>(initialDraft);
@@ -85,6 +87,7 @@ export function useEditProfile() {
   const [isGenderPickerOpen, setIsGenderPickerOpen] = useState(false);
   const [isAllergenModalOpen, setIsAllergenModalOpen] = useState(false);
   const [isPickingAvatar, setIsPickingAvatar] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
   // Fetch dynamic standard allergies from Supabase
@@ -247,42 +250,49 @@ export function useEditProfile() {
   }, [isDirty, promptDiscard, returnToProfile]);
 
   const save = useCallback(async () => {
-    if (!isDirty) {
+    if (!isDirty || isSaving) {
       return;
     }
 
-    const success = await updateUserProfile(draft);
-    if (!success) {
+    setIsSaving(true);
+    try {
+      const { success, updatedUser } = await updateUserProfile(draft);
+      if (!success) {
+        Toast.show({
+          type: 'error',
+          text1: 'Update Failed',
+          text2: 'Could not save profile changes. Please try again.',
+          position: 'bottom',
+        });
+        return;
+      }
+
+      // Immediately sync active auth store with returned user metadata
+      if (updatedUser) {
+        useAuthStore.setState((state) => ({
+          ...state,
+          user: updatedUser,
+        }));
+      }
+
+      // Background invalidate queries without blocking navigation
+      void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+      void queryClient.invalidateQueries({ queryKey: ['scan'] });
+
       Toast.show({
-        type: 'error',
-        text1: 'Update Failed',
-        text2: 'Could not save profile changes. Please try again.',
+        type: 'success',
+        text1: 'Profile Updated',
+        text2: 'Your profile changes have been applied.',
         position: 'bottom',
       });
-      return;
-    }
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        useAuthStore.getState().setSession(session);
-      }
-    } catch {
-      // ignore
-    }
-
-    Toast.show({
-      type: 'success',
-      text1: 'Profile Updated',
-      text2: 'Your profile changes have been applied.',
-      position: 'bottom',
-    });
-
-    // Smooth return to profile
-    setTimeout(() => {
+      // Immediate transition back to ProfilePage
       returnToProfile();
-    }, 600);
-  }, [isDirty, draft, returnToProfile]);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isDirty, isSaving, draft, returnToProfile, queryClient]);
 
   return {
     draft,
@@ -291,6 +301,7 @@ export function useEditProfile() {
     computedAge,
     computedLifeStage,
     isDirty,
+    isSaving,
     isPickingAvatar,
     saveNotice,
     isDatePickerOpen,

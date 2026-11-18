@@ -3,11 +3,12 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { getCachedIngredients } from '../../../shared/storage/catalogStorage';
-import { fetchIngredients } from '../model/library_api';
+import { fetchAllIngredients, fetchIngredients } from '../model/library_api';
 import { Ingredient, IngredientSection } from '../model/library_types';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
 import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
 import { fetchHistoryPage } from '../../history/model/history_api';
+import { fetchUserClinicalFilters } from '../../profile/model/profile_api';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -18,6 +19,7 @@ export interface UseIngredientsResult {
   sections: IngredientSection[];
   favoriteIds: string[];
   compatibleIngredientIds: string[];
+  filteredIngredientIds: string[];
   searchQuery: string;
   isLoading: boolean;
   isRefreshing: boolean;
@@ -118,6 +120,18 @@ export function useIngredients(): UseIngredientsResult {
     staleTime: 1000 * 60 * 60 * 24, // 24 hours (instant cache access across tabs)
   });
 
+  const allIngredientsQuery = useQuery({
+    queryKey: ['library', 'all-ingredients'],
+    queryFn: async () => {
+      const cached = await getCachedIngredients();
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+      return await fetchAllIngredients();
+    },
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const favoritesQuery = useQuery({
     queryKey: favoritesQueryKey,
     queryFn: () => loadFavorites(storageKey),
@@ -127,7 +141,7 @@ export function useIngredients(): UseIngredientsResult {
   const favoriteIds = favoritesQuery.data ?? EMPTY_FAVORITES;
 
   const latestAnalysisQuery = useQuery({
-    queryKey: ['library', 'ingredient-detail', 'latest-analysis'],
+    queryKey: ['library', 'ingredient-detail', 'latest-analysis', userId ?? 'anonymous'],
     queryFn: async () => {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
@@ -139,6 +153,7 @@ export function useIngredients(): UseIngredientsResult {
     queryKey: [
       'library',
       'ingredient-compatibility',
+      userId ?? 'anonymous',
       latestAnalysisQuery.data?.id,
     ],
     queryFn: async () => {
@@ -155,6 +170,13 @@ export function useIngredients(): UseIngredientsResult {
     },
     enabled: Boolean(latestAnalysisQuery.data?.id),
     staleTime: 1000 * 60 * 30,
+  });
+
+  const clinicalFiltersQuery = useQuery({
+    queryKey: ['profile', 'clinical-filters', userId ?? 'anonymous'],
+    queryFn: fetchUserClinicalFilters,
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 15,
   });
 
   const favoriteMutation = useMutation<
@@ -201,21 +223,21 @@ export function useIngredients(): UseIngredientsResult {
     setIsRefreshing(true);
     try {
       await Promise.race([
-        query.refetch(),
+        Promise.all([query.refetch(), allIngredientsQuery.refetch()]),
         new Promise((resolve) => setTimeout(resolve, 2500)),
       ]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [query]);
+  }, [allIngredientsQuery, query]);
 
   const retry = useCallback(async () => {
     if (query.isFetchNextPageError && query.hasNextPage) {
       await query.fetchNextPage();
       return;
     }
-    await query.refetch();
-  }, [query]);
+    await Promise.all([query.refetch(), allIngredientsQuery.refetch()]);
+  }, [allIngredientsQuery, query]);
 
   const loadNextPage = useCallback(() => {
     if (query.hasNextPage && !query.isFetchingNextPage) {
@@ -223,10 +245,47 @@ export function useIngredients(): UseIngredientsResult {
     }
   }, [query]);
 
-  const ingredients = useMemo(
+  const paginatedIngredients = useMemo(
     () => query.data?.pages.flatMap((page) => page.items) ?? [],
     [query.data]
   );
+
+  const ingredients = useMemo(() => {
+    // When not filtering with search query, use all catalog ingredients so all letters A-Z are present
+    if (!debouncedQuery && allIngredientsQuery.data && allIngredientsQuery.data.length > 0) {
+      return allIngredientsQuery.data;
+    }
+    return paginatedIngredients;
+  }, [allIngredientsQuery.data, debouncedQuery, paginatedIngredients]);
+
+  const { filteredIdSet, filteredNameSet, filteredIngredientIds } = useMemo(() => {
+    const idSet = new Set<string>();
+    const nameSet = new Set<string>();
+    const combined = [
+      ...(clinicalFiltersQuery.data ?? []),
+      ...(compatibilityQuery.data?.filtered_ingredients ?? []),
+    ];
+
+    for (const item of combined) {
+      const fid = String(item.ingredient_id || ('id' in item && item.id ? item.id : '')).trim();
+      const fname = String(item.name || '').toLowerCase().trim();
+      if (fid) idSet.add(fid);
+      if (fname) nameSet.add(fname);
+    }
+
+    const matchedIds = new Set<string>(idSet);
+    for (const ing of ingredients) {
+      if (idSet.has(ing.id) || nameSet.has(ing.name.toLowerCase().trim())) {
+        matchedIds.add(ing.id);
+      }
+    }
+
+    return {
+      filteredIdSet: idSet,
+      filteredNameSet: nameSet,
+      filteredIngredientIds: Array.from(matchedIds),
+    };
+  }, [clinicalFiltersQuery.data, compatibilityQuery.data?.filtered_ingredients, ingredients]);
 
   const compatibleIngredientIds = useMemo<string[]>(() => {
     const list = compatibilityQuery.data?.compatible_ingredients ?? (
@@ -238,21 +297,30 @@ export function useIngredients(): UseIngredientsResult {
 
     const ids = new Set<string>();
     const names = new Set<string>();
-    list.forEach((item: any) => {
-      const id = item.id || item.ingredient_id;
-      if (id) ids.add(String(id));
-      if (item.name) names.add(String(item.name).toLowerCase().trim());
+    list.forEach((item) => {
+      const id = String(item.id || item.ingredient_id || '').trim();
+      const nameLower = String(item.name || '').toLowerCase().trim();
+      if ((id && filteredIdSet.has(id)) || (nameLower && filteredNameSet.has(nameLower))) {
+        return;
+      }
+      if (id) ids.add(id);
+      if (nameLower) names.add(nameLower);
     });
 
-    // Cross-match loaded ingredients by name
+    // Cross-match loaded ingredients by name while excluding clinically filtered items
     ingredients.forEach((ing) => {
-      if (names.has(ing.name.toLowerCase().trim())) {
+      const lower = ing.name.toLowerCase().trim();
+      if (filteredIdSet.has(ing.id) || filteredNameSet.has(lower)) {
+        ids.delete(ing.id);
+        return;
+      }
+      if (names.has(lower)) {
         ids.add(ing.id);
       }
     });
 
     return Array.from(ids);
-  }, [compatibilityQuery.data, ingredients]);
+  }, [compatibilityQuery.data, ingredients, filteredIdSet, filteredNameSet]);
 
   const sections = useMemo<IngredientSection[]>(() => {
     if (!ingredients.length) return [];
@@ -280,8 +348,11 @@ export function useIngredients(): UseIngredientsResult {
     sections,
     favoriteIds,
     compatibleIngredientIds,
+    filteredIngredientIds,
     searchQuery,
-    isLoading: query.isLoading,
+    isLoading: !debouncedQuery
+      ? (!allIngredientsQuery.data && allIngredientsQuery.isLoading)
+      : query.isLoading,
     isRefreshing,
     isFetchingNextPage: query.isFetchingNextPage,
     isFetchNextPageError: query.isFetchNextPageError,

@@ -1,6 +1,11 @@
 import { api } from '../../../shared/services/api';
 import { isMockEnabled } from '@/shared/config/mockConfig';
 import { supabase } from '../../../shared/services/supabase';
+import {
+  getCachedArticles,
+  saveCachedArticles,
+  isMockCatalogItemId,
+} from '../../../shared/storage/catalogStorage';
 import { LatestAnalysis, RoutineStep, Article } from './home_types';
 import { MOCK_LATEST_ANALYSIS, MOCK_ROUTINE_STEPS, MOCK_ARTICLES } from './home_mock';
 
@@ -84,10 +89,99 @@ export async function fetchTodayRoutine(timePeriod: string): Promise<RoutineStep
 }
 
 /**
- * Fetch curated skincare articles (authentic educational guides).
- * Displays curated articles in both live and mock modes.
+ * Fetch skincare articles from Supabase.
+ * Supports both 'articles' and 'article' table names, with flexible column mappings,
+ * ensuring articles created or updated in Supabase are displayed directly to users.
  */
 export async function fetchArticles(): Promise<Article[]> {
-  // Curated articles are the actual live educational articles for AureSkin
-  return MOCK_ARTICLES;
+  if (isMockEnabled('home')) {
+    return MOCK_ARTICLES;
+  }
+
+  try {
+    let rawData: Record<string, unknown>[] | null = null;
+    let lastError: unknown = null;
+
+    // 1. Try 'articles' (plural) with published_at order
+    const resArticles = await supabase
+      .from('articles')
+      .select('*')
+      .order('published_at', { ascending: false });
+
+    if (!resArticles.error && Array.isArray(resArticles.data) && resArticles.data.length > 0) {
+      rawData = resArticles.data as Record<string, unknown>[];
+    } else if (resArticles.error) {
+      lastError = resArticles.error;
+      // If order by published_at failed (e.g. column not yet indexed or renamed), try plain select
+      const plainArticles = await supabase.from('articles').select('*');
+      if (!plainArticles.error && Array.isArray(plainArticles.data) && plainArticles.data.length > 0) {
+        rawData = plainArticles.data as Record<string, unknown>[];
+        lastError = null;
+      }
+    }
+
+    // 2. If 'articles' failed or was empty, also try 'article' (singular)
+    if (!rawData || rawData.length === 0) {
+      const resArticle = await supabase
+        .from('article')
+        .select('*')
+        .order('published_at', { ascending: false });
+
+      if (!resArticle.error && Array.isArray(resArticle.data) && resArticle.data.length > 0) {
+        rawData = resArticle.data as Record<string, unknown>[];
+        lastError = null;
+      } else {
+        const plainArticle = await supabase.from('article').select('*');
+        if (!plainArticle.error && Array.isArray(plainArticle.data) && plainArticle.data.length > 0) {
+          rawData = plainArticle.data as Record<string, unknown>[];
+          lastError = null;
+        } else if (!rawData) {
+          lastError = plainArticle.error || resArticle.error || lastError;
+        }
+      }
+    }
+
+    if (rawData && rawData.length > 0) {
+      const articles: Article[] = rawData.map((item: Record<string, unknown>, idx: number) => ({
+        id: String(item.id ?? `article-${idx}`),
+        title: String(item.title ?? item.name ?? item.headline ?? 'Untitled Article'),
+        summary: String(item.summary ?? item.description ?? item.content ?? item.snippet ?? ''),
+        source: String(item.source ?? item.author ?? item.publisher ?? 'AureSkin Skincare'),
+        url: String(item.url ?? item.link ?? item.article_url ?? item.source_url ?? ''),
+        image_url: item.image_url
+          ? String(item.image_url)
+          : item.image
+            ? String(item.image)
+            : item.thumbnail
+              ? String(item.thumbnail)
+              : null,
+        category: String(item.category ?? item.tag ?? item.topic ?? 'General'),
+        published_at: item.published_at
+          ? String(item.published_at)
+          : item.created_at
+            ? String(item.created_at)
+            : undefined,
+      }));
+
+      void saveCachedArticles(articles);
+      return articles;
+    }
+
+    if (lastError) {
+      console.warn('[HomeApi] Error fetching articles from Supabase:', lastError);
+    }
+
+    const cached = await getCachedArticles();
+    if (cached && cached.length > 0 && !cached.some((a) => isMockCatalogItemId(a?.id))) {
+      return cached;
+    }
+    return [];
+  } catch (err) {
+    console.warn('[HomeApi] Unexpected error fetching articles:', err);
+    const cached = await getCachedArticles();
+    if (cached && cached.length > 0 && !cached.some((a) => isMockCatalogItemId(a?.id))) {
+      return cached;
+    }
+    return [];
+  }
 }

@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card } from '../../../../shared/components/Card';
-import { HealthGauge } from '../../../../shared/components/HealthGauge';
-import { theme } from '../../../../shared/theme';
+import { Card, HealthGauge, HealthScoreBadge, getHealthScoreColor } from '@/shared/components';
+import { theme } from '@/shared/theme';
 
 interface SkinOverviewCardProps {
   skinType?: string;
@@ -10,20 +9,40 @@ interface SkinOverviewCardProps {
   healthScore?: number;
 }
 
+function formatSkinTypeTitle(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+  const compact = trimmed.toLowerCase().replace(/[\s_-]+/g, '');
+  if (compact === 'acneprone') return 'Acne-Prone';
+  return trimmed
+    .replace(/[_-]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export function SkinOverviewCard({
   skinType = '',
   conditions = [],
   healthScore = 0,
 }: SkinOverviewCardProps) {
-  const hasAnalysis = Boolean(skinType && skinType.trim().length > 0);
+  const formattedSkinType = formatSkinTypeTitle(skinType);
+  const hasAnalysis = formattedSkinType.length > 0;
 
   return (
     <Card className="p-5 mb-4">
-      <Text className="text-body font-sans-bold text-secondary mb-3">
-        Skin Overview
-      </Text>
+      {/* Header Row: Skin Overview Label + HealthScoreBadge */}
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-body font-sans-bold text-secondary">
+          Skin Overview
+        </Text>
+        {hasAnalysis ? (
+          <HealthScoreBadge score={healthScore} />
+        ) : null}
+      </View>
 
-      <View className="flex-row items-center justify-between">
+      <View className="flex-row items-start justify-between">
         {/* Left Column: Skin Type & Skin Conditions */}
         <View className="flex-1 mr-4">
           <Text className="text-caption font-sans-bold text-muted uppercase tracking-wider">
@@ -31,7 +50,7 @@ export function SkinOverviewCard({
           </Text>
           {hasAnalysis ? (
             <Text className="text-h2 font-sans-bold text-text mt-0.5">
-              {skinType}
+              {formattedSkinType}
             </Text>
           ) : (
             <Text className="text-body-sm font-sans text-muted mt-1">
@@ -47,7 +66,6 @@ export function SkinOverviewCard({
               {conditions.map((condition, idx) => (
                 <View
                   key={`${condition}-${idx}`}
-                  style={{ backgroundColor: theme.colors.concern }}
                   className="bg-concern px-3 py-1 rounded-badge self-start"
                 >
                   <Text className="text-caption font-sans-bold text-neutral-white">
@@ -63,15 +81,14 @@ export function SkinOverviewCard({
           )}
         </View>
 
-        {/* Right Column: Health Gauge */}
-        <View className="items-center justify-start shrink-0">
+        {/* Right Column: Health Gauge (Top Aligned) */}
+        <View className="items-center justify-start shrink-0 pt-0.5">
           <HealthGauge
             percentage={hasAnalysis ? healthScore : 0}
             size={84}
             strokeWidth={8}
-            color={hasAnalysis ? theme.colors.accent : theme.colors.muted}
-            showSublabel={true}
-            sublabel={hasAnalysis ? 'Healthy' : 'No Scan'}
+            color={hasAnalysis ? getHealthScoreColor(healthScore) : theme.colors.muted}
+            showSublabel={false}
           />
         </View>
       </View>

@@ -64,14 +64,14 @@ export function HelpPage() {
           ))}
 
           {/* Diagnostic & Storage Management Card */}
-          <View className="mt-2">
+          {/* <View className="mt-2">
             <DiagnosticCard
               diagnostics={helpData.diagnostics}
               isClearing={isClearingCache}
               clearedStatus={cacheClearedStatus}
               onClearCache={handleClearCache}
             />
-          </View>
+          </View> */}
 
           {/* Contact Support Footer Card */}
           <SupportCard

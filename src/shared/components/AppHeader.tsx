@@ -45,6 +45,10 @@ export interface AppHeaderProps {
    * Optional container styling override
    */
   className?: string;
+  /**
+   * Whether the header background is transparent to allow underlying fixed background pattern to show through
+   */
+  transparent?: boolean;
 }
 
 /** Global default font size for AppHeader title across all tabs */
@@ -84,6 +88,7 @@ export function AppHeader({
   subtitleClassName = '',
   rightElement,
   className = '',
+  transparent = false,
 }: AppHeaderProps) {
   const openMenu = useAppStore((state) => state.openMenu);
 
@@ -94,8 +99,8 @@ export function AppHeader({
   const titleClasses = `${sizeClass} font-sans-bold text-neutral-white ${titleClassName}`.trim();
 
   return (
-    <SafeAreaView edges={['top']} style={{ backgroundColor: theme.colors.primary }}>
-      <View className={`flex-row items-center px-5 py-2 mb-2 mt-1 bg-primary ${className}`}>
+    <SafeAreaView edges={['top']} style={{ backgroundColor: transparent ? 'transparent' : theme.colors.primary }}>
+      <View className={`flex-row items-center px-5 py-2 mb-2 mt-1 ${transparent ? 'bg-transparent' : 'bg-primary'} ${className}`}>
         <TouchableOpacity
           onPress={openMenu}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}

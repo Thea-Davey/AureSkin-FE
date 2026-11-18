@@ -8,13 +8,28 @@ import { fetchProducts } from '../model/library_api';
 import { fetchHistoryPage } from '../../history/model/history_api';
 import { fetchCompatibility, USE_MOCK as USE_SCAN_MOCK } from '../../scan/model/scan_api';
 import { MOCK_COMPATIBILITY } from '../../scan/model/scan_mock';
+import { fetchUserClinicalFilters } from '../../profile/model/profile_api';
 import {
+  ClinicalFilterWarning,
   Product,
   ProductCategory,
   ProductFilterTarget,
   ProductListFilter,
   ProductListItemModel,
 } from '../model/library_types';
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function rawIngredientsContains(rawIngs: string, ingredientName: string): boolean {
+  const target = ingredientName.toLowerCase().trim();
+  if (!rawIngs || !target) return false;
+  if (target.length <= 3) {
+    return new RegExp(`(^|[,;/()\\s])${escapeRegex(target)}($|[,;/()\\s])`, 'i').test(rawIngs);
+  }
+  return rawIngs.includes(target);
+}
 
 const MOCK_COMPATIBLE_PRODUCT_IDS = new Set([
   'product-glycolic-toning-solution',
@@ -216,7 +231,7 @@ export function useProducts(): UseProductsResult {
   });
 
   const latestAnalysisQuery = useQuery({
-    queryKey: ['library', 'product-list', 'latest-analysis'],
+    queryKey: ['library', 'product-list', 'latest-analysis', userId ?? 'anonymous'],
     queryFn: async () => {
       const page = await fetchHistoryPage({ limit: 1, offset: 0 });
       return page.items[0] ?? null;
@@ -226,13 +241,20 @@ export function useProducts(): UseProductsResult {
 
   const latestAnalysisId = latestAnalysisQuery.data?.id;
   const compatibilityQuery = useQuery({
-    queryKey: ['library', 'product-list-compatibility', latestAnalysisId],
+    queryKey: ['library', 'product-list-compatibility', userId ?? 'anonymous', latestAnalysisId],
     queryFn: async () => {
       if (!latestAnalysisId) return null;
       return fetchCompatibility(latestAnalysisId);
     },
     enabled: Boolean(latestAnalysisId),
     staleTime: 1000 * 60 * 30,
+  });
+
+  const clinicalFiltersQuery = useQuery({
+    queryKey: ['profile', 'clinical-filters', userId ?? 'anonymous'],
+    queryFn: fetchUserClinicalFilters,
+    enabled: Boolean(userId),
+    staleTime: 1000 * 60 * 15,
   });
 
   const favoriteIds = savedFavoriteIds ?? EMPTY_FAVORITES;
@@ -246,14 +268,57 @@ export function useProducts(): UseProductsResult {
     const analysis = latestAnalysisQuery.data;
     const userSkinType = (analysis?.skin_type ?? (USE_SCAN_MOCK ? 'combination' : null))?.toLowerCase();
 
+    // Merge profile-wide clinical filters + scan-specific filtered ingredients (deduped by ingredient name)
+    const clinicalFilterList: ClinicalFilterWarning[] = [];
+    const seenFilterKeys = new Set<string>();
+    const rawCombinedFilters = [
+      ...(clinicalFiltersQuery.data ?? []),
+      ...(compatibility?.filtered_ingredients ?? []),
+    ];
+    for (const item of rawCombinedFilters) {
+      const fid = String(item.ingredient_id || ('id' in item && item.id ? item.id : '')).trim();
+      const fname = String(item.name || '').trim();
+      const dedupeKey = `${fname.toLowerCase()}|${String(item.filter_type || '').toLowerCase()}`;
+      if (!fname || seenFilterKeys.has(dedupeKey)) continue;
+      seenFilterKeys.add(dedupeKey);
+      clinicalFilterList.push({
+        ingredientId: fid,
+        ingredientName: fname,
+        filterType: item.filter_type || 'allergen',
+        reason: item.reason || 'Flagged by your profile clinical filters.',
+        details: item.details,
+      });
+    }
+
+    const filteredNameSet = new Set(
+      clinicalFilterList.map((f) => f.ingredientName.toLowerCase().trim())
+    );
+
     const compatibleNames = new Set(
       (compatibility?.compatible_ingredients ?? [])
         .map((ci) => ci.name.toLowerCase().trim())
-        .filter(Boolean)
+        .filter((name) => Boolean(name) && !filteredNameSet.has(name))
     );
     const incompatiblePairs = compatibility?.incompatible_pairs ?? [];
 
-    const isProductCompatible = (product: Product): boolean => {
+    const getProductClinicalWarnings = (product: Product): ClinicalFilterWarning[] => {
+      const rawIngs = (product.raw_ingredients || '').toLowerCase();
+      if (!rawIngs || clinicalFilterList.length === 0) {
+        return [];
+      }
+      return clinicalFilterList.filter((item) =>
+        rawIngredientsContains(rawIngs, item.ingredientName)
+      );
+    };
+
+    const isProductCompatible = (
+      product: Product,
+      warnings: ClinicalFilterWarning[]
+    ): boolean => {
+      // Clinical filters (allergen, pregnancy, age) always mark product as not compatible
+      if (warnings.length > 0) {
+        return false;
+      }
       if (USE_SCAN_MOCK && MOCK_COMPATIBLE_PRODUCT_IDS.has(product.id)) {
         return true;
       }
@@ -297,11 +362,15 @@ export function useProducts(): UseProductsResult {
       return skinTypeMatches || hasCompatibleIngredient;
     };
 
-    const listItems: ProductListItemModel[] = loadedProducts.map((product: Product) => ({
-      product,
-      isFavorite: favoriteIdSet.has(product.id),
-      isCompatible: isProductCompatible(product),
-    }));
+    const listItems: ProductListItemModel[] = loadedProducts.map((product: Product) => {
+      const warnings = getProductClinicalWarnings(product);
+      return {
+        product,
+        isFavorite: favoriteIdSet.has(product.id),
+        isCompatible: isProductCompatible(product, warnings),
+        clinicalFilterWarnings: warnings.length > 0 ? warnings : undefined,
+      };
+    });
 
     return selectedListFilter === 'favorites'
       ? listItems.filter((item) => item.isFavorite)
@@ -312,6 +381,7 @@ export function useProducts(): UseProductsResult {
     selectedListFilter,
     compatibilityQuery.data,
     latestAnalysisQuery.data,
+    clinicalFiltersQuery.data,
   ]);
 
   useEffect(() => {

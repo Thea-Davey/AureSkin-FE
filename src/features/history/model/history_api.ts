@@ -26,12 +26,16 @@ interface HistoryConditionItem {
   name?: string;
   display_name?: string;
   description?: string | null;
+  symptoms?: string | null;
+  causes?: string | null;
   confidence?: number | null;
   condition?: {
     id?: string;
     name?: string;
     display_name?: string;
     description?: string | null;
+    symptoms?: string | null;
+    causes?: string | null;
   };
 }
 
@@ -48,14 +52,24 @@ interface HistoryResponseItem {
 interface HistoryDetailResponse extends HistoryResponseItem {
   summary?: string | null;
   skin_type_confidence?: number | null;
+  skin_type_description?: string | null;
   analysis_compatible_ingredients?: CompatibleIngredientItem[] | null;
   compatible_ingredients?: CompatibleIngredientItem[] | null;
   analysis_incompatible_pairs?: IncompatiblePairItem[] | null;
   incompatible_pairs?: IncompatiblePairItem[] | null;
+  filtered_ingredients?: Array<{
+    id?: string;
+    ingredient_id?: string;
+    name?: string;
+    filter_type?: string;
+    reason?: string;
+    details?: string;
+  }> | null;
 }
 
 interface CompatibleIngredientItem {
   id?: string;
+  ingredient_id?: string;
   name?: string;
   reason?: string | null;
   ingredient?: {
@@ -148,6 +162,8 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
       ...condition,
       id: rawCondition.id ?? joinedCondition.id ?? condition.id,
       description: joinedCondition.description ?? null,
+      symptoms: joinedCondition.symptoms ?? null,
+      causes: joinedCondition.causes ?? null,
       confidence: rawCondition.confidence ?? null,
     };
   });
@@ -160,8 +176,10 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
       const ingredient = item.ingredient ?? item;
       const name = ingredient.name ?? item.name;
       if (!name) throw new Error('A compatible ingredient was missing its name.');
+      const resolvedId = item.id ?? item.ingredient_id ?? ingredient.id;
       return {
-        id: item.id ?? ingredient.id ?? `${item.id ?? 'compatible'}-${index}`,
+        id: resolvedId ?? name,
+        ingredient_id: resolvedId,
         name,
         reason: item.reason ?? null,
       };
@@ -181,19 +199,33 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
       };
     });
 
+  const rawFiltered = item.filtered_ingredients;
+  const filteredIngredients = Array.isArray(rawFiltered)
+    ? rawFiltered.map((f: any, index: number) => ({
+        id: f.id ?? f.ingredient_id ?? `filtered-${index}`,
+        ingredient_id: f.ingredient_id ?? f.id ?? `filtered-${index}`,
+        name: f.name ?? 'Filtered Ingredient',
+        filter_type: f.filter_type ?? 'allergen',
+        reason: f.reason ?? '',
+        details: f.details ?? undefined,
+      }))
+    : [];
+
   return {
     ...normalizeEntry(item),
     summary: item.summary ?? null,
     skin_type_confidence: item.skin_type_confidence ?? null,
+    skin_type_description: item.skin_type_description ?? null,
     conditions: normalizedConditions,
     compatible_ingredients: compatibleIngredients,
     incompatible_pairs: incompatiblePairs,
+    filtered_ingredients: filteredIngredients,
   };
 }
 
 export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
-  // If mock mode is active, or if ID is a mock ID, resolve directly from mock store
-  if (isMockEnabled('history') || id.startsWith('mock-') || (MOCK_HISTORY_DETAILS as Record<string, any>)[id]) {
+  // If mock mode is explicitly active, or if ID is an explicit mock fixture ID, resolve from mock store
+  if (isMockEnabled('history') || id.startsWith('mock-')) {
     if (deletedMockEntryIds.has(id)) {
       throw new Error('This scan is no longer available.');
     }
@@ -210,8 +242,8 @@ export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
 
     return normalizeDetail(payload as HistoryDetailResponse);
   } catch (err: any) {
-    // Graceful fallback to mock details if backend returns 404 (e.g. legacy/cached mock ID)
-    if (MOCK_HISTORY_DETAILS[id]) {
+    // Only fall back to mock details if this was an explicit mock fixture ID
+    if (id.startsWith('mock-') && MOCK_HISTORY_DETAILS[id]) {
       return MOCK_HISTORY_DETAILS[id];
     }
     throw err;

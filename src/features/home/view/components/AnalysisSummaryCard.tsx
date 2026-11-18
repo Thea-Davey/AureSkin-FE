@@ -8,6 +8,7 @@ interface AnalysisSummaryCardProps {
   latestAnalysis: LatestAnalysis | null;
   isLoading: boolean;
   onScanPress: () => void;
+  onCardPress?: () => void;
 }
 
 function formatConditionName(condition: string): string {
@@ -25,6 +26,7 @@ export function AnalysisSummaryCard({
   latestAnalysis,
   isLoading,
   onScanPress,
+  onCardPress,
 }: AnalysisSummaryCardProps) {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -73,7 +75,7 @@ export function AnalysisSummaryCard({
     );
   }
 
-  return (
+  const cardContent = (
     <View className="flex-row items-stretch gap-2">
       {/* Left Block: Skin Type & Skin Condition/s + Date Scanned */}
       <View className="flex-1 flex-col gap-2">
@@ -106,29 +108,42 @@ export function AnalysisSummaryCard({
             </Text>
             <View className="gap-0.5">
               {latestAnalysis.conditions && latestAnalysis.conditions.length > 0 ? (
-                latestAnalysis.conditions.map((condition, idx) => (
-                  <View key={idx} className="flex-row items-center gap-1 py-0">
-                    <View
-                      style={{
-                        backgroundColor: theme.colors.concern,
-                        width: 4,           // <-- Change size here (e.g. 5, 6, or 7)
-                        height: 4,          // <-- Keep same as width
-                        borderRadius: 9999, // Keeps it perfectly circular
-                      }}
-                      className="h-2 w-2 rounded-full bg-concern"
-                    />
-                    <Text
-                      numberOfLines={1}
-                      style={{ color: theme.colors.concern }}
-                      className="text-caption font-sans-bold text-concern flex-1"
-                    >
-                      {formatConditionName(condition)}
-                    </Text>
-                  </View>
-                ))
+                (() => {
+                  const conditions = latestAnalysis.conditions;
+                  const displayConditions = conditions.slice(0, 3);
+                  const remainingCount = conditions.length - 3;
+
+                  return displayConditions.map((condition, idx) => (
+                    <View key={idx} className="flex-row items-center gap-1 py-0">
+                      <View
+                        style={{
+                          backgroundColor: theme.colors.concern,
+                          width: 4,
+                          height: 4,
+                          borderRadius: 9999,
+                        }}
+                        className="h-2 w-2 rounded-full bg-concern"
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={{ color: theme.colors.concern }}
+                        className="text-caption font-sans-bold text-concern shrink"
+                      >
+                        {formatConditionName(condition)}
+                      </Text>
+                      {idx === 2 && remainingCount > 0 ? (
+                        <Text
+                          style={{ color: theme.colors.concern }}
+                          className="text-caption font-sans-bold text-concern ml-0.5"
+                        >
+                          +{remainingCount}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ));
+                })()
               ) : (
                 <View className="flex-row items-center gap-1.5 py-0.5">
-                  {/* <View className="h-2 w-2 rounded-full bg-accent" /> */}
                   <Text className="text-caption font-sans-bold text-muted">
                     none detected
                   </Text>
@@ -161,6 +176,21 @@ export function AnalysisSummaryCard({
       </View>
     </View>
   );
+
+  if (onCardPress) {
+    return (
+      <TouchableOpacity
+        onPress={onCardPress}
+        activeOpacity={0.88}
+        accessibilityRole="button"
+        accessibilityLabel="View latest scan results in history"
+      >
+        {cardContent}
+      </TouchableOpacity>
+    );
+  }
+
+  return cardContent;
 }
 
 export default AnalysisSummaryCard;

@@ -10,7 +10,7 @@ export function HistoryPage() {
   const history = useHistory();
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-transparent">
       <StatusBar style="light" />
       <View className="flex-1 rounded-t-card bg-background overflow-hidden">
         <S1HistoryList
@@ -39,7 +39,7 @@ export function HistoryPage() {
           onRefresh={history.actions.refresh}
           onLoadNextPage={history.actions.loadNextPage}
           onOpenEntry={(id) => router.push({ pathname: '/history/[id]', params: { id } })}
-          onStartScan={() => useAppStore.getState().openScanOverlay()}
+          onStartScan={() => router.push('/scan/setup')}
         />
       </View>
     </View>

@@ -30,7 +30,7 @@ export function HomePage() {
   } = useHome();
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-transparent">
       <StatusBar style="light" />
 
       {/* Scrollable Dashboard Body */}
@@ -49,7 +49,7 @@ export function HomePage() {
         {/* Upper Dashboard Cards (Primary Olive Background) */}
         <View className="px-4 space-y-4 gap-0 pt-3 -mb-2">
           {/* 1. Hero Card: "How is your skin today?" */}
-          <HeroCard onScanPress={() => router.push('/scan/camera')} />
+          <HeroCard onScanPress={() => router.push('/scan/setup')} />
 
           {/* 2. Latest Analysis Result Section */}
           <S1LatestAnalysis

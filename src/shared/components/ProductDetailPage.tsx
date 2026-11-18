@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Droplet, Star, X } from 'lucide-react-native';
+import { AlertCircle, AlertTriangle, Droplet, Star, X } from 'lucide-react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,18 +16,42 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { theme } from '../theme';
 import { DeleteDialog } from './DeleteDialog';
 import {
+  ClinicalFilterWarning,
   ProductCompatibilityStatus,
   ProductDetail,
 } from '../../features/library/model/library_types';
 import { getProductCategoryImage, formatCategory } from '../utils/productCategory';
 import { DescriptionCard } from '../../features/library/view/components/DescriptionCard';
 import { ProductDetailSkeleton } from '../../features/library/view/components/ProductDetailSkeleton';
+import { CompatibleNote } from '../../features/library/view/components/CompatibleNote';
+import { WarningNote } from './WarningNote';
+import { NegativeNote } from './NegativeNote';
 import { useProductDetail } from '../../features/library/viewmodel/useProductDetail';
 import { useAuthStore } from '../store/authStore';
 import { IngredientDetailPage } from './IngredientDetailPage';
 import { CompatibilityBadge } from './CompatibilityBadge';
 import { CloseButton } from './CloseButton';
 import { Button } from './Button';
+
+function formatSkinTypeLabel(raw: string): string {
+  const cleaned = raw.replace(/[\[\]'"]/g, '').trim();
+  if (!cleaned) return '';
+  const lower = cleaned.toLowerCase().replace(/[\s_-]+/g, '');
+  if (lower === 'acneprone') return 'Acne-prone';
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+}
+
+function formatConditionLabel(raw: string): string {
+  const cleaned = raw.replace(/[\[\]'"]/g, '').trim();
+  if (!cleaned) return '';
+  const lower = cleaned.toLowerCase();
+  if (lower === 'pores') return 'Enlarged Pores';
+  return cleaned
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 export interface ProductDetailPageProps {
   visible: boolean;
@@ -40,6 +64,7 @@ export interface ProductDetailPageProps {
   isLoading?: boolean;
   error?: string | null;
   compatibilityStatus?: ProductCompatibilityStatus;
+  clinicalFilterWarnings?: ClinicalFilterWarning[];
   compatibilityError?: string | null;
   isCompatibilityLoading?: boolean;
   canRetryCompatibility?: boolean;
@@ -64,6 +89,7 @@ interface InternalProductDetailViewProps {
   isLoading: boolean;
   error: string | null;
   compatibilityStatus: ProductCompatibilityStatus;
+  clinicalFilterWarnings: ClinicalFilterWarning[];
   compatibilityError: string | null;
   isCompatibilityLoading: boolean;
   canRetryCompatibility: boolean;
@@ -89,6 +115,7 @@ function ProductDetailView({
   isLoading,
   error,
   compatibilityStatus,
+  clinicalFilterWarnings,
   compatibilityError,
   isCompatibilityLoading,
   canRetryCompatibility,
@@ -289,6 +316,13 @@ function ProductDetailView({
                 </View>
               ) : null}
 
+              {/* Intro Description from Supabase (no card, matching IngredientDetailPage) */}
+              {product.description?.trim() ? (
+                <Text className="mx-5 mt-4 text-body-sm font-sans text-muted leading-relaxed">
+                  {product.description.trim()}
+                </Text>
+              ) : null}
+
               {/* Card 1: Ingredients using DescriptionCard */}
               <DescriptionCard title="Ingredients" className="mx-5 mt-4">
                 {product.ingredients.length === 0 ? (
@@ -296,47 +330,180 @@ function ProductDetailView({
                     Ingredient list unavailable.
                   </Text>
                 ) : (
-                  product.ingredients.map((ingredient) => (
-                    <Pressable
-                      key={`${ingredient.id}-${ingredient.order}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`View ingredient details for ${ingredient.name}`}
-                      onPress={() => onIngredientPress(ingredient.id)}
-                      className="flex-row items-center gap-3 rounded-button py-1.5 active:bg-background"
-                    >
-                      <Droplet size={13} color={theme.colors.secondary} fill={theme.colors.secondary} />
-                      <Text className="flex-1 text-body-sm font-sans text-text">
-                        {ingredient.name}
-                      </Text>
-                    </Pressable>
-                  ))
+                  product.ingredients.map((ingredient) => {
+                    const matchedWarning = clinicalFilterWarnings.find(
+                      (w) =>
+                        (w.ingredientId && w.ingredientId === ingredient.id) ||
+                        w.ingredientName.toLowerCase().trim() === ingredient.name.toLowerCase().trim()
+                    );
+                    const isHighRisk =
+                      matchedWarning &&
+                      ['allergen', 'pregnancy'].includes((matchedWarning.filterType || '').toLowerCase());
+                    return (
+                      <Pressable
+                        key={`${ingredient.id}-${ingredient.order}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View ingredient details for ${ingredient.name}`}
+                        onPress={() => onIngredientPress(ingredient.id)}
+                        className="flex-row items-center gap-3 rounded-button py-1.5 active:bg-background"
+                      >
+                        {matchedWarning ? (
+                          isHighRisk ? (
+                            <AlertCircle size={14} color={theme.colors.note.negative.icon} />
+                          ) : (
+                            <AlertTriangle size={14} color={theme.colors.note.warning.icon} />
+                          )
+                        ) : (
+                          <Droplet size={13} color={theme.colors.secondary} fill={theme.colors.secondary} />
+                        )}
+                        <Text
+                          className={`flex-1 text-body-sm ${
+                            matchedWarning
+                              ? isHighRisk
+                                ? 'font-sans-semibold text-note-negative-title'
+                                : 'font-sans-semibold text-note-warning-title'
+                              : 'font-sans text-text'
+                          }`}
+                        >
+                          {ingredient.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })
                 )}
               </DescriptionCard>
 
               {/* Card 2: Compatible Skin Types */}
-              {product.compatible_skin_types && product.compatible_skin_types.length > 0 ? (
-                <DescriptionCard
-                  title="Compatible Skin Types"
-                  variant="bulleted"
-                  bullets={product.compatible_skin_types}
-                  bulletTone="positive"
-                  className="mx-5 mt-3"
-                />
-              ) : null}
+              {(() => {
+                const rawTypes =
+                  product.compatible_skin_types && product.compatible_skin_types.length > 0
+                    ? product.compatible_skin_types
+                    : Array.isArray(product.skin_types)
+                      ? product.skin_types
+                      : [];
+                const formattedTypes = rawTypes.map(formatSkinTypeLabel).filter(Boolean);
+                if (formattedTypes.length === 0) return null;
+                return (
+                  <DescriptionCard
+                    title="Compatible Skin Types"
+                    variant="bulleted"
+                    bullets={formattedTypes}
+                    bulletTone="positive"
+                    className="mx-5 mt-3"
+                  />
+                );
+              })()}
 
               {/* Card 3: Target Skin Conditions */}
-              {((product.target_skin_conditions && product.target_skin_conditions.length > 0) || (product.good_for && product.good_for.length > 0)) ? (
-                <DescriptionCard
-                  title="Target Skin Conditions"
-                  variant="bulleted"
-                  bullets={product.target_skin_conditions && product.target_skin_conditions.length > 0 ? product.target_skin_conditions : product.good_for}
-                  bulletTone="negative"
-                  className="mx-5 mt-3"
-                />
+              {(() => {
+                const rawConditions =
+                  product.target_skin_conditions && product.target_skin_conditions.length > 0
+                    ? product.target_skin_conditions
+                    : Array.isArray(product.skin_conditions) && product.skin_conditions.length > 0
+                      ? product.skin_conditions
+                      : product.good_for && product.good_for.length > 0
+                        ? product.good_for
+                        : [];
+                const formattedConditions = rawConditions.map(formatConditionLabel).filter(Boolean);
+                if (formattedConditions.length === 0) return null;
+                return (
+                  <DescriptionCard
+                    title="Target Skin Conditions"
+                    variant="bulleted"
+                    bullets={formattedConditions}
+                    bulletTone="negative"
+                    className="mx-5 mt-3"
+                  />
+                );
+              })()}
+
+              {/* Card 4: Who should avoid? (Hidden automatically when it has no content) */}
+              {(() => {
+                const rawAvoid =
+                  product.avoid && product.avoid.length > 0
+                    ? product.avoid
+                    : typeof product.who_should_avoid === 'string' && product.who_should_avoid.trim().length > 0
+                      ? product.who_should_avoid
+                          .split(',')
+                          .map((s) => s.replace(/[\[\]'"]/g, '').trim())
+                          .filter((s) => {
+                            const lower = s.toLowerCase();
+                            return Boolean(s) && lower !== 'none' && lower !== 'n/a' && lower !== 'null';
+                          })
+                      : [];
+                const rawCaution = (product.caution ?? '').trim();
+                const cautionStripped = rawCaution.replace(/[\[\]'",\s]/g, '');
+                const isRawArrayLiteral = rawCaution.startsWith('[') && rawCaution.endsWith(']');
+                const cautionText =
+                  cautionStripped &&
+                  !isRawArrayLiteral &&
+                  !['none', 'n/a', 'null'].includes(rawCaution.toLowerCase())
+                    ? rawCaution
+                    : '';
+                if (rawAvoid.length === 0 && !cautionText) {
+                  return null;
+                }
+                return (
+                  <DescriptionCard
+                    title="Who should avoid?"
+                    variant="description"
+                    className="mx-5 mt-3"
+                  >
+                    {rawAvoid.map((item, idx) => (
+                      <View key={`${item}-${idx}`} className="mb-2 flex-row items-center gap-2.5">
+                        <View className="h-2 w-2 rounded-full bg-status-error shrink-0" />
+                        <Text className="flex-1 text-body-sm font-sans text-text">
+                          {item}
+                        </Text>
+                      </View>
+                    ))}
+                    {cautionText ? (
+                      <Text className="text-body-sm font-sans text-text leading-5">
+                        {cautionText}
+                      </Text>
+                    ) : null}
+                  </DescriptionCard>
+                );
+              })()}
+
+              {/* Clinical Profile Filter Warnings (Allergen / Pregnancy / Age) */}
+              {clinicalFilterWarnings.map((warning, idx) => {
+                const type = (warning.filterType || '').toLowerCase();
+                const isNegative = type === 'allergen' || type === 'pregnancy';
+                const warningTitle =
+                  type === 'allergen'
+                    ? 'Flagged for Allergen'
+                    : type === 'pregnancy'
+                      ? 'Flagged for Pregnancy'
+                      : 'Flagged for Age';
+                const description = `${warning.ingredientName}: ${warning.reason}`;
+
+                return isNegative ? (
+                  <NegativeNote
+                    key={`${warning.ingredientName}-${warning.filterType}-${idx}`}
+                    style={2}
+                    title={warningTitle}
+                    description={description}
+                    className="mx-5 mt-3"
+                  />
+                ) : (
+                  <WarningNote
+                    key={`${warning.ingredientName}-${warning.filterType}-${idx}`}
+                    style={2}
+                    title={warningTitle}
+                    description={description}
+                    className="mx-5 mt-3"
+                  />
+                );
+              })}
+
+              {/* Compatible Note */}
+              {compatibilityStatus === 'compatible' && clinicalFilterWarnings.length === 0 ? (
+                <CompatibleNote className="mx-5 mt-3" />
               ) : null}
 
-              {/* Delete Product Button (User-added custom products only) */}
-              {product.is_user_added ? (
+              {/* Delete Product Button (Custom user-added products only) */}
+              {product.is_user_added === true && Boolean(onDeleteProduct) ? (
                 <View className="mx-5 mt-6 mb-2">
                   <Button
                     variant="outline-danger"
@@ -353,11 +520,11 @@ function ProductDetailView({
             </ScrollView>
 
             {/* Delete Confirmation Dialog */}
-            {product.is_user_added ? (
+            {product.is_user_added === true && Boolean(onDeleteProduct) ? (
               <DeleteDialog
                 visible={isDeleteDialogOpen}
                 title="Delete Product"
-                body="This action will permanently delete your custom added product to your library"
+                body="This action will permanently delete your custom added product from your library."
                 cancelLabel="Keep"
                 confirmLabel="Delete"
                 onCancel={() => setIsDeleteDialogOpen(false)}
@@ -462,6 +629,7 @@ function ProductDetailSelfFetching({
         isLoading={detail.isLoading}
         error={detail.error}
         compatibilityStatus={detail.compatibilityStatus}
+        clinicalFilterWarnings={detail.clinicalFilterWarnings}
         compatibilityError={detail.compatibilityError}
         isCompatibilityLoading={detail.isCompatibilityLoading}
         canRetryCompatibility={detail.canRetryCompatibility}
@@ -501,6 +669,7 @@ export function ProductDetailPage(props: ProductDetailPageProps) {
         isLoading={props.isLoading ?? false}
         error={props.error ?? null}
         compatibilityStatus={props.compatibilityStatus ?? 'unavailable'}
+        clinicalFilterWarnings={props.clinicalFilterWarnings ?? []}
         compatibilityError={props.compatibilityError ?? null}
         isCompatibilityLoading={props.isCompatibilityLoading ?? false}
         canRetryCompatibility={props.canRetryCompatibility ?? false}

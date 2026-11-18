@@ -33,6 +33,14 @@ export const theme = {
       info: "#42A5F5",
     },
 
+    // Health Score range colors (Green 80-100, Yellow 60-79, Orange 40-59, Red 0-39)
+    healthScore: {
+      optimal: "#4CAF50",     // Green (80-100)
+      moderate: "#FBC02D",    // Yellow (60-79)
+      attention: "#F57C00",   // Orange (40-59)
+      compromised: "#E53935", // Red (0-39)
+    },
+
     // Note / Callout tokens (positive, warning, negative)
     note: {
       positive: {

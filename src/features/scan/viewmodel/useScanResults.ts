@@ -1,13 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isMockEnabled } from '@/shared/config/mockConfig';
+import { deleteHistoryEntry } from '../../history/model/history_api';
 import { fetchScanResult } from '../model/scan_api';
 import { MOCK_SCAN_RESULT } from '../model/scan_mock';
 import { useScanStore, normalizeFileUri } from '../model/scanStore';
 import {
   ScanResult,
-  ScanResultsParams,
   ScanResultsTab,
 } from '../model/scan_types';
 
@@ -20,12 +21,23 @@ export interface UseScanResultsReturn {
   // States
   isLoading: boolean;
   isRefreshing: boolean;
+  isDiscarding: boolean;
+  isSaveSuccessOpen: boolean;
+  isDiscardDialogOpen: boolean;
+  isFooterVisible: boolean;
   error: string | null;
 
   // Actions
   setTab: (tab: ScanResultsTab) => void;
   handleClose: () => void;
   handleIngredientPress: (id?: string) => void;
+  handleSavePress: () => void;
+  handleSuccessGoHome: () => void;
+  handleSuccessViewHistory: () => void;
+  openDiscardDialog: () => void;
+  closeDiscardDialog: () => void;
+  handleConfirmDiscard: () => Promise<void>;
+  handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   onRefresh: () => Promise<void>;
   retry: () => void;
 }
@@ -40,14 +52,32 @@ export function useScanResults(): UseScanResultsReturn {
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ analysisId?: string; imageUri?: string }>();
 
-  const [activeTab, setActiveTab] = useState<ScanResultsTab>('results');
+  const [activeTab, setActiveTabState] = useState<ScanResultsTab>('results');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isDiscarding, setIsDiscarding] = useState<boolean>(false);
+  const [isSaveSuccessOpen, setIsSaveSuccessOpen] = useState<boolean>(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState<boolean>(false);
+  const [isFooterVisible, setIsFooterVisible] = useState<boolean>(true);
+
+  const lastScrollYRef = useRef<number>(0);
+  const lastScrollTimeRef = useRef<number>(0);
+
+  const setTab = useCallback((tab: ScanResultsTab) => {
+    setActiveTabState(tab);
+    lastScrollYRef.current = 0;
+    lastScrollTimeRef.current = Date.now();
+    setIsFooterVisible(true);
+  }, []);
 
   const rawIdParam = params.analysisId;
   const analysisId = Array.isArray(rawIdParam) ? rawIdParam[0] : rawIdParam;
 
   const storeResult = useScanStore((state) => state.latestScanResult);
   const storeUri = useScanStore((state) => state.capturedImageUri);
+  const storeShotType = useScanStore((state) => state.shotType);
+  const storePhotos = useScanStore((state) => state.photos);
+  const resetScanSetup = useScanStore((state) => state.resetScanSetup);
+  const setLatestScanResult = useScanStore((state) => state.setLatestScanResult);
 
   const rawParam = params.imageUri;
   const rawUri = Array.isArray(rawParam) ? rawParam[0] : rawParam;
@@ -74,17 +104,35 @@ export function useScanResults(): UseScanResultsReturn {
   });
 
   // Determine final scan result: live queried result > fresh in-memory result > mock fallback (only if mock is enabled!)
-  const activeScanResult: ScanResult | null =
+  const baseScanResult: ScanResult | null =
     fetchedResult || matchingStoreResult || (isMockEnabled('scan') ? MOCK_SCAN_RESULT : null);
+
+  // Enrich with shotType and photos from store if not already populated on result
+  const activeScanResult: ScanResult | null = baseScanResult
+    ? {
+        ...baseScanResult,
+        shot_type: baseScanResult.shot_type || storeShotType || undefined,
+        image_urls:
+          baseScanResult.image_urls ||
+          (storePhotos && (storePhotos.front || storePhotos.left || storePhotos.right)
+            ? {
+                ...(storePhotos.front ? { front: storePhotos.front } : {}),
+                ...(storePhotos.left ? { left: storePhotos.left } : {}),
+                ...(storePhotos.right ? { right: storePhotos.right } : {}),
+              }
+            : undefined),
+      }
+    : null;
 
   // Determine display image URI:
   // 1. Fresh in-memory capture if it matches current result
   // 2. Explicit route param rawUri (normalized)
-  // 3. activeScanResult.image_url (from Supabase or mock)
+  // 3. activeScanResult.image_urls?.front or activeScanResult.image_url (from Supabase or mock)
   // 4. storeUri fallback (if no specific analysisId was targeted)
   const candidateUri =
     (matchingStoreResult && storeUri) ||
     (rawUri ? normalizeFileUri(rawUri) : '') ||
+    activeScanResult?.image_urls?.front ||
     activeScanResult?.image_url ||
     (!analysisId ? storeUri : '') ||
     '';
@@ -111,6 +159,94 @@ export function useScanResults(): UseScanResultsReturn {
     }
   }, [router]);
 
+  const handleSavePress = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ['history'] });
+    void queryClient.invalidateQueries({ queryKey: ['home'] });
+    void queryClient.invalidateQueries({ queryKey: ['library'] });
+    void queryClient.invalidateQueries({ queryKey: ['routine'] });
+    setIsSaveSuccessOpen(true);
+  }, [queryClient]);
+
+  const handleSuccessGoHome = useCallback(() => {
+    setIsSaveSuccessOpen(false);
+    resetScanSetup();
+    router.replace('/(tabs)');
+  }, [resetScanSetup, router]);
+
+  const handleSuccessViewHistory = useCallback(() => {
+    setIsSaveSuccessOpen(false);
+    resetScanSetup();
+    router.replace('/(tabs)/history');
+  }, [resetScanSetup, router]);
+
+  const openDiscardDialog = useCallback(() => {
+    setIsDiscardDialogOpen(true);
+  }, []);
+
+  const closeDiscardDialog = useCallback(() => {
+    setIsDiscardDialogOpen(false);
+  }, []);
+
+  const handleConfirmDiscard = useCallback(async () => {
+    setIsDiscardDialogOpen(false);
+    setIsDiscarding(true);
+    try {
+      if (activeScanResult?.id) {
+        await deleteHistoryEntry(activeScanResult.id);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['history'] });
+      void queryClient.invalidateQueries({ queryKey: ['home'] });
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+      void queryClient.invalidateQueries({ queryKey: ['routine'] });
+    } catch {
+      // Proceed cleanly even if mock/offline deletion fails
+    } finally {
+      setLatestScanResult(null);
+      resetScanSetup();
+      setIsDiscarding(false);
+      router.replace('/(tabs)');
+    }
+  }, [activeScanResult?.id, queryClient, setLatestScanResult, resetScanSetup, router]);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const y = Math.max(0, contentOffset.y);
+    const now = Date.now();
+    const prevY = lastScrollYRef.current;
+    const prevTime = lastScrollTimeRef.current || now - 16;
+
+    const dy = y - prevY;
+    const dt = Math.max(now - prevTime, 1);
+    const velocity = Math.abs(dy) / dt; // px per ms (0.75 px/ms = 750 px/sec)
+
+    lastScrollYRef.current = y;
+    lastScrollTimeRef.current = now;
+
+    // Always reveal at the very top of the page
+    if (y <= 16) {
+      setIsFooterVisible(true);
+      return;
+    }
+
+    // Always reveal when the user reaches the bottom of the report
+    const isScrollable = contentSize.height > layoutMeasurement.height + 24;
+    if (isScrollable && y + layoutMeasurement.height >= contentSize.height - 36) {
+      setIsFooterVisible(true);
+      return;
+    }
+
+    // Swiping finger UP (reading further down the page) -> collapse footer
+    if (dy > 6 && y > 40) {
+      setIsFooterVisible(false);
+      return;
+    }
+
+    // Swiping finger DOWN (scrolling back up) -> only reveal on fast intentional flick
+    if (dy < -6 && (velocity >= 0.75 || dy <= -28)) {
+      setIsFooterVisible(true);
+    }
+  }, []);
+
   const handleIngredientPress = useCallback(
     (_id?: string) => {
       // Handled directly via modal sheet in compatibility tab
@@ -130,10 +266,21 @@ export function useScanResults(): UseScanResultsReturn {
     activeTab,
     isLoading: isQueryLoading && !activeScanResult,
     isRefreshing,
+    isDiscarding,
+    isSaveSuccessOpen,
+    isDiscardDialogOpen,
+    isFooterVisible,
     error: errorMessage,
-    setTab: setActiveTab,
+    setTab,
     handleClose,
     handleIngredientPress,
+    handleSavePress,
+    handleSuccessGoHome,
+    handleSuccessViewHistory,
+    openDiscardDialog,
+    closeDiscardDialog,
+    handleConfirmDiscard,
+    handleScroll,
     onRefresh,
     retry,
   };

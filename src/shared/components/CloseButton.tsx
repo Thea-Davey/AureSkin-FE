@@ -10,6 +10,7 @@ export interface CloseButtonProps {
   iconSize?: number;
   iconColor?: string;
   accessibilityLabel?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -23,15 +24,18 @@ export function CloseButton({
   iconSize = 22,
   iconColor,
   accessibilityLabel = 'Close',
+  disabled = false,
 }: CloseButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       hitSlop={10}
       style={style}
-      className={`h-10 w-10 items-center justify-center rounded-full bg-white/20 active:opacity-70 ${className}`}
+      className={`h-10 w-10 items-center justify-center rounded-full bg-white/20 active:opacity-70 ${disabled ? 'opacity-50' : ''} ${className}`}
     >
       <X size={iconSize} color={iconColor ?? theme.colors.card} />
     </Pressable>

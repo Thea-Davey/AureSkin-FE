@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
-import { AlertCircle, X } from 'lucide-react-native';
+import { AlertCircle, CheckCircle2, X } from 'lucide-react-native';
 import { theme } from '../theme';
 import { Button } from './Button';
 
@@ -11,6 +11,8 @@ export interface NotifDialogProps {
   body: string | React.ReactNode;
   /** Optional phrase within the body to render in bold font */
   boldPhrase?: string;
+  /** Icon variant displayed in the top banner ('alert' | 'success') */
+  icon?: 'alert' | 'success';
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm: () => void;
@@ -25,6 +27,7 @@ export function NotifDialog({
   subtitle,
   body,
   boldPhrase,
+  icon = 'alert',
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   onConfirm,
@@ -78,7 +81,7 @@ export function NotifDialog({
         </View>
 
         {/* Dialog Card */}
-        <View className="relative w-full max-w-[340px] overflow-hidden rounded-card bg-card shadow-2xl">
+        <View className="relative w-full max-w-[340px] overflow-hidden rounded-card bg-primary shadow-2xl">
           {/* Top Banner (Deep Olive Green / Primary) */}
           <View className="relative items-center bg-primary px-6 pb-6 pt-7">
             {/* Top-Right Close Button */}
@@ -92,9 +95,13 @@ export function NotifDialog({
               <X size={18} color={theme.colors.white} />
             </Pressable>
 
-            {/* Alert / Exclamation Icon in White Ring */}
+            {/* Banner Icon */}
             <View className="mb-3 h-14 w-14 items-center justify-center rounded-full">
-              <AlertCircle size={42} color={theme.colors.white} strokeWidth={2} />
+              {icon === 'success' ? (
+                <CheckCircle2 size={42} color={theme.colors.white} strokeWidth={2} />
+              ) : (
+                <AlertCircle size={42} color={theme.colors.white} strokeWidth={2} />
+              )}
             </View>
 
             {/* Title */}
@@ -111,7 +118,7 @@ export function NotifDialog({
           </View>
 
           {/* Bottom Card Content */}
-          <View className="bg-card p-6">
+          <View className="rounded-t-card bg-card p-6">
             {/* Body */}
             <View className="mb-6">
               {renderBody()}

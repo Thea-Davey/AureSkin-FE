@@ -1,3 +1,5 @@
+import { FilteredIngredient, ShotType } from '@/features/scan/model/scan_types';
+
 export interface HistoryEntry {
   id: string;
   image_url: string | null;
@@ -12,11 +14,14 @@ export interface HistoryCondition {
   name: string;
   display_name: string;
   description: string | null;
+  symptoms?: string | null;
+  causes?: string | null;
   confidence: number | null;
 }
 
 export interface HistoryCompatibleIngredient {
   id: string;
+  ingredient_id?: string;
   name: string;
   reason: string | null;
 }
@@ -31,9 +36,13 @@ export interface HistoryIncompatiblePair {
 export interface HistoryDetail extends Omit<HistoryEntry, 'conditions'> {
   summary: string | null;
   skin_type_confidence: number | null;
+  skin_type_description?: string | null;
   conditions: HistoryCondition[];
   compatible_ingredients: HistoryCompatibleIngredient[] | null;
   incompatible_pairs: HistoryIncompatiblePair[] | null;
+  filtered_ingredients?: FilteredIngredient[] | null;
+  shot_type?: ShotType | string | null;
+  image_urls?: Record<string, string> | null;
 }
 
 export interface HistoryPage {

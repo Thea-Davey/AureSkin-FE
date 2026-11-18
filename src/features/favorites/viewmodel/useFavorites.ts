@@ -1,10 +1,24 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/shared/store/authStore';
 import { FavoriteFilter, FavoriteItem, FavoriteCounts } from '../model/favorites_types';
 import { fetchFavorites, removeFavoriteItem } from '../model/favorites_api';
 
 export function useFavorites() {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id ?? null);
+  const userScope = userId ?? 'anonymous';
+
+  const favoritesQueryKey = useMemo(() => ['favorites', userScope] as const, [userScope]);
+  const ingredientFavoritesKey = useMemo(
+    () => ['library', 'ingredient-favorites', userScope] as const,
+    [userScope]
+  );
+  const productFavoritesKey = useMemo(
+    () => ['library', 'product-favorites', userScope] as const,
+    [userScope]
+  );
+
   const [activeFilter, setActiveFilter] = useState<FavoriteFilter>('all');
   const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -16,9 +30,10 @@ export function useFavorites() {
     error,
     refetch,
   } = useQuery<FavoriteItem[]>({
-    queryKey: ['favorites'],
-    queryFn: fetchFavorites,
-    staleTime: 1000 * 60 * 5,
+    queryKey: favoritesQueryKey,
+    queryFn: () => fetchFavorites(userId),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const counts: FavoriteCounts = useMemo(() => {
@@ -39,8 +54,8 @@ export function useFavorites() {
 
   const handleToggleFavorite = useCallback(
     async (id: string) => {
-      // Optimistically update query client state
-      queryClient.setQueryData<FavoriteItem[]>(['favorites'], (old = []) =>
+      // 1. Optimistically remove from Favorites list
+      queryClient.setQueryData<FavoriteItem[]>(favoritesQueryKey, (old = []) =>
         old.filter((item) => {
           if (item.type === 'ingredient') {
             return item.ingredient.id !== id && item.id !== id;
@@ -49,9 +64,26 @@ export function useFavorites() {
           return prodId !== id && item.id !== id;
         })
       );
-      await removeFavoriteItem(id);
+
+      // 2. Optimistically remove from BOTH Library favorite ID caches so Library updates immediately
+      queryClient.setQueryData<string[]>(ingredientFavoritesKey, (old) =>
+        Array.isArray(old) ? old.filter((favId) => favId !== id) : old
+      );
+      queryClient.setQueryData<string[]>(productFavoritesKey, (old) =>
+        Array.isArray(old) ? old.filter((favId) => favId !== id) : old
+      );
+
+      // 3. Persist removal to AsyncStorage for the active account
+      await removeFavoriteItem(id, userId);
+
+      // 4. Invalidate all favorite queries across Favorites & Library
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+        queryClient.invalidateQueries({ queryKey: ['library', 'ingredient-favorites'] }),
+        queryClient.invalidateQueries({ queryKey: ['library', 'product-favorites'] }),
+      ]);
     },
-    [queryClient]
+    [queryClient, favoritesQueryKey, ingredientFavoritesKey, productFavoritesKey, userId]
   );
 
   const handleOpenItem = useCallback((item: FavoriteItem) => {

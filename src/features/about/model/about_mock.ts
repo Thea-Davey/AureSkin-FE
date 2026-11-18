@@ -20,13 +20,13 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
         'Dynamic 3D facial landmark detection ensuring tilt-invariant anatomical T-zone and cheek cropping.',
       badge: 'Face Mesh',
     },
-    {
-      id: 'tech-3',
-      name: 'Harmful Pairs Relational Engine',
-      description:
-        'Deterministic conflict matching flagging dangerous active ingredient interactions.',
-      badge: 'Safety Engine',
-    },
+    // {
+    //   id: 'tech-3',
+    //   name: 'Harmful Pairs Relational Engine',
+    //   description:
+    //     'Deterministic conflict matching flagging dangerous active ingredient interactions.',
+    //   badge: 'Safety Engine',
+    // },
   ],
   academicAffiliation: {
     institution: 'De La Salle University — Dasmariñas (DLSUD)',
@@ -37,7 +37,7 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
   team: [
     {
       id: 'dev-1',
-      name: 'Lead Developer',
+      name: 'Althea Davey',
       role: 'Lead Developer & Systems Architect',
       subRole:
         'Full-Stack Mobile Architecture, On-Device Neural Model Integration & Native Pipeline',
@@ -46,8 +46,8 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
     },
     {
       id: 'res-1',
-      name: 'Lead Researcher I',
-      role: 'Lead AI / ML Researcher',
+      name: 'Bea Barnachea',
+      role: 'AI / ML Researcher',
       subRole:
         'Computer Vision Dataset Training, Facial Normalization & Model Benchmarking',
       isDeveloper: false,
@@ -55,7 +55,7 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
     },
     {
       id: 'res-2',
-      name: 'Lead Researcher II',
+      name: 'Faith Rojales',
       role: 'Lead Skincare Domain Researcher',
       subRole:
         'Empirical Dermatological Dataset Curation & Ingredient Compatibility Matrix Validation',

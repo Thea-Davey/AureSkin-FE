@@ -63,7 +63,21 @@ export const MOCK_HELP_DATA: HelpData = {
     },
   ],
   support: {
-    email: 'support@aureskin.app',
+    email: 'dab0394@dlsud.edu.ph',
+    contacts: [
+      {
+        name: 'Althea Davey',
+        email: 'dab0394@dlsud.edu.ph',
+      },
+      {
+        name: 'Bea Barnachea',
+        email: 'bbb0094@dlsud.edu.ph',
+      },
+      {
+        name: 'Faith Rojales',
+        email: 'rfp0721@dlsud.edu.ph',
+      },
+    ],
     responseTime: '24 to 48 hours',
     faqHint:
       'Looking for common questions? Check the dedicated FAQ carousel right on your Home dashboard.',

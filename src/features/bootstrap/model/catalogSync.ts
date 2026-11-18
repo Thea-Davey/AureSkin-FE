@@ -13,6 +13,8 @@ import {
   getCatalogMetadata,
   saveCatalogMetadata,
   hasValidLocalCatalog,
+  clearAllCatalogCache,
+  isMockCatalogItemId,
   CURRENT_CATALOG_VERSION,
 } from '../../../shared/storage/catalogStorage';
 import { fetchAllIngredients, fetchAllProducts } from '../../library/model/library_api';
@@ -34,6 +36,17 @@ export async function hydrateQueryClientFromDisk(queryClient: QueryClient): Prom
     ]);
 
     if (!cachedIngredients || !cachedProducts) {
+      return false;
+    }
+
+    // Guard against mock data pollution in persistent cache
+    if (
+      cachedIngredients.some((i) => isMockCatalogItemId(i?.id)) ||
+      cachedProducts.some((p) => isMockCatalogItemId(p?.id)) ||
+      cachedArticles?.some((a) => isMockCatalogItemId(a?.id))
+    ) {
+      console.warn('[CatalogSync] Found legacy mock data in disk cache. Purging and downloading real data.');
+      await clearAllCatalogCache();
       return false;
     }
 

@@ -259,7 +259,7 @@ export function S2ProductsTab({
         unstable_pressDelay={0}
         hitSlop={12}
         onPress={onAddProductPress}
-        className="absolute bottom-5 right-5 h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-75"
+        className="absolute bottom-28 right-5 h-12 w-12 items-center justify-center rounded-full bg-primary shadow-lg active:opacity-75"
       >
         <Plus size={24} color={theme.colors.card} />
       </Pressable>

@@ -29,7 +29,7 @@ export function HistoryDetailHeader({
 }: HistoryDetailHeaderProps) {
   return (
     <View className="bg-primary px-4 pb-4 pt-2">
-      <View className="mb-4 min-h-12 flex-row items-center">
+      <View className="mb-0 min-h-12 flex-row items-center">
         <Pressable
           onPress={onBack}
           hitSlop={10}

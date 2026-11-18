@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Activity } from 'lucide-react-native';
 import { CardGradientHeader } from './CardGradientHeader';
-import { Card } from '@/shared/components';
-import { HealthGauge } from '@/shared/components/HealthGauge';
+import { Card, HealthGauge, HealthScoreBadge, getHealthScoreTier } from '@/shared/components';
 import { theme } from '@/shared/theme';
 
 interface HealthScoreCardProps {
@@ -11,69 +10,21 @@ interface HealthScoreCardProps {
   summary?: string;
 }
 
-interface ScoreTier {
-  label: string;
-  color: string;
-  badgeBg: string;
-  badgeBorder: string;
-  badgeText: string;
-}
-
 /**
  * HealthScoreCard (Container 2 in Section 4.6).
- * Redesigned with:
+ * Features:
  * - Dynamic score tier gradient header
  * - Prominent Activity health pulse icon beside "Skin Health Score"
- * - Status tier pill badge
- * - Animated SVG HealthGauge (matching Home)
- * - Tightly balanced vertical spacing (eliminating large gaps)
- * - Structured "ANALYSIS INSIGHT" subtitle for improved visual hierarchy
+ * - Shared HealthScoreBadge
+ * - Animated SVG HealthGauge (matching Home & History)
+ * - Structured "ANALYSIS SUMMARY" section
  */
 export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
   healthScore,
   summary,
 }) => {
   const score = Math.max(0, Math.min(100, Math.round(healthScore || 0)));
-
-  // Define score range mapping: Green (80-100), Yellow (60-79), Orange (40-59), Red (0-39)
-  const getScoreTier = (val: number): ScoreTier => {
-    if (val >= 80) {
-      return {
-        label: 'Optimal Balance',
-        color: theme.colors.accent,
-        badgeBg: 'bg-note-positive',
-        badgeBorder: 'border-note-positive-border',
-        badgeText: 'text-note-positive-title',
-      };
-    }
-    if (val >= 60) {
-      return {
-        label: 'Moderate Balance',
-        color: theme.colors.status.warning,
-        badgeBg: 'bg-note-warning',
-        badgeBorder: 'border-note-warning-border',
-        badgeText: 'text-note-warning-title',
-      };
-    }
-    if (val >= 40) {
-      return {
-        label: 'Needs Attention',
-        color: theme.colors.note.warning.icon,
-        badgeBg: 'bg-note-warning',
-        badgeBorder: 'border-note-warning-border',
-        badgeText: 'text-note-warning-title',
-      };
-    }
-    return {
-      label: 'Compromised Barrier',
-      color: theme.colors.status.error,
-      badgeBg: 'bg-note-negative',
-      badgeBorder: 'border-note-negative-border',
-      badgeText: 'text-note-negative-title',
-    };
-  };
-
-  const tier = getScoreTier(score);
+  const tier = getHealthScoreTier(score);
 
   return (
     <Card style={2} className="mx-4 mt-4 overflow-hidden items-stretch">
@@ -96,13 +47,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
               </Text>
             </View>
 
-            <View
-              className={`self-start mt-2 px-3 py-0.5 rounded-badge border ${tier.badgeBg} ${tier.badgeBorder}`}
-            >
-              <Text className={`text-caption font-sans-bold ${tier.badgeText}`}>
-                {tier.label}
-              </Text>
-            </View>
+            <HealthScoreBadge score={score} className="mt-2" />
           </View>
 
           {/* Aligned Right Score Ring using animated HealthGauge like from Home */}
@@ -111,6 +56,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({
             size={64}
             strokeWidth={5.5}
             color={tier.color}
+            showSublabel={false}
           />
         </View>
       </View>

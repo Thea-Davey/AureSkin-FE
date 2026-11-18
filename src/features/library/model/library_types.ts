@@ -24,8 +24,17 @@ export interface IngredientSection {
   data: Ingredient[];
 }
 
+export interface ClinicalFilterWarning {
+  ingredientId: string;
+  ingredientName: string;
+  filterType: 'allergen' | 'pregnancy' | 'age' | string;
+  reason: string;
+  details?: string;
+}
+
 export type IngredientCompatibilityStatus =
   | 'compatible'
+  | 'review'
   | 'not_listed'
   | 'scan_needed'
   | 'unavailable';
@@ -75,6 +84,9 @@ export interface ProductDetail extends Product {
   good_for?: string[];
   compatible_skin_types?: string[];
   target_skin_conditions?: string[];
+  who_should_avoid?: string | null;
+  avoid?: string[];
+  caution?: string | null;
 }
 
 export type ProductCompatibilityStatus =
@@ -103,4 +115,5 @@ export interface ProductListItemModel {
   product: Product;
   isFavorite: boolean;
   isCompatible?: boolean;
+  clinicalFilterWarnings?: ClinicalFilterWarning[];
 }

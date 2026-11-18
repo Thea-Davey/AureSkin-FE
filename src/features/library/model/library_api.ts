@@ -64,6 +64,50 @@ export function addMockProduct(input: {
   return product;
 }
 
+export interface CreateProductInput {
+  name: string;
+  brand?: string;
+  description: string;
+  category?: ProductCategory;
+  ingredients: string[];
+  skinTypes?: string[];
+  skinConditions?: string[];
+}
+
+export async function createProduct(input: CreateProductInput): Promise<ProductDetail> {
+  if (isMockEnabled('library')) {
+    console.log('[Library API] Using MOCK mode for createProduct');
+    return addMockProduct(input);
+  }
+
+  const payload = {
+    name: input.name.trim(),
+    brand: input.brand?.trim() || null,
+    description: input.description.trim() || null,
+    category: input.category || 'other',
+    ingredients: input.ingredients.map((item) => item.trim()).filter(Boolean),
+    skin_types:
+      input.skinTypes && input.skinTypes.length > 0
+        ? input.skinTypes.map((t) => t.trim().toLowerCase().replace(/[\s-]+/g, ''))
+        : undefined,
+    skin_conditions:
+      input.skinConditions && input.skinConditions.length > 0
+        ? input.skinConditions.map((c) => c.trim().toLowerCase().replace(/\s+/g, '_'))
+        : undefined,
+  };
+
+  const response = await api.post<unknown>('/products', payload);
+  const raw = isRecord(response.data) && isRecord(response.data.data)
+    ? response.data.data
+    : null;
+
+  if (!raw || typeof raw.id !== 'string') {
+    throw new Error('The product service returned an unexpected response when creating the product.');
+  }
+
+  return normalizeProductDetail(raw, raw.id);
+}
+
 export function deleteMockProduct(id: string): void {
   const addedIndex = MOCK_ADDED_PRODUCTS.findIndex((item) => item.id === id);
   if (addedIndex !== -1) {
@@ -329,11 +373,25 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
     return ingredient;
   }
 
-  // 1. Instant Cache-First Lookup: Use pre-downloaded catalog for 0ms response
+  // 1. Instant Cache-First Lookup: Match by ID or exact/normalized name for 0ms response
+  const rawTarget = id.trim();
+  const normalizedTarget = rawTarget.toLowerCase();
+  const findInCache = (items: Ingredient[] | null): Ingredient | undefined => {
+    if (!items || items.length === 0) return undefined;
+    const byId = items.find((item) => item.id === rawTarget);
+    if (byId) return byId;
+    const byExactName = items.find((item) => item.name.toLowerCase().trim() === normalizedTarget);
+    if (byExactName) return byExactName;
+    return items.find((item) => {
+      const n = item.name.toLowerCase().trim();
+      return n.includes(normalizedTarget) || normalizedTarget.includes(n);
+    });
+  };
+
   try {
     const cached = await getCachedIngredients();
-    const localItem = cached?.find((item) => item.id === id);
-    if (localItem && localItem.description) {
+    const localItem = findInCache(cached);
+    if (localItem && (localItem.description || localItem.what_is_it || localItem.benefits)) {
       return localItem;
     }
   } catch {
@@ -341,7 +399,7 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
   }
 
   try {
-    const response = await api.get<unknown>(`/ingredients/${encodeURIComponent(id)}`);
+    const response = await api.get<unknown>(`/ingredients/${encodeURIComponent(rawTarget)}`);
     if (!isRecord(response.data) || !isRecord(response.data.data)) {
       throw new Error('The ingredient service returned an unexpected detail response.');
     }
@@ -350,7 +408,7 @@ export async function fetchIngredientById(id: string): Promise<Ingredient> {
   } catch (err) {
     // Offline / Network fallback: look up in cached ingredients list
     const cached = await getCachedIngredients();
-    const found = cached?.find((item) => item.id === id);
+    const found = findInCache(cached);
     if (found) {
       return found;
     }
@@ -449,42 +507,67 @@ function normalizeProductDetail(value: unknown, requestedId: string): ProductDet
     ?? value.product_ingredients
     ?? productRecord.ingredients
     ?? productRecord.product_ingredients;
-  if (!Array.isArray(rawIngredients)) {
-    throw new Error('Product detail response did not contain its ingredient list.');
-  }
 
-  const ingredients = rawIngredients
-    .map(normalizeProductIngredient)
-    .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+  let ingredients: ProductIngredient[] = [];
+  if (Array.isArray(rawIngredients)) {
+    ingredients = rawIngredients
+      .map(normalizeProductIngredient)
+      .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+  } else {
+    const rawIngStr =
+      (typeof value.raw_ingredients === 'string' && value.raw_ingredients) ||
+      (typeof productRecord.raw_ingredients === 'string' && productRecord.raw_ingredients) ||
+      (typeof rawIngredients === 'string' && rawIngredients) ||
+      '';
+    if (rawIngStr.trim().length > 0) {
+      ingredients = rawIngStr
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .map((name, idx) => ({ id: name, name, order: idx + 1 }));
+    }
+  }
 
   const rawGoodFor = productRecord.good_for ?? value.good_for;
-  if (
-    rawGoodFor !== undefined
-    && rawGoodFor !== null
-    && (
-      !Array.isArray(rawGoodFor)
-      || !rawGoodFor.every((item) => typeof item === 'string' && item.trim().length > 0)
-    )
-  ) {
-    throw new Error('Product detail response contains an invalid "good_for" list.');
-  }
+  const goodForList = parseStringList(rawGoodFor);
 
-  const rawCompatibleSkinTypes = productRecord.compatible_skin_types ?? value.compatible_skin_types;
-  const rawTargetSkinConditions = productRecord.target_skin_conditions ?? value.target_skin_conditions;
+  const compatibleSkinTypes = parseStringList(
+    productRecord.compatible_skin_types ??
+      value.compatible_skin_types ??
+      productRecord.skin_types ??
+      value.skin_types
+  );
+  const targetSkinConditions = parseStringList(
+    productRecord.target_skin_conditions ??
+      value.target_skin_conditions ??
+      productRecord.skin_conditions ??
+      value.skin_conditions
+  );
 
-  const compatibleSkinTypes = Array.isArray(rawCompatibleSkinTypes)
-    ? rawCompatibleSkinTypes.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : undefined;
-  const targetSkinConditions = Array.isArray(rawTargetSkinConditions)
-    ? rawTargetSkinConditions.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-    : undefined;
+  const avoidList = parseStringList(
+    productRecord.avoid ??
+      value.avoid ??
+      productRecord.who_should_avoid ??
+      value.who_should_avoid
+  );
+
+  const whoShouldAvoid =
+    nullableProductString(productRecord, 'who_should_avoid') ??
+    nullableProductString(value, 'who_should_avoid');
+  const caution =
+    nullableProductString(productRecord, 'caution') ??
+    nullableProductString(value, 'caution');
 
   return {
     ...product,
+    is_user_added: productRecord.is_user_added === true || value.is_user_added === true,
     ingredients,
-    good_for: Array.isArray(rawGoodFor) ? rawGoodFor : undefined,
-    compatible_skin_types: compatibleSkinTypes,
-    target_skin_conditions: targetSkinConditions,
+    good_for: goodForList.length > 0 ? goodForList : undefined,
+    compatible_skin_types: compatibleSkinTypes.length > 0 ? compatibleSkinTypes : undefined,
+    target_skin_conditions: targetSkinConditions.length > 0 ? targetSkinConditions : undefined,
+    who_should_avoid: whoShouldAvoid,
+    avoid: avoidList.length > 0 ? avoidList : undefined,
+    caution,
   };
 }
 
@@ -503,12 +586,12 @@ export async function fetchProductById(id: string): Promise<ProductDetail> {
     return product;
   }
 
-  // 1. Instant Cache-First Lookup: Use pre-downloaded catalog for 0ms response
+  // 1. Instant Cache-First Lookup only when cached item already has normalized ingredient objects
   try {
     const cached = await getCachedProducts();
     const localItem = cached?.find((item) => item.id === id);
-    if (localItem && (localItem as any).ingredients && (localItem as any).ingredients.length > 0) {
-      return localItem as ProductDetail;
+    if (localItem && Array.isArray((localItem as any).ingredients) && (localItem as any).ingredients.length > 0) {
+      return normalizeProductDetail(localItem, id);
     }
   } catch {
     // Continue to network fetch

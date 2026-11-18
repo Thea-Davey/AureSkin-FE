@@ -15,6 +15,18 @@ interface S1LatestAnalysisProps {
 export function S1LatestAnalysis({ latestAnalysis, isLoading }: S1LatestAnalysisProps) {
   const router = useRouter();
 
+  const handleSeeResults = () => {
+    try {
+      router.navigate('/(tabs)/history');
+    } catch {
+      try {
+        router.navigate('/history');
+      } catch {
+        router.replace('/(tabs)/history');
+      }
+    }
+  };
+
   return (
     <View className="mb-4">
       {/* Section Header */}
@@ -23,7 +35,7 @@ export function S1LatestAnalysis({ latestAnalysis, isLoading }: S1LatestAnalysis
           Latest Result
         </Text>
         <TouchableOpacity
-          onPress={() => router.push('/(tabs)/history')}
+          onPress={handleSeeResults}
           activeOpacity={0.7}
           className="flex-row items-center"
         >
@@ -38,7 +50,8 @@ export function S1LatestAnalysis({ latestAnalysis, isLoading }: S1LatestAnalysis
       <AnalysisSummaryCard
         latestAnalysis={latestAnalysis}
         isLoading={isLoading}
-        onScanPress={() => useAppStore.getState().openScanOverlay()}
+        onScanPress={() => router.push('/scan/setup')}
+        onCardPress={latestAnalysis ? handleSeeResults : undefined}
       />
     </View>
   );

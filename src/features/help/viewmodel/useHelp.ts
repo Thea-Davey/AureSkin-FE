@@ -49,8 +49,9 @@ export function useHelp() {
     }
   }, []);
 
-  const handleContactSupport = useCallback(async () => {
-    const email = helpData?.support.email ?? 'support@aureskin.app';
+  const handleContactSupport = useCallback(async (targetEmail?: string, targetName?: string) => {
+    const email = targetEmail || helpData?.support.email || 'dab0394@dlsud.edu.ph';
+    const recipient = targetName ? ` ${targetName}` : '';
     const url = `mailto:${email}?subject=AureSkin%20Support%20Request`;
     try {
       const supported = await Linking.canOpenURL(url);
@@ -59,11 +60,11 @@ export function useHelp() {
       } else {
         Alert.alert(
           'Email Support',
-          `Please contact us at:\n${email}`
+          `Please contact${recipient} at:\n${email}`
         );
       }
     } catch {
-      Alert.alert('Email Support', `Please contact us at:\n${email}`);
+      Alert.alert('Email Support', `Please contact${recipient} at:\n${email}`);
     }
   }, [helpData]);
 

@@ -38,7 +38,7 @@ export function RoutinePage() {
     !routineState.profileError;
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-transparent">
       <StatusBar barStyle="light-content" />
 
       {isLoadingRoutine ? (
@@ -106,7 +106,7 @@ export function RoutinePage() {
               generationError={routineState.generationError}
               canGenerate={canGenerate}
               onRetryProfile={routineState.actions.retryProfile}
-              onStartScan={() => useAppStore.getState().openScanOverlay()}
+              onStartScan={() => router.push('/scan/setup')}
               onGenerate={routineState.actions.generate}
               onDismissGenerationError={routineState.actions.clearGenerationError}
             />
@@ -144,7 +144,10 @@ export function RoutinePage() {
 
       {/* New Skin Analysis Detected Notification Dialog (Image 6) */}
       <NewSkinAnalysisDetectedDialog
-        visible={routineState.showNewAnalysisDialog}
+        visible={
+          routineState.showNewAnalysisDialog &&
+          Boolean(routineState.routine && (routineState.routine.steps?.length ?? 0) > 0)
+        }
         onKeepCurrentRoutine={routineState.dismissNewAnalysisDialog}
         onGenerateNewRoutine={routineState.confirmNewAnalysisRoutine}
       />

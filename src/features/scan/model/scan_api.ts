@@ -1,4 +1,5 @@
 import { api } from '../../../shared/services/api';
+import { supabase } from '@/shared/services/supabase';
 import { isMockEnabled } from '@/shared/config/mockConfig';
 import {
   ScanResult,
@@ -10,6 +11,10 @@ import {
   CompatibilityResponse,
   SkinGuidanceTip,
   GalleryPhotoItem,
+  QuestionnaireQuestion,
+  ShotType,
+  SetupPhotos,
+  QuestionnaireAnswer,
 } from './scan_types';
 import {
   MOCK_SCAN_RESULT,
@@ -17,8 +22,9 @@ import {
   MOCK_GALLERY_THUMBNAIL,
   MOCK_SKIN_GUIDANCE_TIPS,
   MOCK_GALLERY_PHOTOS,
+  MOCK_QUESTIONNAIRE_QUESTIONS,
 } from './scan_mock';
-import { normalizeFileUri } from './scanStore';
+import { useScanStore, normalizeFileUri } from './scanStore';
 
 // ============================================================================
 // DATA SOURCE TOGGLE (use mock)
@@ -41,7 +47,10 @@ function formatConditionDisplayName(name: string): string {
  */
 export function normalizeScanResult(raw: any): ScanResult {
   if (!raw) {
-    return MOCK_SCAN_RESULT;
+    if (isMockEnabled('scan')) {
+      return MOCK_SCAN_RESULT;
+    }
+    throw new Error('No scan analysis payload received from the server.');
   }
 
   // Normalize skin type
@@ -94,11 +103,15 @@ export function normalizeScanResult(raw: any): ScanResult {
     ? raw.compatible_ingredients
     : [];
   const compatible_ingredients: CompatibleIngredient[] = rawCompatible.map(
-    (item: any, index: number) => ({
-      id: item.id || item.ingredient_id || `compat-${index}`,
-      name: item.name || item.ingredient?.name || 'Skincare Active',
-      reason: item.reason || 'Supports barrier repair and cellular turnover.',
-    })
+    (item: any, index: number) => {
+      const resolvedId = item.id || item.ingredient_id;
+      return {
+        id: resolvedId || item.name || `compat-${index}`,
+        ingredient_id: resolvedId || undefined,
+        name: item.name || item.ingredient?.name || 'Skincare Active',
+        reason: item.reason || 'Supports barrier repair and cellular turnover.',
+      };
+    }
   );
 
   // Normalize filtered ingredients (excluded by allergen, pregnancy, or age)
@@ -131,15 +144,30 @@ export function normalizeScanResult(raw: any): ScanResult {
     })
   );
 
+  const skinTypeDescription: string | undefined =
+    (typeof raw.skin_type_description === 'string' && raw.skin_type_description.trim().length > 0)
+      ? raw.skin_type_description
+      : (rawSkinType && typeof rawSkinType === 'object' && typeof rawSkinType.description === 'string' && rawSkinType.description.trim().length > 0)
+        ? rawSkinType.description
+        : undefined;
+
   return {
     id: raw.id || '',
     user_id: raw.user_id || '',
     image_url: raw.image_url || '',
+    shot_type: raw.shot_type || 'single',
+    enhanced_analysis: Boolean(raw.enhanced_analysis),
+    image_urls: raw.image_urls || undefined,
     skin_type: skinType,
     skin_type_confidence: skinTypeConfidence,
+    skin_type_description: skinTypeDescription,
     health_score: typeof raw.health_score === 'number' ? raw.health_score : 85,
     summary: raw.summary || '',
     conditions,
+    questionnaire_score: raw.questionnaire_score || undefined,
+    vision_confidence: typeof raw.vision_confidence === 'number' ? raw.vision_confidence : undefined,
+    fused_confidence: typeof raw.fused_confidence === 'number' ? raw.fused_confidence : undefined,
+    acne_tendency: Boolean(raw.acne_tendency),
     compatible_ingredients,
     incompatible_pairs,
     filtered_ingredients,
@@ -147,29 +175,45 @@ export function normalizeScanResult(raw: any): ScanResult {
   };
 }
 
+export interface UploadScanOptions {
+  imageUri?: string;
+  shotType?: ShotType | null;
+  enhancedSkinAnalysis?: boolean;
+  photos?: SetupPhotos;
+  questionnaireAnswers?: Record<number, QuestionnaireAnswer>;
+  signal?: AbortSignal;
+}
+
 /**
- * Upload face photo for end-to-end deep learning analysis.
+ * Upload face photo(s) for end-to-end deep learning analysis and optional clinical questionnaire fusion.
  * Supports cancellation via AbortSignal.
  * - Live: POST /scan (multipart/form-data)
  * - Mock: returns MOCK_SCAN_RESULT after simulated multi-stage delay with cancellation support
  */
 export async function uploadScan(
-  imageUri: string,
+  imageUriOrOptions: string | UploadScanOptions,
   signal?: AbortSignal
 ): Promise<ScanResult> {
+  const options: UploadScanOptions =
+    typeof imageUriOrOptions === 'string'
+      ? { imageUri: imageUriOrOptions, signal }
+      : imageUriOrOptions;
+
+  const activeSignal = options.signal || signal;
+
   if (isMockEnabled('scan')) {
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         resolve();
       }, 2500);
 
-      if (signal) {
-        if (signal.aborted) {
+      if (activeSignal) {
+        if (activeSignal.aborted) {
           clearTimeout(timeout);
           reject(new DOMException('Aborted', 'AbortError'));
           return;
         }
-        signal.addEventListener('abort', () => {
+        activeSignal.addEventListener('abort', () => {
           clearTimeout(timeout);
           reject(new DOMException('Aborted', 'AbortError'));
         });
@@ -178,22 +222,83 @@ export async function uploadScan(
     return MOCK_SCAN_RESULT;
   }
 
-  const cleanUri = normalizeFileUri(imageUri);
-  const formData = new FormData();
-  const filename = cleanUri.split('/').pop() || 'face_scan.jpg';
-  const match = /\.(\w+)$/.exec(filename);
-  const type = match ? `image/${match[1]}` : 'image/jpeg';
+  // Pull active state from store if not provided in options
+  const storeState = useScanStore.getState();
+  const shotType = options.shotType || storeState.shotType || 'single';
+  const enhancedSkinAnalysis =
+    typeof options.enhancedSkinAnalysis === 'boolean'
+      ? options.enhancedSkinAnalysis
+      : storeState.enhancedSkinAnalysis;
+  const photos = options.photos || storeState.photos;
+  const questionnaireAnswers =
+    options.questionnaireAnswers || storeState.questionnaireAnswers;
 
-  formData.append('file', {
-    uri: cleanUri,
-    name: filename,
-    type,
-  } as unknown as Blob);
+  const frontUri = photos?.front || options.imageUri || storeState.capturedImageUri || '';
+  const cleanFrontUri = normalizeFileUri(frontUri);
+
+  const formData = new FormData();
+  formData.append('shot_type', shotType);
+  formData.append('enhanced_analysis', enhancedSkinAnalysis ? 'true' : 'false');
+
+  if (enhancedSkinAnalysis && questionnaireAnswers && Object.keys(questionnaireAnswers).length > 0) {
+    formData.append('questionnaire_answers', JSON.stringify(questionnaireAnswers));
+  }
+
+  // Helper to append local file or remote URL to FormData safely
+  const appendPhotoToForm = async (fieldName: string, uri: string, defaultName: string) => {
+    const cleanUri = normalizeFileUri(uri);
+    if (!cleanUri) return;
+
+    if (cleanUri.startsWith('http://') || cleanUri.startsWith('https://')) {
+      try {
+        const res = await fetch(cleanUri);
+        const blob = await res.blob();
+        formData.append(fieldName, blob, defaultName);
+      } catch (e) {
+        console.warn(`Failed to fetch remote photo for ${fieldName}:`, e);
+      }
+      return;
+    }
+
+    const filename = cleanUri.split('/').pop() || defaultName;
+    const match = /\.(\w+)$/.exec(filename);
+    const ext = match ? match[1].toLowerCase() : 'jpeg';
+    const type = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+    formData.append(fieldName, {
+      uri: cleanUri,
+      name: filename,
+      type,
+    } as unknown as Blob);
+  };
+
+  // Attach frontal photo (backend checks file_front or file)
+  if (cleanFrontUri) {
+    await appendPhotoToForm('file_front', cleanFrontUri, 'front_scan.jpg');
+  }
+
+  // If triple shot, attach left and right profiles
+  if (shotType === 'triple' && photos) {
+    if (photos.left) {
+      await appendPhotoToForm('file_left', photos.left, 'left_scan.jpg');
+    }
+    if (photos.right) {
+      await appendPhotoToForm('file_right', photos.right, 'right_scan.jpg');
+    }
+  }
 
   const response = await api.post('/scan', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    signal,
-    timeout: 60000, // 60 seconds to accommodate landmark extraction & CNN inference
+    headers: {
+      Accept: 'application/json',
+    },
+    transformRequest: (data, headers) => {
+      // Let React Native / Axios automatically set multipart/form-data with boundary
+      if (headers) {
+        delete headers['Content-Type'];
+      }
+      return data;
+    },
+    signal: activeSignal,
+    timeout: 90000, // 90 seconds for multi-image upload, preprocessing, and ML inference
   });
 
   return normalizeScanResult(response.data?.data);
@@ -350,6 +455,77 @@ export async function fetchScanResult(analysisId?: string): Promise<ScanResult> 
   }
 
   return result;
+}
+
+/**
+ * Fetches the 10 diagnostic questionnaire questions.
+ * Prioritizes direct Supabase cloud query (always accessible from phone/emulator),
+ * then FastAPI backend endpoint (/scan/questionnaire),
+ * and finally falls back to bundled MOCK_QUESTIONNAIRE_QUESTIONS.
+ */
+export async function fetchQuestionnaireQuestions(): Promise<QuestionnaireQuestion[]> {
+  // 1. Attempt direct live fetch from Supabase cloud database
+  try {
+    const { data: qData, error: qErr } = await supabase
+      .from('questionnaire_questions')
+      .select('id, question_number, section, section_title, question_text, is_multi_select, measures')
+      .order('question_number', { ascending: true });
+
+    if (!qErr && Array.isArray(qData) && qData.length > 0) {
+      const { data: cData, error: cErr } = await supabase
+        .from('questionnaire_choices')
+        .select('id, question_id, choice_order, label')
+        .order('choice_order', { ascending: true });
+
+      if (!cErr && Array.isArray(cData) && cData.length > 0) {
+        const choicesByQ: Record<number, { id: string; label: string }[]> = {};
+        for (const c of cData) {
+          const qId = c.question_id;
+          if (!choicesByQ[qId]) choicesByQ[qId] = [];
+          choicesByQ[qId].push({ id: c.id, label: c.label });
+        }
+
+        return qData.map((q: any) => ({
+          id: q.id || q.question_number,
+          questionNumber: q.question_number || q.id,
+          question: q.question_text || q.question,
+          section: q.section,
+          sectionTitle: q.section_title,
+          isMultiSelect: q.is_multi_select,
+          measures: q.measures || '',
+          choices: choicesByQ[q.id] || [],
+        }));
+      }
+    }
+  } catch (supabaseErr) {
+    console.warn('Direct Supabase fetch for questionnaire failed:', supabaseErr);
+  }
+
+  // 2. Attempt fetch via FastAPI backend endpoint
+  try {
+    const response = await api.get('/scan/questionnaire');
+    const rawList = response.data?.data;
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      return rawList.map((q: any) => ({
+        id: q.id || q.question_number,
+        questionNumber: q.question_number || q.id,
+        question: q.question_text || q.question,
+        section: q.section,
+        sectionTitle: q.section_title,
+        isMultiSelect: q.is_multi_select,
+        measures: q.measures || '',
+        choices: (q.choices || []).map((c: any) => ({
+          id: c.id,
+          label: c.label,
+        })),
+      }));
+    }
+  } catch (apiErr) {
+    console.warn('Backend API fetch for questionnaire failed, falling back to mock:', apiErr);
+  }
+
+  // 3. Fallback to bundled clinical questionnaire questions
+  return MOCK_QUESTIONNAIRE_QUESTIONS;
 }
 
 

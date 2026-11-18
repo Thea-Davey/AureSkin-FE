@@ -24,6 +24,7 @@ export interface SkinConditionResult {
 
 export interface CompatibleIngredient {
   id: string;
+  ingredient_id?: string;
   name: string;
   reason: string;
 }
@@ -50,11 +51,19 @@ export interface ScanResult {
   id: string;
   user_id: string;
   image_url: string;
+  shot_type?: ShotType;
+  enhanced_analysis?: boolean;
+  image_urls?: Record<string, string>;
   skin_type: SkinType;
   skin_type_confidence: number; // 0 - 100
+  skin_type_description?: string;
   health_score: number;        // 0 - 100 (weighted heuristic)
   summary: string;
   conditions: SkinConditionResult[];
+  questionnaire_score?: Record<string, number>;
+  vision_confidence?: number;
+  fused_confidence?: number;
+  acne_tendency?: boolean;
   compatible_ingredients: CompatibleIngredient[];
   incompatible_pairs: IncompatiblePair[];
   filtered_ingredients?: FilteredIngredient[];
@@ -197,6 +206,59 @@ export interface ScanResultsParams {
  * Active tab selection on the Scan Results screen.
  */
 export type ScanResultsTab = 'results' | 'compatibility';
+
+// ── Setup & Questionnaire Specific Types ───────────────────────
+
+export type ShotType = 'single' | 'triple';
+
+export interface SetupPhotos {
+  front?: string | null;
+  left?: string | null;
+  right?: string | null;
+}
+
+export interface QuestionnaireChoice {
+  id: string;
+  label: string;
+}
+
+export interface QuestionnaireQuestion {
+  id: number;
+  questionNumber: number;
+  question: string;
+  choices: QuestionnaireChoice[];
+  measures: string;
+  isMultiSelect?: boolean;
+  section?: string;
+  sectionTitle?: string;
+}
+
+export interface QuestionnaireAnswer {
+  questionId: number;
+  selectedChoiceId: string;
+  selectedChoiceLabel: string;
+  selectedChoiceIds?: string[];
+  selectedChoiceLabels?: string[];
+}
+
+export interface ScanSetupState {
+  enhancedSkinAnalysis: boolean;
+  shotType: ShotType | null;
+  photos: SetupPhotos;
+  questionnaireAnswers: Record<number, QuestionnaireAnswer>;
+  isQuestionnaireCompleted: boolean;
+}
+
+export interface SetupValidationResult {
+  isValid: boolean;
+  isQuestionnaireValid: boolean;
+  isShotTypeValid: boolean;
+  isPhotosValid: boolean;
+  uploadedCount: number;
+  requiredPhotosCount: number;
+  statusHeader: string;
+  statusSubtitle: string;
+}
 
 
 

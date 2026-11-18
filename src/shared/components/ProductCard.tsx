@@ -37,7 +37,12 @@ export function ProductCard({
 }: ProductCardProps) {
   const product = item?.product ?? productProp;
   const isFavorite = item?.isFavorite ?? isFavoriteProp ?? false;
-  const isCompatible = item?.isCompatible ?? isCompatibleProp ?? false;
+  const hasClinicalWarning = Boolean(
+    item?.clinicalFilterWarnings && item.clinicalFilterWarnings.length > 0
+  );
+  const isCompatible = hasClinicalWarning
+    ? false
+    : (item?.isCompatible ?? isCompatibleProp ?? false);
 
   if (!product) {
     return null;
@@ -81,7 +86,9 @@ export function ProductCard({
       </Pressable>
 
       <View className="flex-row items-center gap-2 self-start">
-        {isCompatible ? (
+        {hasClinicalWarning ? (
+          <CompatibilityBadge status="review" compact />
+        ) : isCompatible ? (
           <CompatibilityBadge status="compatible" compact />
         ) : null}
 

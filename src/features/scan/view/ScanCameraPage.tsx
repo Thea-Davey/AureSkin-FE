@@ -25,6 +25,7 @@ export const ScanCameraPage: React.FC = () => {
     recentThumbnail,
     isGuidanceVisible,
     guidanceTips,
+    promptText,
     onCameraReady,
     toggleCameraFacing,
     requestCameraPermission,
@@ -63,6 +64,7 @@ export const ScanCameraPage: React.FC = () => {
       <S2CameraControls
         recentThumbnail={recentThumbnail}
         isCapturing={isCapturing}
+        promptText={promptText}
         onCapture={capturePhoto}
         onFlip={toggleCameraFacing}
         onNavigateToUpload={navigateToUpload}

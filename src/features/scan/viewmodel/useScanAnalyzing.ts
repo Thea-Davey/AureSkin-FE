@@ -155,11 +155,13 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
         return;
       }
 
+      console.error('Scan analysis error:', err?.response?.data || err?.message || err);
       stopProgressTicker();
       setIsAnalyzing(false);
       setIsError(true);
       setErrorMessage(
         err?.response?.data?.message ||
+          err?.response?.data?.error?.message ||
           err?.message ||
           'Analysis could not be completed. Please ensure your face is clearly visible and try again.'
       );

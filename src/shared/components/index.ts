@@ -2,6 +2,8 @@ export { AppHeader, DEFAULT_HEADER_TITLE_SIZE } from './AppHeader';
 export type { AppHeaderProps, AppHeaderFontSize } from './AppHeader';
 export { BottomNavBar, AppBottomNavBar } from './BottomNavBar';
 export type { BottomNavBarProps } from './BottomNavBar';
+export { FloatingNavBar } from './FloatingNavBar';
+export type { FloatingNavBarProps } from './FloatingNavBar';
 export { MenuOverlay } from './MenuOverlay';
 export { ModalHeader } from './ModalHeader';
 
@@ -20,6 +22,9 @@ export type { DeleteDialogProps } from './DeleteDialog';
 export { NotifDialog } from './NotifDialog';
 export type { NotifDialogProps } from './NotifDialog';
 
+export { PopUpDialog } from './PopUpDialog';
+export type { PopUpDialogProps, PopUpDialogAction } from './PopUpDialog';
+
 export { ProductDetailPage } from './ProductDetailPage';
 export type { ProductDetailPageProps } from './ProductDetailPage';
 
@@ -31,6 +36,8 @@ export type { PopUpPanelProps } from './PopUpPanel';
 
 export { HealthGauge } from './HealthGauge';
 export type { HealthGaugeProps } from './HealthGauge';
+export { HealthScoreBadge, getHealthScoreTier, getHealthScoreColor } from './HealthScoreBadge';
+export type { HealthScoreBadgeProps, HealthScoreTier, HealthScoreTierKey } from './HealthScoreBadge';
 
 export { CalendarPickerModal } from './CalendarPickerModal';
 export type { CalendarPickerModalProps } from './CalendarPickerModal';
@@ -58,3 +65,10 @@ export type { FilterBadgeProps } from './FilterBadge';
 
 export { FilterSpecificBadge } from './FilterSpecificBadge';
 export type { FilterSpecificBadgeProps, FilterSpecificType } from './FilterSpecificBadge';
+
+export {
+  FixedBackgroundPattern,
+  DEFAULT_PATTERN_OPACITY,
+  DEFAULT_PULL_DOWN_OFFSET,
+} from './FixedBackgroundPattern';
+export type { FixedBackgroundPatternProps } from './FixedBackgroundPattern';
