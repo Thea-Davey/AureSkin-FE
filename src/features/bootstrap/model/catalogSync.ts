@@ -13,6 +13,8 @@ import {
   getCatalogMetadata,
   saveCatalogMetadata,
   hasValidLocalCatalog,
+  isInitialCatalogDownloaded,
+  setInitialCatalogDownloaded,
   clearAllCatalogCache,
   isMockCatalogItemId,
   CURRENT_CATALOG_VERSION,
@@ -185,6 +187,9 @@ export async function downloadAndPersistFullCatalog(
     articleCount: articles.length,
   });
 
+  // Mark initial one-time download as completed
+  await setInitialCatalogDownloaded(true);
+
   // If user is authenticated, also warm and persist routine & history
   const authState = useAuthStore.getState();
   const userId = authState.user?.id;
@@ -219,58 +224,54 @@ export async function downloadAndPersistFullCatalog(
 let isSyncInProgress = false;
 
 /**
- * Non-blocking silent background sync: checks for new data without showing any UI spinner.
+ * Non-blocking silent background sync: refreshes lightweight articles and user-scoped data.
+ * Does NOT re-download the product or ingredient catalog (catalog is downloaded once).
  */
 export async function silentBackgroundSync(queryClient: QueryClient): Promise<void> {
   if (isSyncInProgress) return;
   isSyncInProgress = true;
 
   try {
-    const meta = await getCatalogMetadata();
-    const now = Date.now();
-    const SIX_HOURS_MS = 1000 * 60 * 60 * 6;
+    const authState = useAuthStore.getState();
+    const userId = authState.user?.id;
 
-    // Throttle silent sync to at most once every 6 hours unless version changed
-    if (meta && now - meta.lastSyncedAt < SIX_HOURS_MS && meta.version === CURRENT_CATALOG_VERSION) {
-      console.log('[CatalogSync] Local disk cache is fresh. Skipping background sync.');
-      isSyncInProgress = false;
-      return;
+    const tasks: Promise<unknown>[] = [
+      fetchArticles()
+        .then(async (articles) => {
+          if (articles && articles.length > 0) {
+            await saveCachedArticles(articles);
+            queryClient.setQueryData(['articles'], articles);
+          }
+        })
+        .catch(() => null),
+    ];
+
+    if (authState.isAuthenticated && userId) {
+      tasks.push(
+        fetchRoutine()
+          .then(async (routine) => {
+            if (routine !== undefined) {
+              await saveCachedRoutine(userId, routine);
+              queryClient.setQueryData(['routine', 'current'], routine);
+            }
+          })
+          .catch(() => null),
+        fetchHistoryPage({ limit: 20, offset: 0 })
+          .then(async (history) => {
+            if (history) {
+              await saveCachedHistory(userId, history);
+              const pagesPayload = { pages: [history], pageParams: [0] };
+              queryClient.setQueryData(['history', 'list', userId], pagesPayload);
+              queryClient.setQueryData(['history', 'list'], pagesPayload);
+            }
+          })
+          .catch(() => null)
+      );
     }
 
-    console.log('[CatalogSync] Starting silent background delta sync...');
-
-    const [ingredients, products, articles] = await Promise.all([
-      fetchAllIngredients().catch(() => null),
-      fetchAllProducts().catch(() => null),
-      fetchArticles().catch(() => null),
-    ]);
-
-    if (ingredients && ingredients.length > 0) {
-      await saveCachedIngredients(ingredients);
-      queryClient.setQueryData(['library', 'all-ingredients'], ingredients);
-    }
-
-    if (products && products.length > 0) {
-      await saveCachedProducts(products);
-      queryClient.setQueryData(['library', 'all-products'], products);
-    }
-
-    if (articles && articles.length > 0) {
-      await saveCachedArticles(articles);
-      queryClient.setQueryData(['articles'], articles);
-    }
-
-    await saveCatalogMetadata({
-      version: CURRENT_CATALOG_VERSION,
-      lastSyncedAt: now,
-      ingredientCount: ingredients ? ingredients.length : meta?.ingredientCount ?? 0,
-      productCount: products ? products.length : meta?.productCount ?? 0,
-      articleCount: articles ? articles.length : meta?.articleCount ?? 0,
-    });
-
-    console.log('[CatalogSync] Silent background sync completed successfully.');
+    await Promise.allSettled(tasks);
   } catch (err) {
-    console.warn('[CatalogSync] Silent background sync failed silently (offline/network):', err);
+    console.warn('[CatalogSync] Silent background sync notice:', err);
   } finally {
     isSyncInProgress = false;
   }

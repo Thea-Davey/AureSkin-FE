@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
   CATALOG_PRODUCTS: '@aureskin/catalog/products_v2',
   CATALOG_ARTICLES: '@aureskin/catalog/articles_v2',
   CATALOG_METADATA: '@aureskin/catalog/metadata_v2',
+  CATALOG_INITIAL_DOWNLOADED: '@aureskin/catalog/initial_download_completed_v2',
   USER_ROUTINE: (userId: string) => `@aureskin/user/${userId}/routine_v2`,
   USER_HISTORY: (userId: string) => `@aureskin/user/${userId}/history_v2`,
 } as const;
@@ -178,10 +179,43 @@ export async function saveCatalogMetadata(metadata: CatalogMetadata): Promise<vo
 }
 
 /**
+ * Checks if the initial catalog download has already completed successfully.
+ */
+export async function isInitialCatalogDownloaded(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(STORAGE_KEYS.CATALOG_INITIAL_DOWNLOADED);
+    return val === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Marks the one-time catalog download as completed (or resets it).
+ */
+export async function setInitialCatalogDownloaded(completed: boolean = true): Promise<void> {
+  try {
+    if (completed) {
+      await AsyncStorage.setItem(STORAGE_KEYS.CATALOG_INITIAL_DOWNLOADED, 'true');
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEYS.CATALOG_INITIAL_DOWNLOADED);
+    }
+  } catch (err) {
+    console.warn('[CatalogStorage] Error saving initial download flag:', err);
+  }
+}
+
+/**
  * Checks whether valid permanent catalog data exists on device disk.
  */
 export async function hasValidLocalCatalog(): Promise<boolean> {
   try {
+    // 1. Instant check: If initial download was already completed, return fast true
+    const isCompleted = await isInitialCatalogDownloaded();
+    if (isCompleted) {
+      return true;
+    }
+
     const meta = await getCatalogMetadata();
     if (!meta || meta.version !== CURRENT_CATALOG_VERSION) {
       return false;
@@ -203,6 +237,9 @@ export async function hasValidLocalCatalog(): Promise<boolean> {
       await clearAllCatalogCache();
       return false;
     }
+
+    // Persist completion flag for future app opens
+    await setInitialCatalogDownloaded(true);
     return true;
   } catch {
     return false;
@@ -279,6 +316,7 @@ export async function clearAllCatalogCache(): Promise<void> {
       STORAGE_KEYS.CATALOG_PRODUCTS,
       STORAGE_KEYS.CATALOG_ARTICLES,
       STORAGE_KEYS.CATALOG_METADATA,
+      STORAGE_KEYS.CATALOG_INITIAL_DOWNLOADED,
       ...LEGACY_V1_KEYS,
     ]);
   } catch (err) {

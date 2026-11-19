@@ -30,10 +30,6 @@ export async function prefetchAppResources(
     const hydrated = await hydrateQueryClientFromDisk(queryClient);
     if (hydrated) {
       onStepProgress?.('ready');
-      // Schedule silent background sync
-      setTimeout(() => {
-        silentBackgroundSync(queryClient).catch(() => {});
-      }, 1000);
       return { isFastPath: true };
     }
   }

@@ -290,8 +290,8 @@ export async function fetchIngredients(
 }
 
 /**
- * Fetches the entire ingredients catalog from the backend (or mock)
- * by iterating pages of 100 items until complete.
+ * Fetches the initial offline ingredients catalog from the backend (or mock).
+ * Limited to top 200 items to avoid overwhelming cloud backend resources on bootstrap.
  */
 export async function fetchAllIngredients(): Promise<Ingredient[]> {
   if (isMockEnabled('library')) {
@@ -303,8 +303,9 @@ export async function fetchAllIngredients(): Promise<Ingredient[]> {
   let offset = 0;
   let hasMore = true;
   let safetyCounter = 0;
+  const maxPages = 2; // Up to 200 items for instant offline storage
 
-  while (hasMore && safetyCounter < 50) {
+  while (hasMore && safetyCounter < maxPages) {
     safetyCounter++;
     const page = await fetchIngredients({
       q: '',
@@ -661,8 +662,8 @@ export async function fetchProducts(params: ProductQuery): Promise<ProductPage> 
 }
 
 /**
- * Fetches the entire products catalog from the backend (or mock)
- * by iterating pages of 100 items until complete.
+ * Fetches the initial offline products catalog from the backend (or mock).
+ * Limited to top 200 items to avoid overwhelming cloud backend resources on bootstrap.
  */
 export async function fetchAllProducts(): Promise<Product[]> {
   if (isMockEnabled('library')) {
@@ -674,8 +675,9 @@ export async function fetchAllProducts(): Promise<Product[]> {
   let offset = 0;
   let hasMore = true;
   let safetyCounter = 0;
+  const maxPages = 2; // Up to 200 items for instant offline storage
 
-  while (hasMore && safetyCounter < 50) {
+  while (hasMore && safetyCounter < maxPages) {
     safetyCounter++;
     const page = await fetchProducts({
       q: '',

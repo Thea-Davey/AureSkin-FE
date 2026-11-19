@@ -40,7 +40,7 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
       name: 'Althea Davey',
       role: 'Lead Developer & Systems Architect',
       subRole:
-        'Full-Stack Mobile Architecture, On-Device Neural Model Integration & Native Pipeline',
+        'Mobile UI Design, Full-Stack Development, Supabase Backend Setup, Dataset Collection and Curation & Skin Type Model Training',
       isDeveloper: true,
       department: 'Computer Science Dept, DLSUD',
     },
@@ -49,16 +49,16 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
       name: 'Bea Barnachea',
       role: 'AI / ML Researcher',
       subRole:
-        'Computer Vision Dataset Training, Facial Normalization & Model Benchmarking',
+        'Skin Condition Model Training, Dataset Collection, Cleaning & Standardization, and App Feature Research',
       isDeveloper: false,
       department: 'Computer Science Dept, DLSUD',
     },
     {
       id: 'res-2',
       name: 'Faith Rojales',
-      role: 'Lead Skincare Domain Researcher',
+      role: 'Thesis & Data Researcher',
       subRole:
-        'Empirical Dermatological Dataset Curation & Ingredient Compatibility Matrix Validation',
+        'Thesis Research, Dataset Collection & Data Preparation, and App Feature Research',
       isDeveloper: false,
       department: 'Computer Science Dept, DLSUD',
     },
