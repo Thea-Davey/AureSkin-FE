@@ -290,10 +290,13 @@ export async function fetchIngredients(
 }
 
 /**
- * Fetches the initial offline ingredients catalog from the backend (or mock).
- * Limited to top 200 items to avoid overwhelming cloud backend resources on bootstrap.
+ * Fetches the entire ingredients catalog from the backend (or mock)
+ * by sequentially iterating pages of 100 items until complete.
+ * Includes gentle pacing between batches to keep cloud backend resources stable.
  */
-export async function fetchAllIngredients(): Promise<Ingredient[]> {
+export async function fetchAllIngredients(
+  onProgress?: (loadedCount: number) => void
+): Promise<Ingredient[]> {
   if (isMockEnabled('library')) {
     return [...MOCK_INGREDIENTS];
   }
@@ -303,9 +306,8 @@ export async function fetchAllIngredients(): Promise<Ingredient[]> {
   let offset = 0;
   let hasMore = true;
   let safetyCounter = 0;
-  const maxPages = 2; // Up to 200 items for instant offline storage
 
-  while (hasMore && safetyCounter < maxPages) {
+  while (hasMore && safetyCounter < 50) {
     safetyCounter++;
     const page = await fetchIngredients({
       q: '',
@@ -313,8 +315,12 @@ export async function fetchAllIngredients(): Promise<Ingredient[]> {
       offset,
     });
     allIngredients.push(...page.items);
+    onProgress?.(allIngredients.length);
+
     if (page.nextOffset !== null && page.items.length === pageSize) {
       offset = page.nextOffset;
+      // 60ms pacing to let server memory garbage-collect cleanly
+      await new Promise((resolve) => setTimeout(resolve, 60));
     } else {
       hasMore = false;
     }
@@ -662,10 +668,13 @@ export async function fetchProducts(params: ProductQuery): Promise<ProductPage> 
 }
 
 /**
- * Fetches the initial offline products catalog from the backend (or mock).
- * Limited to top 200 items to avoid overwhelming cloud backend resources on bootstrap.
+ * Fetches the entire products catalog from the backend (or mock)
+ * by sequentially iterating pages of 100 items until complete.
+ * Includes gentle pacing between batches to keep cloud backend resources stable.
  */
-export async function fetchAllProducts(): Promise<Product[]> {
+export async function fetchAllProducts(
+  onProgress?: (loadedCount: number) => void
+): Promise<Product[]> {
   if (isMockEnabled('library')) {
     return [...MOCK_ADDED_PRODUCTS, ...MOCK_PRODUCTS];
   }
@@ -675,9 +684,8 @@ export async function fetchAllProducts(): Promise<Product[]> {
   let offset = 0;
   let hasMore = true;
   let safetyCounter = 0;
-  const maxPages = 2; // Up to 200 items for instant offline storage
 
-  while (hasMore && safetyCounter < maxPages) {
+  while (hasMore && safetyCounter < 50) {
     safetyCounter++;
     const page = await fetchProducts({
       q: '',
@@ -686,8 +694,12 @@ export async function fetchAllProducts(): Promise<Product[]> {
       offset,
     });
     allProducts.push(...page.items);
+    onProgress?.(allProducts.length);
+
     if (page.nextOffset !== null && page.items.length === pageSize) {
       offset = page.nextOffset;
+      // 60ms pacing to let server memory garbage-collect cleanly
+      await new Promise((resolve) => setTimeout(resolve, 60));
     } else {
       hasMore = false;
     }

@@ -20,7 +20,7 @@ export {
  */
 export async function prefetchAppResources(
   queryClient: QueryClient,
-  onStepProgress?: (stepId: string) => void
+  onStepProgress?: (stepId: string, customLabel?: string) => void
 ): Promise<{ isFastPath: boolean }> {
   // Check if permanent disk cache is already present
   const isCached = await hasValidLocalCatalog();

@@ -7,7 +7,8 @@ import { prefetchAppResources } from '../model/bootstrap_api';
 
 const COLD_BOOT_MINIMUM_DISPLAY_MS = 1200;
 const FAST_PATH_MINIMUM_DISPLAY_MS = 350;
-const FAIL_SAFE_TIMEOUT_MS = 4500;
+// Generous 2-minute safety timeout to allow full sequential catalog download on cold boot
+const COLD_BOOT_FAIL_SAFE_TIMEOUT_MS = 120000;
 
 export function useStartupBootstrap() {
   const router = useRouter();
@@ -19,11 +20,13 @@ export function useStartupBootstrap() {
   const isNavigatingRef = useRef<boolean>(false);
   const startTimeRef = useRef<number>(Date.now());
 
-  const handleStepProgress = useCallback((stepId: string) => {
+  const handleStepProgress = useCallback((stepId: string, customLabel?: string) => {
     const step = BOOTSTRAP_STEPS.find((s) => s.id === stepId);
     if (step) {
-      setCurrentLabel(step.label);
+      setCurrentLabel(customLabel || step.label);
       setProgress((prev) => Math.max(prev, step.weight));
+    } else if (customLabel) {
+      setCurrentLabel(customLabel);
     }
   }, []);
 
@@ -48,8 +51,8 @@ export function useStartupBootstrap() {
 
       // Start prefetching / disk hydration
       try {
-        const result = await prefetchAppResources(queryClient, (stepId) => {
-          if (isMounted) handleStepProgress(stepId);
+        const result = await prefetchAppResources(queryClient, (stepId, customLabel) => {
+          if (isMounted) handleStepProgress(stepId, customLabel);
         });
         isFast = result.isFastPath;
       } catch (err) {
@@ -65,25 +68,26 @@ export function useStartupBootstrap() {
       setTimeout(() => {
         if (!isMounted) return;
         setProgress(100);
-        setCurrentLabel('Ready!');
+        setCurrentLabel('Welcome to AureSkin!');
         setIsCompleted(true);
 
         // Brief delay at 100% before transition
         setTimeout(() => {
           if (isMounted) navigateToDestination();
-        }, isFast ? 100 : 250);
+        }, isFast ? 100 : 350);
       }, remaining);
     }
 
     runBootstrap();
 
-    // Fail-safe maximum timeout (guarantees app never hangs)
+    // Generous fail-safe timer (allows full initial download to complete without being cut off)
     const failSafeTimer = setTimeout(() => {
       if (isMounted && !isNavigatingRef.current) {
+        console.warn('[Bootstrap] Max cold boot timeout reached. Navigating.');
         setProgress(100);
         navigateToDestination();
       }
-    }, FAIL_SAFE_TIMEOUT_MS);
+    }, COLD_BOOT_FAIL_SAFE_TIMEOUT_MS);
 
     return () => {
       isMounted = false;

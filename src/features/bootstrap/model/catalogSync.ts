@@ -1,4 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
+import { Ingredient, Product } from '../../library/model/library_types';
+import { Article } from '../../home/model/home_types';
 import {
   getCachedIngredients,
   saveCachedIngredients,
@@ -111,74 +113,78 @@ export async function hydrateQueryClientFromDisk(queryClient: QueryClient): Prom
 }
 
 /**
- * Cold Boot: Fetches entire catalog from server in parallel, writes to disk,
- * and primes TanStack QueryClient.
+ * Cold Boot: Sequentially downloads the entire catalog (ingredients then products),
+ * persists directly to device storage, and primes TanStack QueryClient.
+ * Strict sequential execution prevents cloud container OOM memory spikes.
  */
 export async function downloadAndPersistFullCatalog(
   queryClient: QueryClient,
-  onStepProgress?: (stepId: string) => void
+  onStepProgress?: (stepId: string, customLabel?: string) => void
 ): Promise<void> {
-  onStepProgress?.('connect');
+  onStepProgress?.('connect', 'Connecting to AureSkin service...');
 
-  // Parallel download of full catalogs
-  const [ingredientsResult, productsResult, articlesResult] = await Promise.allSettled([
-    (async () => {
-      try {
-        const items = await fetchAllIngredients();
-        await saveCachedIngredients(items);
-        queryClient.setQueryData(['library', 'all-ingredients'], items);
-        queryClient.setQueryData(['library', 'ingredients', ''], {
-          pages: [
-            {
-              items: items.slice(0, 20),
-              nextOffset: items.length > 20 ? 20 : null,
-            },
-          ],
-          pageParams: [0],
-        });
-        return items;
-      } finally {
-        onStepProgress?.('ingredients');
-      }
-    })(),
+  // 1. Sequentially fetch and persist Ingredients
+  onStepProgress?.('ingredients', 'Downloading ingredients directory...');
+  let ingredients: Ingredient[] = [];
+  try {
+    ingredients = await fetchAllIngredients((count) => {
+      onStepProgress?.('ingredients', `Downloading ingredients (${count} items)...`);
+    });
+    if (ingredients.length > 0) {
+      await saveCachedIngredients(ingredients);
+      queryClient.setQueryData(['library', 'all-ingredients'], ingredients);
+      queryClient.setQueryData(['library', 'ingredients', ''], {
+        pages: [
+          {
+            items: ingredients.slice(0, 20),
+            nextOffset: ingredients.length > 20 ? 20 : null,
+          },
+        ],
+        pageParams: [0],
+      });
+    }
+  } catch (err) {
+    console.warn('[CatalogSync] Ingredients sequential download error:', err);
+  }
 
-    (async () => {
-      try {
-        const items = await fetchAllProducts();
-        await saveCachedProducts(items);
-        queryClient.setQueryData(['library', 'all-products'], items);
-        queryClient.setQueryData(['library', 'products', '', null], {
-          pages: [
-            {
-              items: items.slice(0, 20),
-              nextOffset: items.length > 20 ? 20 : null,
-            },
-          ],
-          pageParams: [0],
-        });
-        return items;
-      } finally {
-        onStepProgress?.('products');
-      }
-    })(),
+  // 2. Sequentially fetch and persist Products (only after ingredients complete)
+  onStepProgress?.('products', 'Syncing skincare product catalog...');
+  let products: Product[] = [];
+  try {
+    products = await fetchAllProducts((count) => {
+      onStepProgress?.('products', `Syncing skincare products (${count} items)...`);
+    });
+    if (products.length > 0) {
+      await saveCachedProducts(products);
+      queryClient.setQueryData(['library', 'all-products'], products);
+      queryClient.setQueryData(['library', 'products', '', null], {
+        pages: [
+          {
+            items: products.slice(0, 20),
+            nextOffset: products.length > 20 ? 20 : null,
+          },
+        ],
+        pageParams: [0],
+      });
+    }
+  } catch (err) {
+    console.warn('[CatalogSync] Products sequential download error:', err);
+  }
 
-    (async () => {
-      try {
-        const items = await fetchArticles();
-        await saveCachedArticles(items);
-        queryClient.setQueryData(['articles'], items);
-        return items;
-      } finally {
-        onStepProgress?.('articles');
-      }
-    })(),
-  ]);
+  // 3. Fetch and persist Articles
+  onStepProgress?.('articles', 'Preparing skincare guides & routines...');
+  let articles: Article[] = [];
+  try {
+    articles = await fetchArticles();
+    if (articles.length > 0) {
+      await saveCachedArticles(articles);
+      queryClient.setQueryData(['articles'], articles);
+    }
+  } catch (err) {
+    console.warn('[CatalogSync] Articles download error:', err);
+  }
 
-  const ingredients = ingredientsResult.status === 'fulfilled' ? ingredientsResult.value : [];
-  const products = productsResult.status === 'fulfilled' ? productsResult.value : [];
-  const articles = articlesResult.status === 'fulfilled' ? articlesResult.value : [];
-
-  // Update catalog metadata
+  // 4. Update catalog metadata and flag one-time download as completed
   await saveCatalogMetadata({
     version: CURRENT_CATALOG_VERSION,
     lastSyncedAt: Date.now(),
@@ -187,10 +193,11 @@ export async function downloadAndPersistFullCatalog(
     articleCount: articles.length,
   });
 
-  // Mark initial one-time download as completed
-  await setInitialCatalogDownloaded(true);
+  if (ingredients.length > 0 || products.length > 0) {
+    await setInitialCatalogDownloaded(true);
+  }
 
-  // If user is authenticated, also warm and persist routine & history
+  // 5. If user is authenticated, warm and persist routine & history
   const authState = useAuthStore.getState();
   const userId = authState.user?.id;
   if (authState.isAuthenticated && userId) {
@@ -218,7 +225,7 @@ export async function downloadAndPersistFullCatalog(
     }
   }
 
-  onStepProgress?.('ready');
+  onStepProgress?.('ready', 'Welcome to AureSkin!');
 }
 
 let isSyncInProgress = false;
