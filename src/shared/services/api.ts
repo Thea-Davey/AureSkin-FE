@@ -58,7 +58,40 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle unified error format, backend updates, and server downtime
+let isProbingRailway = false;
+
+/**
+ * Actively verifies whether the backend container has truly crashed on Railway.
+ * When Railway containers crash (e.g. OOM or unhandled exit), Railway's edge router
+ * immediately responds with 502 Bad Gateway or 503 Service Unavailable across all routes.
+ * A lightweight probe to /health confirms whether the server is down vs. an individual slow route.
+ */
+async function checkRailwayActuallyCrashed(): Promise<boolean> {
+  if (isProbingRailway) return false;
+  isProbingRailway = true;
+  try {
+    const probe = await axios.get(`${baseURL}/health`, {
+      timeout: 4000,
+      headers: { Accept: 'application/json' },
+    });
+    // If /health responded 200, the server is UP and running - do not show crash dialog
+    if (probe.status === 200) {
+      return false;
+    }
+    return false;
+  } catch (err: any) {
+    const probeStatus = err.response?.status;
+    // Railway proxy returns 502 / 503 when the container is crashed
+    if (probeStatus === 502 || probeStatus === 503) {
+      return true;
+    }
+    return false;
+  } finally {
+    isProbingRailway = false;
+  }
+}
+
+// Response interceptor to handle unified error format, backend updates, and verified server downtime
 api.interceptors.response.use(
   (response) => {
     // Check if backend returned a version header to detect updates
@@ -71,26 +104,25 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
-    // Check if error corresponds to server downtime / crash:
-    // 1. No response: network error, server offline, ECONNREFUSED, timeout
-    // 2. HTTP 500, 502, 503, 504: Railway crash, bad gateway, service unavailable
+  async (error) => {
+    const isCanceled =
+      axios.isCancel(error) ||
+      error.name === 'AbortError' ||
+      error.code === 'ERR_CANCELED';
+
     const status = error.response?.status;
-    const isNetworkOrConnectionError =
-      !error.response ||
-      error.code === 'ECONNABORTED' ||
-      error.code === 'ERR_NETWORK' ||
-      error.message?.includes('Network Error');
+    const shouldSkip =
+      Boolean((error.config as any)?.skipCrashDialog) || isCanceled;
 
-    const isServerCrashed =
-      isNetworkOrConnectionError ||
-      status === 502 ||
-      status === 503 ||
-      status === 504 ||
-      status === 500;
-
-    if (isServerCrashed) {
-      showBackendDownDialog();
+    // Only suspect a crash if Railway returns 502 Bad Gateway or 503 Service Unavailable.
+    // Do NOT trigger on client errors (4xx), normal timeouts, canceled requests, or 500 app errors.
+    if (!shouldSkip && (status === 502 || status === 503)) {
+      void checkRailwayActuallyCrashed().then((actuallyCrashed) => {
+        if (actuallyCrashed) {
+          console.warn('[API] Verified Railway backend crash (502/503), displaying notification');
+          showBackendDownDialog();
+        }
+      });
     }
 
     // Surface standardized error message if it exists

@@ -299,6 +299,7 @@ export async function uploadScan(
     },
     signal: activeSignal,
     timeout: 90000, // 90 seconds for multi-image upload, preprocessing, and ML inference
+    ...({ skipCrashDialog: true } as any),
   });
 
   return normalizeScanResult(response.data?.data);
