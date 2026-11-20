@@ -78,3 +78,4 @@ export const hideBackendUpdateDialog = () => {
 export const reloadApplication = () => {
   useBackendUpdateStore.getState().reloadApp();
 };
+

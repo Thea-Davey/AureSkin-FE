@@ -4,13 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { theme } from '../theme';
 import { CloseButton } from './CloseButton';
+import { FixedBackgroundPattern } from './FixedBackgroundPattern';
 
 interface ModalHeaderProps {
   title: string;
   onClose?: () => void;
+  showPattern?: boolean;
 }
 
-export function ModalHeader({ title, onClose }: ModalHeaderProps) {
+export function ModalHeader({ title, onClose, showPattern = true }: ModalHeaderProps) {
   const router = useRouter();
 
   const handleClose = () => {
@@ -24,8 +26,16 @@ export function ModalHeader({ title, onClose }: ModalHeaderProps) {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={{ backgroundColor: theme.colors.primary }}>
-      <View className="flex-row items-center justify-between px-5 py-5 bg-primary">
+    <SafeAreaView
+      edges={['top']}
+      style={{
+        backgroundColor: theme.colors.primary,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {showPattern && <FixedBackgroundPattern />}
+      <View className="flex-row items-center justify-between px-5 py-5 bg-transparent z-10">
         <Text className="text-h2 font-sans-bold text-neutral-white flex-1 mr-3" numberOfLines={1}>
           {title}
         </Text>

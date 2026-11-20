@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Image, Modal } from 'react-native';
-import { ScanFace, RotateCw, Eye, X } from 'lucide-react-native';
+import { View, Text, Pressable, Image, Modal, ImageSourcePropType } from 'react-native';
+import { RotateCw, Eye, X } from 'lucide-react-native';
 import { theme } from '@/shared/theme';
 import { Card } from '@/shared/components/Card';
 import { Button } from '@/shared/components/Button';
 import { ShotType, SetupPhotos } from '../../model/scan_types';
+
+const FRONT_FACE_SCAN: ImageSourcePropType = require('../../../../../assets/images/front-face-scan.png');
+const LEFT_FACE_SCAN: ImageSourcePropType = require('../../../../../assets/images/left-face-scan.png');
+const RIGHT_FACE_SCAN: ImageSourcePropType = require('../../../../../assets/images/right-face-scan.png');
 
 export interface CapturePhotoCardProps {
   shotType: ShotType | null;
@@ -120,9 +124,14 @@ export const CapturePhotoCard: React.FC<CapturePhotoCardProps> = ({
                 onPress={() => onRetakePhoto('left')}
                 accessibilityRole="button"
                 accessibilityLabel="Take left profile photo"
-                className="items-center justify-center w-full h-full active:opacity-70"
+                className="items-center justify-center w-full h-full p-2 active:opacity-70"
               >
-                <ScanFace size={32} color={theme.colors.muted} strokeWidth={1.8} />
+                <Image
+                  source={LEFT_FACE_SCAN}
+                  style={{ width: 62, height: 62 }}
+                  resizeMode="contain"
+                  accessibilityLabel="Left face scan guide"
+                />
                 <Text className="mt-1 text-caption font-sans-medium text-text">
                   Left
                 </Text>
@@ -171,9 +180,14 @@ export const CapturePhotoCard: React.FC<CapturePhotoCardProps> = ({
                 onPress={() => onRetakePhoto('front')}
                 accessibilityRole="button"
                 accessibilityLabel="Take frontal photo"
-                className="items-center justify-center w-full h-full active:opacity-70"
+                className="items-center justify-center w-full h-full p-2 active:opacity-70"
               >
-                <ScanFace size={32} color={theme.colors.muted} strokeWidth={1.8} />
+                <Image
+                  source={FRONT_FACE_SCAN}
+                  style={{ width: 62, height: 62 }}
+                  resizeMode="contain"
+                  accessibilityLabel="Front face scan guide"
+                />
                 <Text className="mt-1 text-caption font-sans-medium text-text">
                   Front
                 </Text>
@@ -222,9 +236,14 @@ export const CapturePhotoCard: React.FC<CapturePhotoCardProps> = ({
                 onPress={() => onRetakePhoto('right')}
                 accessibilityRole="button"
                 accessibilityLabel="Take right profile photo"
-                className="items-center justify-center w-full h-full active:opacity-70"
+                className="items-center justify-center w-full h-full p-2 active:opacity-70"
               >
-                <ScanFace size={32} color={theme.colors.muted} strokeWidth={1.8} />
+                <Image
+                  source={RIGHT_FACE_SCAN}
+                  style={{ width: 62, height: 62 }}
+                  resizeMode="contain"
+                  accessibilityLabel="Right face scan guide"
+                />
                 <Text className="mt-1 text-caption font-sans-medium text-text">
                   Right
                 </Text>
@@ -271,9 +290,14 @@ export const CapturePhotoCard: React.FC<CapturePhotoCardProps> = ({
               onPress={() => onRetakePhoto('front')}
               accessibilityRole="button"
               accessibilityLabel="Take frontal selfie"
-              className="items-center justify-center w-full h-full active:opacity-70"
+              className="items-center justify-center w-full h-full p-3 active:opacity-70"
             >
-              <ScanFace size={40} color={theme.colors.muted} strokeWidth={1.8} />
+              <Image
+                source={FRONT_FACE_SCAN}
+                style={{ width: 88, height: 88 }}
+                resizeMode="contain"
+                accessibilityLabel="Frontal selfie scan guide"
+              />
               <Text className="mt-2 text-caption font-sans-medium text-text">
                 Frontal Selfie
               </Text>
