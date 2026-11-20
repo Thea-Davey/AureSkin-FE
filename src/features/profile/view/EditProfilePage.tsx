@@ -26,6 +26,7 @@ import { CalendarPickerModal } from '../../../shared/components/CalendarPickerMo
 import { Card } from '../../../shared/components/Card';
 import { CloseButton } from '../../../shared/components/CloseButton';
 import { Button } from '../../../shared/components/Button';
+import { FixedBackgroundPattern } from '../../../shared/components/FixedBackgroundPattern';
 import { theme } from '../../../shared/theme';
 import { COMMON_ALLERGENS, GENDER_OPTIONS, GenderOption } from '../model/profile_types';
 import { useEditProfile } from '../viewmodel/useEditProfile';
@@ -41,6 +42,7 @@ export function EditProfilePage() {
   const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, 24);
+  const [headerHeight, setHeaderHeight] = useState(140);
   const availableAllergens =
     profile.commonAllergies && profile.commonAllergies.length > 0
       ? profile.commonAllergies.map((a) => a.name)
@@ -50,11 +52,30 @@ export function EditProfilePage() {
   );
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary relative">
       <StatusBar style="light" />
+
+      {/* Top Background Pattern strictly pinned to the top primary area */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: headerHeight,
+          overflow: 'hidden',
+        }}
+      >
+        <FixedBackgroundPattern />
+      </View>
 
       {/* Top Olive Green Header with Safe Area Spacing */}
       <View
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0) setHeaderHeight(h);
+        }}
         style={{ paddingTop: topInset + 8, paddingBottom: 16 }}
         className="px-5 relative items-center justify-center z-20"
       >

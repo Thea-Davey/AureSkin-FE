@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseButton } from '../../../shared/components/CloseButton';
 import { PositiveNote } from '../../../shared/components/PositiveNote';
 import { Button } from '../../../shared/components/Button';
+import { FixedBackgroundPattern } from '../../../shared/components/FixedBackgroundPattern';
 import { useProfile } from '../viewmodel/useProfile';
 import { SkinOverviewCard } from './components/SkinOverviewCard';
 import { ProfileInfoCard } from './components/ProfileInfoCard';
@@ -13,14 +14,34 @@ export default function ProfilePage() {
   const { profile, actions } = useProfile();
   const insets = useSafeAreaInsets();
   const topInset = Math.max(insets.top, 24);
+  const [headerHeight, setHeaderHeight] = useState(220);
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim() || 'User';
 
   return (
-    <View className="flex-1 bg-primary">
+    <View className="flex-1 bg-primary relative">
       <StatusBar style="light" />
+
+      {/* Top Background Pattern strictly pinned to the top primary area */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: headerHeight,
+          overflow: 'hidden',
+        }}
+      >
+        <FixedBackgroundPattern />
+      </View>
 
       {/* Top Olive Green Hero Header */}
       <View
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0) setHeaderHeight(h);
+        }}
         style={{ paddingTop: topInset + 8, paddingBottom: 20 }}
         className="px-5 relative z-20"
       >
