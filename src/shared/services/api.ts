@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
+import { showBackendDownDialog } from '../store/backendStatusStore';
 
 /**
  * Dynamically resolves the backend API base URL.
@@ -56,10 +57,31 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle unified error format
+// Response interceptor to handle unified error format and server downtime
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Check if error corresponds to server downtime / crash:
+    // 1. No response: network error, server offline, ECONNREFUSED, timeout
+    // 2. HTTP 500, 502, 503, 504: Railway crash, bad gateway, service unavailable
+    const status = error.response?.status;
+    const isNetworkOrConnectionError =
+      !error.response ||
+      error.code === 'ECONNABORTED' ||
+      error.code === 'ERR_NETWORK' ||
+      error.message?.includes('Network Error');
+
+    const isServerCrashed =
+      isNetworkOrConnectionError ||
+      status === 502 ||
+      status === 503 ||
+      status === 504 ||
+      status === 500;
+
+    if (isServerCrashed) {
+      showBackendDownDialog();
+    }
+
     // Surface standardized error message if it exists
     if (error.response?.data?.error?.message) {
       error.message = error.response.data.error.message;

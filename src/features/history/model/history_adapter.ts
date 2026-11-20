@@ -59,8 +59,10 @@ export function historyDetailToScanResult(detail: HistoryDetail): ScanResult {
       reason: item.reason || '',
       details: item.details ?? undefined,
     })),
-    shot_type: (detail.shot_type as ShotType) || 'single',
-    image_urls: detail.image_urls || undefined,
+    shot_type:
+      (detail.shot_type as ShotType) ||
+      (detail.image_urls && (detail.image_urls.left || detail.image_urls.right) ? 'triple' : 'single'),
+    image_urls: (detail.image_urls as any) || (detail.image_url ? { front: detail.image_url } : undefined),
     created_at: detail.created_at,
   };
 }

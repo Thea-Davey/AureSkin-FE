@@ -16,7 +16,7 @@ export function S1HistoryResults({ detail, isRefreshing, onRefresh }: HistoryRes
   return (
     <S2ResultsTab
       scanResult={scanResult}
-      imageUri={detail.image_url || ''}
+      imageUri={detail.image_url || detail.image_urls?.front || ''}
       isRefreshing={isRefreshing}
       onRefresh={onRefresh}
     />

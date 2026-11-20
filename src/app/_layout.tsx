@@ -6,6 +6,8 @@ import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import '../global.css';
 import { useAuthStore } from '../shared/store/authStore';
+import { BackendNotifDialog } from '../shared/components/BackendNotifDialog';
+import { useBackendStatusStore } from '../shared/store/backendStatusStore';
 
 // Silence development-only navigation registration warnings
 LogBox.ignoreLogs([
@@ -26,9 +28,19 @@ export const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { isBackendDown, title, subtitle, body, iconVariant, hide } = useBackendStatusStore();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
+
+  const handleDismissBackendDown = () => {
+    hide();
+  };
+
+  const handleGoHomeBackendDown = () => {
+    hide();
+    router.replace('/(tabs)');
+  };
 
   const [fontsLoaded] = useFonts({
     'BabyGirl': require('../../assets/fonts/baby-girl.otf'),
@@ -98,6 +110,17 @@ export default function RootLayout() {
         <Stack.Screen name="library/add-product-form" options={{ animation: 'slide_from_bottom' }} />
       </Stack>
       <Toast />
+      {/* Global Backend Server Down Notification Dialog */}
+      <BackendNotifDialog
+        visible={isBackendDown}
+        title={title}
+        subtitle={subtitle}
+        body={body}
+        iconVariant={iconVariant}
+        onDismiss={handleDismissBackendDown}
+        onGoHome={handleGoHomeBackendDown}
+        onClose={handleDismissBackendDown}
+      />
     </QueryClientProvider>
   );
 }

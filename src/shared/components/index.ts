@@ -22,6 +22,9 @@ export type { DeleteDialogProps } from './DeleteDialog';
 export { NotifDialog } from './NotifDialog';
 export type { NotifDialogProps } from './NotifDialog';
 
+export { BackendNotifDialog } from './BackendNotifDialog';
+export type { BackendNotifDialogProps } from './BackendNotifDialog';
+
 export { PopUpDialog } from './PopUpDialog';
 export type { PopUpDialogProps, PopUpDialogAction } from './PopUpDialog';
 

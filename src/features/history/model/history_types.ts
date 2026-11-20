@@ -7,6 +7,8 @@ export interface HistoryEntry {
   health_score: number;
   skin_type: string | null;
   conditions: string[];
+  shot_type?: ShotType | string | null;
+  image_urls?: Record<string, string | null> | null;
 }
 
 export interface HistoryCondition {
@@ -42,7 +44,7 @@ export interface HistoryDetail extends Omit<HistoryEntry, 'conditions'> {
   incompatible_pairs: HistoryIncompatiblePair[] | null;
   filtered_ingredients?: FilteredIngredient[] | null;
   shot_type?: ShotType | string | null;
-  image_urls?: Record<string, string> | null;
+  image_urls?: Record<string, string | null> | null;
 }
 
 export interface HistoryPage {

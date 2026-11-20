@@ -1,8 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../../shared/store/authStore';
-import { saveCachedHistory } from '../../../shared/storage/catalogStorage';
+import { getCachedHistory, saveCachedHistory } from '../../../shared/storage/catalogStorage';
 import { deleteHistoryEntry, fetchHistoryPage } from '../model/history_api';
 import { HistoryEntry, HistoryFilters } from '../model/history_types';
 
@@ -49,6 +49,20 @@ export function useHistory() {
     staleTime: 1000 * 60 * 2, // 2 minutes stale time during active navigation
     refetchOnMount: 'always', // Always revalidate & fetch latest past scans on initial screen load / reload
   });
+
+  // Pre-load from disk cache immediately so the user doesn't see a blank state or waiting spinner
+  useEffect(() => {
+    if (!userId) return;
+    const existing = queryClient.getQueryData(['history', 'list', userId]);
+    if (!existing) {
+      void getCachedHistory<any>(userId).then((cached) => {
+        if (cached && (cached.items?.length || cached.pages?.length)) {
+          const pagesPayload = cached.pages ? cached : { pages: [cached], pageParams: [0] };
+          queryClient.setQueryData(['history', 'list', userId], pagesPayload);
+        }
+      });
+    }
+  }, [userId, queryClient]);
 
   // Always refresh past scans when the History tab comes into focus
   useFocusEffect(

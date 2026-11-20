@@ -1,5 +1,13 @@
 import { api } from '../../../shared/services/api';
 import { isMockEnabled } from '@/shared/config/mockConfig';
+import { ShotType } from '@/features/scan/model/scan_types';
+import {
+  getCachedHistory,
+  saveCachedHistory,
+  getCachedHistoryDetail,
+  saveCachedHistoryDetail,
+} from '@/shared/storage/catalogStorage';
+import { useAuthStore } from '@/shared/store/authStore';
 import { MOCK_HISTORY_DETAILS, MOCK_HISTORY_ENTRIES } from './history_mock';
 import {
   HistoryCompatibleIngredient,
@@ -47,12 +55,16 @@ interface HistoryResponseItem {
   skin_type?: string | null;
   conditions?: Array<string | HistoryConditionItem> | null;
   analysis_conditions?: HistoryConditionItem[] | null;
+  shot_type?: string | null;
+  image_urls?: Record<string, string | null> | null;
 }
 
 interface HistoryDetailResponse extends HistoryResponseItem {
   summary?: string | null;
   skin_type_confidence?: number | null;
   skin_type_description?: string | null;
+  shot_type?: string | null;
+  image_urls?: Record<string, string | null> | null;
   analysis_compatible_ingredients?: CompatibleIngredientItem[] | null;
   compatible_ingredients?: CompatibleIngredientItem[] | null;
   analysis_incompatible_pairs?: IncompatiblePairItem[] | null;
@@ -100,10 +112,14 @@ function normalizeEntry(item: HistoryResponseItem): HistoryEntry {
         return condition.display_name ?? condition.name ?? condition.condition?.display_name ?? condition.condition?.name ?? '';
       })
       .filter(Boolean),
+    shot_type: (item.shot_type as ShotType) ?? (item.image_urls?.left || item.image_urls?.right ? 'triple' : 'single'),
+    image_urls: item.image_urls ?? (item.image_url ? { front: item.image_url } : null),
   };
 }
 
 export async function fetchHistoryPage({ limit, offset }: HistoryPageParams): Promise<HistoryPage> {
+  const userId = useAuthStore.getState().user?.id || 'current_user';
+
   if (isMockEnabled('history')) {
     const availableEntries = MOCK_HISTORY_ENTRIES.filter((entry) => !deletedMockEntryIds.has(entry.id));
     const items = availableEntries.slice(offset, offset + limit);
@@ -113,21 +129,39 @@ export async function fetchHistoryPage({ limit, offset }: HistoryPageParams): Pr
     };
   }
 
-  const response = await api.get('/history', { params: { limit, offset } });
-  const rawItems = response.data?.data?.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error('The history response was not in the expected format.');
+  try {
+    const response = await api.get('/history', { params: { limit, offset } });
+    const rawItems = response.data?.data?.items;
+    if (!Array.isArray(rawItems)) {
+      throw new Error('The history response was not in the expected format.');
+    }
+
+    const items = (rawItems as HistoryResponseItem[]).map(normalizeEntry);
+    const total = response.data?.data?.total;
+    const hasMore =
+      typeof total === 'number' ? offset + items.length < total : items.length === limit;
+
+    const pageResult: HistoryPage = {
+      items,
+      nextOffset: hasMore ? offset + items.length : null,
+    };
+
+    if (offset === 0 && userId) {
+      void saveCachedHistory(userId, pageResult);
+    }
+
+    return pageResult;
+  } catch (err: any) {
+    // If backend request fails or device is offline, retrieve from phone disk storage
+    if (userId) {
+      const cached = await getCachedHistory<HistoryPage>(userId);
+      if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+        console.log('[HistoryAPI] Serving cached scan history from disk');
+        return cached;
+      }
+    }
+    throw err;
   }
-
-  const items = (rawItems as HistoryResponseItem[]).map(normalizeEntry);
-  const total = response.data?.data?.total;
-  const hasMore =
-    typeof total === 'number' ? offset + items.length < total : items.length === limit;
-
-  return {
-    items,
-    nextOffset: hasMore ? offset + items.length : null,
-  };
 }
 
 export async function deleteHistoryEntry(id: string): Promise<void> {
@@ -211,6 +245,12 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
       }))
     : [];
 
+  const resolvedShotType: ShotType =
+    (item.shot_type as ShotType) ??
+    (item.image_urls?.left || item.image_urls?.right ? 'triple' : 'single');
+
+  const resolvedImageUrls = item.image_urls ?? (item.image_url ? { front: item.image_url } : null);
+
   return {
     ...normalizeEntry(item),
     summary: item.summary ?? null,
@@ -220,10 +260,14 @@ function normalizeDetail(item: HistoryDetailResponse): HistoryDetail {
     compatible_ingredients: compatibleIngredients,
     incompatible_pairs: incompatiblePairs,
     filtered_ingredients: filteredIngredients,
+    shot_type: resolvedShotType,
+    image_urls: resolvedImageUrls,
   };
 }
 
 export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
+  const userId = useAuthStore.getState().user?.id || 'current_user';
+
   // If mock mode is explicitly active, or if ID is an explicit mock fixture ID, resolve from mock store
   if (isMockEnabled('history') || id.startsWith('mock-')) {
     if (deletedMockEntryIds.has(id)) {
@@ -240,8 +284,20 @@ export async function fetchHistoryDetail(id: string): Promise<HistoryDetail> {
       throw new Error('The history detail response was not in the expected format.');
     }
 
-    return normalizeDetail(payload as HistoryDetailResponse);
+    const normalized = normalizeDetail(payload as HistoryDetailResponse);
+    if (userId) {
+      void saveCachedHistoryDetail(userId, id, normalized);
+    }
+    return normalized;
   } catch (err: any) {
+    // If backend is unavailable, check cached detail on the phone
+    if (userId) {
+      const cachedDetail = await getCachedHistoryDetail<HistoryDetail>(userId, id);
+      if (cachedDetail) {
+        console.log(`[HistoryAPI] Serving cached scan detail ${id} from phone disk storage`);
+        return cachedDetail;
+      }
+    }
     // Only fall back to mock details if this was an explicit mock fixture ID
     if (id.startsWith('mock-') && MOCK_HISTORY_DETAILS[id]) {
       return MOCK_HISTORY_DETAILS[id];

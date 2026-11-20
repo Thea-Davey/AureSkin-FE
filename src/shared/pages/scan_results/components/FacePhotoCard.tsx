@@ -2,6 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, Modal, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import { UserRound, Eye, X } from 'lucide-react-native';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { theme } from '@/shared/theme';
 import { ShotType } from '@/features/scan/model/scan_types';
 
@@ -20,6 +30,208 @@ interface PhotoColumnItemProps {
   uri?: string | null;
   onView: (uri: string, label: string) => void;
 }
+
+interface ZoomablePhotoModalProps {
+  visible: boolean;
+  uri?: string | null;
+  label?: string | null;
+  onClose: () => void;
+}
+
+const ZoomablePhotoModal: React.FC<ZoomablePhotoModalProps> = ({
+  visible,
+  uri,
+  label,
+  onClose,
+}) => {
+  const [useRNImage, setUseRNImage] = useState(false);
+
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const resetZoom = () => {
+    'worklet';
+    scale.value = withTiming(1);
+    savedScale.value = 1;
+    translateX.value = withTiming(0);
+    translateY.value = withTiming(0);
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+  };
+
+  useEffect(() => {
+    if (visible) {
+      setUseRNImage(false);
+      scale.value = 1;
+      savedScale.value = 1;
+      translateX.value = 0;
+      translateY.value = 0;
+      savedTranslateX.value = 0;
+      savedTranslateY.value = 0;
+    }
+  }, [visible, uri]);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = Math.max(1, Math.min(savedScale.value * e.scale, 5));
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+      if (scale.value <= 1.05) {
+        resetZoom();
+      }
+    });
+
+  const panGesture = Gesture.Pan()
+    .minPointers(1)
+    .onUpdate((e) => {
+      if (scale.value > 1) {
+        translateX.value = savedTranslateX.value + e.translationX;
+        translateY.value = savedTranslateY.value + e.translationY;
+      }
+    })
+    .onEnd(() => {
+      if (scale.value <= 1) {
+        resetZoom();
+      } else {
+        savedTranslateX.value = translateX.value;
+        savedTranslateY.value = translateY.value;
+      }
+    });
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      if (scale.value > 1.2) {
+        resetZoom();
+      } else {
+        scale.value = withTiming(2.5);
+        savedScale.value = 2.5;
+      }
+    });
+
+  const composedGesture = Gesture.Simultaneous(
+    pinchGesture,
+    Gesture.Race(panGesture, doubleTapGesture)
+  );
+
+  const animatedImageStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  const cleanUri = (uri || '').trim().replace(/\?$/, '');
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.96)' }}>
+        {/* Top Bar with Title and Close Button (clean edge-to-edge paddingHorizontal 16) */}
+        <View
+          style={{
+            position: 'absolute',
+            top: 48,
+            left: 0,
+            right: 0,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            zIndex: 40,
+          }}
+        >
+          <Text className="text-body font-sans-bold text-neutral-white">
+            {label || 'Photo Preview'}
+          </Text>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close photo preview"
+            className="w-10 h-10 rounded-full bg-neutral-white/20 items-center justify-center active:opacity-70"
+          >
+            <X size={20} color={theme.colors.card} />
+          </Pressable>
+        </View>
+
+        {/* Center Zoomable Image Container */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          {cleanUri ? (
+            <GestureDetector gesture={composedGesture}>
+              <Animated.View
+                style={[
+                  {
+                    width: '94%',
+                    height: '75%',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                  animatedImageStyle,
+                ]}
+              >
+                {!useRNImage ? (
+                  <Image
+                    key={`modal-expo-${cleanUri}`}
+                    source={{ uri: cleanUri }}
+                    style={{ width: '100%', height: '100%', borderRadius: 16 }}
+                    contentFit="contain"
+                    onError={() => setUseRNImage(true)}
+                    accessibilityLabel="Full size analyzed face photo"
+                  />
+                ) : (
+                  <RNImage
+                    key={`modal-rn-${cleanUri}`}
+                    source={{ uri: cleanUri }}
+                    style={{ width: '100%', height: '100%', borderRadius: 16 }}
+                    resizeMode="contain"
+                    accessibilityLabel="Full size analyzed face photo"
+                  />
+                )}
+              </Animated.View>
+            </GestureDetector>
+          ) : (
+            <View className="items-center justify-center">
+              <UserRound size={56} color={theme.colors.muted} />
+              <Text className="mt-2 text-body-sm font-sans text-neutral-white/70">
+                Photo preview unavailable
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bottom Helper Hint */}
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 32,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+            zIndex: 20,
+          }}
+          pointerEvents="none"
+        >
+          <View className="rounded-badge bg-black/60 px-3 py-1">
+            <Text className="text-caption font-sans text-neutral-white/80">
+              Pinch with 2 fingers to zoom • Double-tap to reset
+            </Text>
+          </View>
+        </View>
+      </GestureHandlerRootView>
+    </Modal>
+  );
+};
 
 const PhotoColumnItem: React.FC<PhotoColumnItemProps> = ({ label, uri, onView }) => {
   const [hasError, setHasError] = useState<boolean>(false);
@@ -211,40 +423,13 @@ export const FacePhotoCard: React.FC<FacePhotoCardProps> = ({
         </View>
       )}
 
-      {/* Full Photo Preview Modal Overlay */}
-      <Modal
+      {/* Full Photo Zoomable Preview Modal Overlay */}
+      <ZoomablePhotoModal
         visible={Boolean(selectedPreview)}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedPreview(null)}
-        statusBarTranslucent
-      >
-        <View className="flex-1 bg-black/95 items-center justify-center relative px-4">
-          {/* Top Bar with Title and Close Button */}
-          <View className="w-full flex-row items-center justify-between absolute top-14 left-0 right-0 px-6 z-20">
-            <Text className="text-body font-sans-bold text-neutral-white">
-              {selectedPreview?.label || 'Photo Preview'}
-            </Text>
-            <Pressable
-              onPress={() => setSelectedPreview(null)}
-              accessibilityRole="button"
-              accessibilityLabel="Close photo preview"
-              className="w-9 h-9 rounded-full bg-neutral-white/20 items-center justify-center active:opacity-70"
-            >
-              <X size={20} color={theme.colors.card} />
-            </Pressable>
-          </View>
-
-          {/* Centered Full Photo */}
-          {selectedPreview?.uri ? (
-            <Image
-              source={{ uri: selectedPreview.uri }}
-              className="w-full h-[75%] rounded-card"
-              contentFit="contain"
-            />
-          ) : null}
-        </View>
-      </Modal>
+        uri={selectedPreview?.uri}
+        label={selectedPreview?.label}
+        onClose={() => setSelectedPreview(null)}
+      />
     </View>
   );
 };

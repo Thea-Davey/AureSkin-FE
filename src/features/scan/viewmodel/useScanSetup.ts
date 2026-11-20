@@ -120,37 +120,35 @@ export function useScanSetup() {
   const handleUploadPhotos = useCallback(async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (permission.granted) {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsMultipleSelection: shotType === 'triple',
-          quality: 0.85,
-        });
-
-        if (!result.canceled && result.assets && result.assets.length > 0) {
-          if (shotType === 'single') {
-            setPhoto('front', result.assets[0].uri);
-            setCapturedImageUri(result.assets[0].uri);
-          } else {
-            const newPhotos: SetupPhotos = {
-              left: result.assets[0]?.uri || MOCK_SETUP_PHOTOS.left,
-              front: result.assets[1]?.uri || result.assets[0]?.uri || MOCK_SETUP_PHOTOS.front,
-              right: result.assets[2]?.uri || result.assets[0]?.uri || MOCK_SETUP_PHOTOS.right,
-            };
-            setAllPhotos(newPhotos);
-          }
-          return;
-        }
+      if (!permission.granted) {
+        return;
       }
-    } catch {
-      // Fallback to mock images on permission refusal or failure
-    }
 
-    // Default mock population for seamless testing
-    if (shotType === 'single') {
-      setPhoto('front', MOCK_SETUP_PHOTOS.front || null);
-    } else {
-      setAllPhotos(MOCK_SETUP_PHOTOS);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: shotType === 'triple',
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        // User cancelled without selecting anything - do not upload or use any mock photo
+        return;
+      }
+
+      if (shotType === 'single') {
+        const pickedUri = result.assets[0].uri;
+        setPhoto('front', pickedUri);
+        setCapturedImageUri(pickedUri);
+      } else {
+        const newPhotos: SetupPhotos = {
+          left: result.assets[0]?.uri || null,
+          front: result.assets[1]?.uri || (result.assets.length === 1 ? result.assets[0]?.uri : null),
+          right: result.assets[2]?.uri || null,
+        };
+        setAllPhotos(newPhotos);
+      }
+    } catch (err) {
+      console.warn('[useScanSetup] Upload photo selection error:', err);
     }
   }, [shotType, setPhoto, setAllPhotos, setCapturedImageUri]);
 

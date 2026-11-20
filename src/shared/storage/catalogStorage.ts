@@ -19,6 +19,7 @@ const STORAGE_KEYS = {
   CATALOG_INITIAL_DOWNLOADED: '@aureskin/catalog/initial_download_completed_v2',
   USER_ROUTINE: (userId: string) => `@aureskin/user/${userId}/routine_v2`,
   USER_HISTORY: (userId: string) => `@aureskin/user/${userId}/history_v2`,
+  USER_HISTORY_DETAIL: (userId: string, id: string) => `@aureskin/user/${userId}/history_detail_${id}_v2`,
 } as const;
 
 const LEGACY_V1_KEYS = [
@@ -303,6 +304,41 @@ export async function saveCachedHistory<T = unknown>(
     }
   } catch (err) {
     console.warn('[CatalogStorage] Error writing history to disk:', err);
+  }
+}
+
+export async function getCachedHistoryDetail<T = unknown>(
+  userId: string,
+  id: string
+): Promise<T | null> {
+  if (!userId || !id) return null;
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.USER_HISTORY_DETAIL(userId, id));
+    if (!raw) return null;
+    return safeJsonParse<T | null>(raw, null);
+  } catch (err) {
+    console.warn('[CatalogStorage] Error reading cached history detail:', err);
+    return null;
+  }
+}
+
+export async function saveCachedHistoryDetail<T = unknown>(
+  userId: string,
+  id: string,
+  detail: T | null
+): Promise<void> {
+  if (!userId || !id) return;
+  try {
+    if (detail) {
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.USER_HISTORY_DETAIL(userId, id),
+        JSON.stringify(detail)
+      );
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEYS.USER_HISTORY_DETAIL(userId, id));
+    }
+  } catch (err) {
+    console.warn('[CatalogStorage] Error writing history detail to disk:', err);
   }
 }
 

@@ -94,7 +94,7 @@ export function AboutPage() {
             </View>
 
             {/* Tech 3 */}
-            {/* <View className="flex-row items-start">
+            <View className="flex-row items-start">
               <View className="mr-3 mt-0.5 h-9 w-9 items-center justify-center rounded-full bg-primary/10">
                 <Database size={18} color={theme.colors.primary} />
               </View>
@@ -106,7 +106,7 @@ export function AboutPage() {
                   Deterministic conflict matching flagging dangerous active ingredient interactions.
                 </Text>
               </View>
-            </View> */}
+            </View>
           </Card>
 
           {/* Container 4: Institution & Research Team */}
