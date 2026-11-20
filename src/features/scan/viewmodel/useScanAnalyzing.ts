@@ -25,6 +25,7 @@ export interface UseScanAnalyzingReturn {
   // Actions
   handleCancel: () => void;
   handleRetry: () => void;
+  handleRetake: () => void;
   handleDismissError: () => void;
 }
 
@@ -61,15 +62,17 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
   const isNavigatingRef = useRef<boolean>(false);
 
   // Helper to determine stage based on progress value
+  // Preprocessing (MAPPING_LANDMARKS) takes the first ~5s (0 - 28%) to allow
+  // image upload and MediaPipe facial mesh mapping to finish before analysis stages begin.
   const getStageForProgress = (p: number): PipelineStageInfo => {
-    if (p < 25) return PIPELINE_STAGES[0];
-    if (p < 60) return PIPELINE_STAGES[1];
-    if (p < 85) return PIPELINE_STAGES[2];
-    if (p < 98) return PIPELINE_STAGES[3];
-    return PIPELINE_STAGES[4];
+    if (p < 28) return PIPELINE_STAGES[0]; // MAPPING_LANDMARKS
+    if (p < 68) return PIPELINE_STAGES[1]; // CLASSIFYING_CONDITIONS
+    if (p < 85) return PIPELINE_STAGES[2]; // CALCULATING_SCORE
+    if (p < 98) return PIPELINE_STAGES[3]; // CHECKING_COMPATIBILITY
+    return PIPELINE_STAGES[4];             // COMPLETE
   };
 
-  // Start progress ticker
+  // Start progress ticker paced to match the real ML execution pipeline
   const startProgressTicker = useCallback(() => {
     if (progressTimerRef.current) {
       clearInterval(progressTimerRef.current);
@@ -77,15 +80,15 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
 
     progressTimerRef.current = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 95) {
-          return 95; // Hold at 95% until API completes
+        if (prev >= 94) {
+          return 94; // Hold smoothly at 94% until API completes
         }
-        const increment = Math.max(1, Math.floor(Math.random() * 3));
-        const next = Math.min(95, prev + increment);
+        // Advance 1% every 180ms (~17 seconds total before hold)
+        const next = Math.min(94, prev + 1);
         setCurrentStage(getStageForProgress(next));
         return next;
       });
-    }, 60);
+    }, 180);
   }, []);
 
   // Stop progress ticker
@@ -113,7 +116,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
 
     startProgressTicker();
 
-    const MAX_RETRIES = 2; // Up to 3 attempts total (initial + 2 automatic retries)
+    const MAX_RETRIES = 2; // Up to 3 attempts total (initial + 2 automatic retries for network/timeouts)
     let lastError: any = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -176,9 +179,30 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
         }
 
         lastError = err;
+        const status = err?.response?.status;
+        const rawMessage =
+          err?.response?.data?.message ||
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          '';
+
+        const isFaceOrValidationError =
+          status === 400 ||
+          status === 422 ||
+          /no face/i.test(rawMessage) ||
+          /landmark/i.test(rawMessage) ||
+          /not detected/i.test(rawMessage) ||
+          /validation/i.test(rawMessage);
+
+        // If face detection failed or input was invalid, do NOT retry! Stop immediately so user can retake photo.
+        if (isFaceOrValidationError) {
+          console.warn('[Scan] Face detection / validation failure, aborting retries:', rawMessage);
+          break;
+        }
+
         console.warn(`[Scan] Attempt ${attempt + 1} encountered an issue:`, err?.response?.data || err?.message || err);
 
-        // If retries remain, wait silently and retry on its own so the user never sees a failure
+        // If retries remain for network/server hiccups, wait silently and retry on its own
         if (attempt < MAX_RETRIES) {
           // Hold progress smoothly around 88%
           setProgress((prev) => Math.min(prev, 88));
@@ -203,8 +227,8 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
       }
     }
 
-    // Only if all attempts failed, present the error modal to the user
-    console.error('Scan analysis failed after all automatic retries:', lastError?.response?.data || lastError?.message || lastError);
+    // Only if all attempts failed or face detection failed, present the error modal to the user
+    console.error('Scan analysis failed:', lastError?.response?.data || lastError?.message || lastError);
     stopProgressTicker();
     setIsAnalyzing(false);
     setIsError(true);
@@ -212,7 +236,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
       lastError?.response?.data?.message ||
         lastError?.response?.data?.error?.message ||
         lastError?.message ||
-        'Analysis could not be completed. Please ensure your face is clearly visible and try again.'
+        'No face detected in the image. Please ensure your face is clearly visible, well-lit, and facing the camera, then try retaking the photo.'
     );
   }, [imageUri, queryClient, router, startProgressTicker, stopProgressTicker]);
 
@@ -252,6 +276,28 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
     executeAnalysis();
   }, [executeAnalysis]);
 
+  // Retake photo: clear previous photo and navigate back to Camera / Setup
+  const handleRetake = useCallback(() => {
+    stopProgressTicker();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsAnalyzing(false);
+    setIsError(false);
+    useScanStore.getState().clearCapturedImage();
+
+    const shotType = useScanStore.getState().shotType;
+    try {
+      if (shotType === 'triple') {
+        router.replace('/scan/setup' as any);
+      } else {
+        router.replace('/scan/camera' as any);
+      }
+    } catch {
+      router.replace('/scan/camera' as any);
+    }
+  }, [router, stopProgressTicker]);
+
   // Dismiss error modal without retry
   const handleDismissError = useCallback(() => {
     setIsError(false);
@@ -267,6 +313,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
     errorMessage,
     handleCancel,
     handleRetry,
+    handleRetake,
     handleDismissError,
   };
 }

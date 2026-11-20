@@ -24,6 +24,7 @@ export const ScanAnalyzingPage: React.FC = () => {
     errorMessage,
     handleCancel,
     handleRetry,
+    handleRetake,
     handleDismissError,
   } = useScanAnalyzing();
 
@@ -55,6 +56,7 @@ export const ScanAnalyzingPage: React.FC = () => {
         message={errorMessage}
         onRetry={handleRetry}
         onCancel={handleDismissError}
+        onRetake={handleRetake}
       />
     </View>
   );

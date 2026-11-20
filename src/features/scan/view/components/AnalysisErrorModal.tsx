@@ -9,6 +9,7 @@ interface AnalysisErrorModalProps {
   message?: string;
   onRetry: () => void;
   onCancel: () => void;
+  onRetake?: () => void;
 }
 
 /**
@@ -21,7 +22,10 @@ export const AnalysisErrorModal: React.FC<AnalysisErrorModalProps> = ({
   message,
   onRetry,
   onCancel,
+  onRetake,
 }) => {
+  const isNoFace = /no face/i.test(message || '') || /landmark/i.test(message || '');
+
   return (
     <Modal
       visible={visible}
@@ -40,13 +44,15 @@ export const AnalysisErrorModal: React.FC<AnalysisErrorModalProps> = ({
 
           {/* Heading */}
           <Text className="text-h3 font-sans-bold text-text text-center mt-3">
-            Analysis Failed
+            {isNoFace ? 'No Face Detected' : 'Analysis Interrupted'}
           </Text>
 
           {/* Error Description Message */}
           <Text className="text-body-sm font-sans text-muted text-center mt-2">
             {message ||
-              'Analysis could not be completed. Please ensure your face is clearly visible and try again.'}
+              (isNoFace
+                ? 'No face detected in the image. Please ensure your face is clearly visible, well-lit, and facing the camera, then try retaking the photo.'
+                : 'Analysis could not be completed. Please check your connection and try again.')}
           </Text>
 
           {/* Action Triggers */}
@@ -61,15 +67,27 @@ export const AnalysisErrorModal: React.FC<AnalysisErrorModalProps> = ({
               textClassName="text-muted font-sans-semibold text-body-sm"
             />
 
-            <Button
-              onPress={onRetry}
-              variant="primary"
-              size="md"
-              title="Retry"
-              accessibilityLabel="Retry skin analysis"
-              className="flex-1 ml-2"
-              textClassName="text-neutral-white font-sans-bold text-body-sm"
-            />
+            {isNoFace ? (
+              <Button
+                onPress={onRetake || onCancel}
+                variant="primary"
+                size="md"
+                title="Retake Photo"
+                accessibilityLabel="Retake facial photo"
+                className="flex-1 ml-2"
+                textClassName="text-neutral-white font-sans-bold text-body-sm"
+              />
+            ) : (
+              <Button
+                onPress={onRetry}
+                variant="primary"
+                size="md"
+                title="Retry"
+                accessibilityLabel="Retry skin analysis"
+                className="flex-1 ml-2"
+                textClassName="text-neutral-white font-sans-bold text-body-sm"
+              />
+            )}
           </View>
         </View>
       </View>
