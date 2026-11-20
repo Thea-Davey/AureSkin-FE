@@ -57,36 +57,50 @@ export const AnalysisErrorModal: React.FC<AnalysisErrorModalProps> = ({
 
           {/* Action Triggers */}
           <View className="flex-row items-center justify-between w-full mt-6">
-            <Button
-              onPress={onCancel}
-              variant="outline"
-              size="md"
-              title="Cancel"
-              accessibilityLabel="Cancel analysis and return"
-              className="flex-1 mr-2"
-              textClassName="text-muted font-sans-semibold text-body-sm"
-            />
-
             {isNoFace ? (
-              <Button
-                onPress={onRetake || onCancel}
-                variant="primary"
-                size="md"
-                title="Retake Photo"
-                accessibilityLabel="Retake facial photo"
-                className="flex-1 ml-2"
-                textClassName="text-neutral-white font-sans-bold text-body-sm"
-              />
+              <>
+                <Button
+                  onPress={onRetry}
+                  variant="outline"
+                  size="md"
+                  title="Retry"
+                  accessibilityLabel="Retry skin analysis"
+                  className="flex-1 mr-2"
+                  textClassName="text-text font-sans-semibold text-body-sm"
+                />
+
+                <Button
+                  onPress={onRetake || onCancel}
+                  variant="primary"
+                  size="md"
+                  title="Retake Photo"
+                  accessibilityLabel="Retake facial photo"
+                  className="flex-1 ml-2"
+                  textClassName="text-neutral-white font-sans-bold text-body-sm"
+                />
+              </>
             ) : (
-              <Button
-                onPress={onRetry}
-                variant="primary"
-                size="md"
-                title="Retry"
-                accessibilityLabel="Retry skin analysis"
-                className="flex-1 ml-2"
-                textClassName="text-neutral-white font-sans-bold text-body-sm"
-              />
+              <>
+                <Button
+                  onPress={onCancel}
+                  variant="outline"
+                  size="md"
+                  title="Cancel"
+                  accessibilityLabel="Cancel analysis and return"
+                  className="flex-1 mr-2"
+                  textClassName="text-muted font-sans-semibold text-body-sm"
+                />
+
+                <Button
+                  onPress={onRetry}
+                  variant="primary"
+                  size="md"
+                  title="Retry"
+                  accessibilityLabel="Retry skin analysis"
+                  className="flex-1 ml-2"
+                  textClassName="text-neutral-white font-sans-bold text-body-sm"
+                />
+              </>
             )}
           </View>
         </View>

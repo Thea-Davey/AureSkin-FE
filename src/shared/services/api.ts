@@ -2,6 +2,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
 import { showBackendDownDialog } from '../store/backendStatusStore';
+import { useBackendUpdateStore } from '../store/backendUpdateStore';
 
 /**
  * Dynamically resolves the backend API base URL.
@@ -57,9 +58,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle unified error format and server downtime
+// Response interceptor to handle unified error format, backend updates, and server downtime
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Check if backend returned a version header to detect updates
+    const backendVersion =
+      response.headers?.['x-backend-version'] ||
+      response.headers?.['x-app-version'] ||
+      response.data?.meta?.version;
+    if (backendVersion) {
+      useBackendUpdateStore.getState().checkVersion(backendVersion);
+    }
+    return response;
+  },
   (error) => {
     // Check if error corresponds to server downtime / crash:
     // 1. No response: network error, server offline, ECONNREFUSED, timeout

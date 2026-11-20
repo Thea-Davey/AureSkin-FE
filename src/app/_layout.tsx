@@ -8,6 +8,8 @@ import '../global.css';
 import { useAuthStore } from '../shared/store/authStore';
 import { BackendNotifDialog } from '../shared/components/BackendNotifDialog';
 import { useBackendStatusStore } from '../shared/store/backendStatusStore';
+import { BackendUpdateDialog } from '../shared/components/BackendUpdateDialog';
+import { useBackendUpdateStore } from '../shared/store/backendUpdateStore';
 
 // Silence development-only navigation registration warnings
 LogBox.ignoreLogs([
@@ -29,6 +31,14 @@ export const queryClient = new QueryClient({
 export default function RootLayout() {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const { isBackendDown, title, subtitle, body, iconVariant, hide } = useBackendStatusStore();
+  const {
+    isUpdateAvailable,
+    title: updateTitle,
+    subtitle: updateSubtitle,
+    body: updateBody,
+    hide: hideUpdate,
+    reloadApp,
+  } = useBackendUpdateStore();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
@@ -40,6 +50,14 @@ export default function RootLayout() {
   const handleGoHomeBackendDown = () => {
     hide();
     router.replace('/(tabs)');
+  };
+
+  const handleDismissUpdate = () => {
+    hideUpdate();
+  };
+
+  const handleReloadApp = () => {
+    reloadApp();
   };
 
   const [fontsLoaded] = useFonts({
@@ -120,6 +138,16 @@ export default function RootLayout() {
         onDismiss={handleDismissBackendDown}
         onGoHome={handleGoHomeBackendDown}
         onClose={handleDismissBackendDown}
+      />
+      {/* Global Backend Update Notification Dialog */}
+      <BackendUpdateDialog
+        visible={isUpdateAvailable}
+        title={updateTitle}
+        subtitle={updateSubtitle}
+        body={updateBody}
+        onDismiss={handleDismissUpdate}
+        onReload={handleReloadApp}
+        onClose={handleDismissUpdate}
       />
     </QueryClientProvider>
   );

@@ -248,14 +248,21 @@ const PhotoColumnItem: React.FC<PhotoColumnItemProps> = ({ label, uri, onView })
     >
       {cleanUri && !hasError ? (
         <>
-          <Image
-            source={{ uri: cleanUri }}
-            contentFit="cover"
-            transition={200}
-            style={{ width: '100%', height: '100%' }}
-            onError={() => setHasError(true)}
-            accessibilityLabel={`${label} profile photo`}
-          />
+          <Pressable
+            onPress={() => onView(cleanUri, `${label} Profile`)}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${label} profile photo full size`}
+            className="w-full h-full active:opacity-90"
+          >
+            <Image
+              source={{ uri: cleanUri }}
+              contentFit="cover"
+              transition={200}
+              style={{ width: '100%', height: '100%' }}
+              onError={() => setHasError(true)}
+              accessibilityLabel={`${label} profile photo`}
+            />
+          </Pressable>
           {/* View icon button on top left */}
           <View style={{ position: 'absolute', top: 8, left: 8, zIndex: 10 }}>
             <Pressable
@@ -380,26 +387,33 @@ export const FacePhotoCard: React.FC<FacePhotoCardProps> = ({
         <View className="aspect-square w-full items-center justify-center bg-background overflow-hidden relative">
           {activeUri && !imageFailed ? (
             <>
-              {!useRNImage ? (
-                <Image
-                  key={`expo-${activeUri}`}
-                  source={{ uri: activeUri }}
-                  contentFit="cover"
-                  transition={200}
-                  style={{ width: '100%', height: '100%' }}
-                  onError={handleExpoError}
-                  accessibilityLabel="Analyzed face photo"
-                />
-              ) : (
-                <RNImage
-                  key={`rn-${activeUri}`}
-                  source={{ uri: activeUri }}
-                  resizeMode="cover"
-                  style={{ width: '100%', height: '100%' }}
-                  onError={handleRNError}
-                  accessibilityLabel="Analyzed face photo"
-                />
-              )}
+              <Pressable
+                onPress={() => setSelectedPreview({ uri: activeUri, label: 'Analyzed Face Photo' })}
+                accessibilityRole="button"
+                accessibilityLabel="View photo full size"
+                className="w-full h-full active:opacity-90 items-center justify-center"
+              >
+                {!useRNImage ? (
+                  <Image
+                    key={`expo-${activeUri}`}
+                    source={{ uri: activeUri }}
+                    contentFit="cover"
+                    transition={200}
+                    style={{ width: '100%', height: '100%' }}
+                    onError={handleExpoError}
+                    accessibilityLabel="Analyzed face photo"
+                  />
+                ) : (
+                  <RNImage
+                    key={`rn-${activeUri}`}
+                    source={{ uri: activeUri }}
+                    resizeMode="cover"
+                    style={{ width: '100%', height: '100%' }}
+                    onError={handleRNError}
+                    accessibilityLabel="Analyzed face photo"
+                  />
+                )}
+              </Pressable>
               {/* View button on top left for single shot */}
               <View style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
                 <Pressable

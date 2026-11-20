@@ -35,3 +35,4 @@ export const showBackendDownDialog = (customMessage?: string, customTitle?: stri
 export const hideBackendDownDialog = () => {
   useBackendStatusStore.getState().hide();
 };
+

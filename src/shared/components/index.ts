@@ -25,6 +25,9 @@ export type { NotifDialogProps } from './NotifDialog';
 export { BackendNotifDialog } from './BackendNotifDialog';
 export type { BackendNotifDialogProps } from './BackendNotifDialog';
 
+export { BackendUpdateDialog } from './BackendUpdateDialog';
+export type { BackendUpdateDialogProps } from './BackendUpdateDialog';
+
 export { PopUpDialog } from './PopUpDialog';
 export type { PopUpDialogProps, PopUpDialogAction } from './PopUpDialog';
 

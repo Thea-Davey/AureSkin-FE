@@ -60,6 +60,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isNavigatingRef = useRef<boolean>(false);
+  const isFaceVerifiedRef = useRef<boolean>(false);
 
   // Helper to determine stage based on progress value
   // Preprocessing (MAPPING_LANDMARKS) takes the first ~5s (0 - 28%) to allow
@@ -80,6 +81,13 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
 
     progressTimerRef.current = setInterval(() => {
       setProgress((prev) => {
+        // Phase 1 gating: Until face presence and landmarks are confirmed by the backend,
+        // clamp progress at Phase 1 (28%, MAPPING_LANDMARKS) and do not advance to phase 2, 3, 4.
+        if (!isFaceVerifiedRef.current && prev >= 28) {
+          setCurrentStage(PIPELINE_STAGES[0]);
+          return 28;
+        }
+
         if (prev >= 94) {
           return 94; // Hold smoothly at 94% until API completes
         }
@@ -103,6 +111,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
   const executeAnalysis = useCallback(async () => {
     // Reset state
     stopProgressTicker();
+    isFaceVerifiedRef.current = false;
     setIsAnalyzing(true);
     setIsError(false);
     setErrorMessage('');
@@ -151,6 +160,18 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
           return;
         }
 
+        // Face presence & analysis verified by backend - advance through remaining phases
+        isFaceVerifiedRef.current = true;
+        setCurrentStage(PIPELINE_STAGES[1]);
+        setProgress(65);
+        await new Promise((r) => setTimeout(r, 280));
+        setCurrentStage(PIPELINE_STAGES[2]);
+        setProgress(85);
+        await new Promise((r) => setTimeout(r, 220));
+        setCurrentStage(PIPELINE_STAGES[3]);
+        setProgress(96);
+        await new Promise((r) => setTimeout(r, 180));
+
         stopProgressTicker();
         setProgress(100);
         setCurrentStage(PIPELINE_STAGES[4]);
@@ -197,6 +218,10 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
         // If face detection failed or input was invalid, do NOT retry! Stop immediately so user can retake photo.
         if (isFaceOrValidationError) {
           console.warn('[Scan] Face detection / validation failure, aborting retries:', rawMessage);
+          isFaceVerifiedRef.current = false;
+          stopProgressTicker();
+          setProgress((prev) => Math.min(prev, 28));
+          setCurrentStage(PIPELINE_STAGES[0]);
           break;
         }
 

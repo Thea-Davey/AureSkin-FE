@@ -11,7 +11,7 @@ export const MOCK_HELP_DATA: HelpData = {
       steps: [
         'Take photos in neutral, indirect daylight facing a window.',
         'Clean your skin prior to analysis to avoid false oil readings.',
-        'Keep a neutral facial expression and hold camera 8–12 inches away.',
+        'Keep a neutral facial expression, make sure your hair or bangs are not covering your face, especially your forehead and hold camera 8–12 inches away from your face.',
       ],
       iconType: 'camera',
     },

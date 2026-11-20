@@ -89,6 +89,9 @@ export function StartupLoadingPage() {
           <Text className="font-brand text-display text-neutral-white tracking-wider">
             AureSkin
           </Text>
+          <Text className="font-sans text-body-sm text-neutral-white/90 tracking-wide mt-1 text-center">
+            Your Personal Skin Health Companion
+          </Text>
         </View>
 
         {/* Bottom Area: Rotating Status Ticker + Progress Bar */}

@@ -70,7 +70,7 @@ export const useScanStore = create<ScanStoreState>((set) => ({
   hasNewScanForLibrary: false,
   hasNewScanForRoutine: false,
 
-  enhancedSkinAnalysis: true,
+  enhancedSkinAnalysis: false,
   shotType: null,
   photos: {},
   questionnaireAnswers: {},
@@ -122,7 +122,7 @@ export const useScanStore = create<ScanStoreState>((set) => ({
   clearQuestionnaireAnswers: () => set({ questionnaireAnswers: {} }),
   resetScanSetup: () =>
     set({
-      enhancedSkinAnalysis: true,
+      enhancedSkinAnalysis: false,
       shotType: null,
       photos: {},
       questionnaireAnswers: {},
