@@ -96,7 +96,7 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
     }
   }, []);
 
-  // Execute pipeline
+  // Execute pipeline with automatic silent retry on transient connection/model hiccups
   const executeAnalysis = useCallback(async () => {
     // Reset state
     stopProgressTicker();
@@ -113,60 +113,108 @@ export function useScanAnalyzing(): UseScanAnalyzingReturn {
 
     startProgressTicker();
 
-    try {
-      const result: ScanResult = await uploadScan(imageUri, controller.signal);
+    const MAX_RETRIES = 2; // Up to 3 attempts total (initial + 2 automatic retries)
+    let lastError: any = null;
 
-      // Cache the live scan result directly into global in-memory store
-      useScanStore.getState().setLatestScanResult(result);
-
-      // Invalidate queries so History, Home, Library, and Routine tabs immediately refresh with this new scan
-      void queryClient.invalidateQueries({ queryKey: ['history'] });
-      void queryClient.invalidateQueries({ queryKey: ['home'] });
-      void queryClient.invalidateQueries({ queryKey: ['library'] });
-      void queryClient.invalidateQueries({ queryKey: ['routine'] });
-
-      // If aborted during execution, do not proceed to success
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       if (controller.signal.aborted) {
         return;
       }
 
-      stopProgressTicker();
-      setProgress(100);
-      setCurrentStage(PIPELINE_STAGES[4]);
-      setIsAnalyzing(false);
-
-      // Brief delay so user perceives completion before transition
-      setTimeout(() => {
-        if (isNavigatingRef.current) return;
-        isNavigatingRef.current = true;
-
-        try {
-          router.replace({
-            pathname: '/scan/results' as any,
-            params: { analysisId: result.id, imageUri },
+      try {
+        if (attempt > 0) {
+          console.log(`[Scan] Retrying analysis silently (attempt ${attempt + 1}/${MAX_RETRIES + 1})...`);
+          setCurrentStage({
+            key: 'CLASSIFYING_CONDITIONS',
+            headline: 'ANALYZING FACIAL TARGET ZONES...',
+            subtext: 'Calibrating dermatological models for high precision',
+            targetProgress: 85,
           });
-        } catch {
-          router.replace('/(tabs)');
         }
-      }, 500);
-    } catch (err: any) {
-      if (controller.signal.aborted || err?.name === 'AbortError') {
-        // Normal user cancellation - do not show error modal
-        return;
-      }
 
-      console.error('Scan analysis error:', err?.response?.data || err?.message || err);
-      stopProgressTicker();
-      setIsAnalyzing(false);
-      setIsError(true);
-      setErrorMessage(
-        err?.response?.data?.message ||
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Analysis could not be completed. Please ensure your face is clearly visible and try again.'
-      );
+        const result: ScanResult = await uploadScan(imageUri, controller.signal);
+
+        // Cache the live scan result directly into global in-memory store
+        useScanStore.getState().setLatestScanResult(result);
+
+        // Invalidate queries so History, Home, Library, and Routine tabs immediately refresh with this new scan
+        void queryClient.invalidateQueries({ queryKey: ['history'] });
+        void queryClient.invalidateQueries({ queryKey: ['home'] });
+        void queryClient.invalidateQueries({ queryKey: ['library'] });
+        void queryClient.invalidateQueries({ queryKey: ['routine'] });
+
+        // If aborted during execution, do not proceed to success
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        stopProgressTicker();
+        setProgress(100);
+        setCurrentStage(PIPELINE_STAGES[4]);
+        setIsAnalyzing(false);
+
+        // Brief delay so user perceives completion before transition
+        setTimeout(() => {
+          if (isNavigatingRef.current) return;
+          isNavigatingRef.current = true;
+
+          try {
+            router.replace({
+              pathname: '/scan/results' as any,
+              params: { analysisId: result.id, imageUri },
+            });
+          } catch {
+            router.replace('/(tabs)');
+          }
+        }, 500);
+
+        return; // Success, exit cleanly
+      } catch (err: any) {
+        if (controller.signal.aborted || err?.name === 'AbortError') {
+          // Normal user cancellation - do not show error modal
+          return;
+        }
+
+        lastError = err;
+        console.warn(`[Scan] Attempt ${attempt + 1} encountered an issue:`, err?.response?.data || err?.message || err);
+
+        // If retries remain, wait silently and retry on its own so the user never sees a failure
+        if (attempt < MAX_RETRIES) {
+          // Hold progress smoothly around 88%
+          setProgress((prev) => Math.min(prev, 88));
+          setCurrentStage({
+            key: 'CHECKING_COMPATIBILITY',
+            headline: 'STABILIZING DERMAL ANALYSIS...',
+            subtext: 'Refining feature maps and connection pipeline',
+            targetProgress: 90,
+          });
+
+          // Wait 3.5 seconds before automatic retry
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(resolve, 3500);
+            controller.signal.addEventListener('abort', () => {
+              clearTimeout(timer);
+              resolve();
+            });
+          });
+
+          continue; // Loop to next attempt
+        }
+      }
     }
-  }, [imageUri, router, startProgressTicker, stopProgressTicker]);
+
+    // Only if all attempts failed, present the error modal to the user
+    console.error('Scan analysis failed after all automatic retries:', lastError?.response?.data || lastError?.message || lastError);
+    stopProgressTicker();
+    setIsAnalyzing(false);
+    setIsError(true);
+    setErrorMessage(
+      lastError?.response?.data?.message ||
+        lastError?.response?.data?.error?.message ||
+        lastError?.message ||
+        'Analysis could not be completed. Please ensure your face is clearly visible and try again.'
+    );
+  }, [imageUri, queryClient, router, startProgressTicker, stopProgressTicker]);
 
   // Mount effect: run analysis
   useEffect(() => {
