@@ -1,3 +1,4 @@
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { api } from '../../../shared/services/api';
 import { supabase } from '@/shared/services/supabase';
 import { isMockEnabled } from '@/shared/config/mockConfig';
@@ -244,9 +245,33 @@ export async function uploadScan(
     formData.append('questionnaire_answers', JSON.stringify(questionnaireAnswers));
   }
 
+  /**
+   * Optimizes phone camera photos prior to network upload.
+   * Downscales image width to max 800px and 85% JPEG quality.
+   * Shrinks upload payload by ~95% (from 10MB down to ~200KB), drastically
+   * cutting network upload latency and preventing memory exhaustion on Railway.
+   */
+  const optimizePhotoForUpload = async (uri: string): Promise<string> => {
+    const clean = normalizeFileUri(uri);
+    if (!clean || clean.startsWith('http://') || clean.startsWith('https://')) {
+      return clean;
+    }
+    try {
+      const manipulated = await manipulateAsync(
+        clean,
+        [{ resize: { width: 800 } }],
+        { compress: 0.85, format: SaveFormat.JPEG }
+      );
+      return manipulated.uri;
+    } catch (err) {
+      console.warn('[ScanAPI] Image optimization fallback to original URI:', err);
+      return clean;
+    }
+  };
+
   // Helper to append local file or remote URL to FormData safely
   const appendPhotoToForm = async (fieldName: string, uri: string, defaultName: string) => {
-    const cleanUri = normalizeFileUri(uri);
+    let cleanUri = normalizeFileUri(uri);
     if (!cleanUri) return;
 
     if (cleanUri.startsWith('http://') || cleanUri.startsWith('https://')) {
@@ -259,6 +284,9 @@ export async function uploadScan(
       }
       return;
     }
+
+    // Downscale and compress on device to protect server RAM and speed up upload
+    cleanUri = await optimizePhotoForUpload(cleanUri);
 
     const filename = cleanUri.split('/').pop() || defaultName;
     const match = /\.(\w+)$/.exec(filename);

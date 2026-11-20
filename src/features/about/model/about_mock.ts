@@ -30,7 +30,7 @@ export const MOCK_ABOUT_INFO: AboutInfo = {
   ],
   academicAffiliation: {
     institution: 'De La Salle University — Dasmariñas (DLSUD)',
-    college: 'College of Science and Computer Studies (CSCS)',
+    college: 'College of Information and Computer Studies (CICS)',
     program: 'Computer Science Department',
     projectType: 'Academic Software Engineering Capstone Research Project',
   },
